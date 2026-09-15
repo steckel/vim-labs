@@ -192,7 +192,8 @@ qa!
     assert.ok(job.findings.length > 0);
     await assert.rejects(call('invoke_provider', { provider: 'test_action', input: { bad: true } }), /invalid_provider_input/);
     assert.equal((await call('execute_ex', { command: 'echo 1' })).code, 'advanced_disabled');
-    assert.equal((await call('help', { topic: 'undo' })).ok, true);
+    const help = await call('help', { topic: 'undo' });
+    assert.equal(help.ok, true, JSON.stringify(help));
   });
 
   await t.test('duplicate request IDs never replay mutations', async () => {

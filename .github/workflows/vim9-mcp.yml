@@ -39,6 +39,7 @@ jobs:
           ./configure --with-features=huge --disable-gui --without-x --disable-nls
           make -j2
           echo "VIM=$RUNNER_TEMP/vim-baseline/src/vim" >> "$GITHUB_ENV"
+          echo "VIMRUNTIME=$RUNNER_TEMP/vim-baseline/runtime" >> "$GITHUB_ENV"
       - run: npm ci
       - run: npm run check
       - run: npm test
