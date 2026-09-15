@@ -4,16 +4,22 @@ set -eu
 root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 component="${1:-all}"
 
+# Retain the original test aliases for existing development scripts.
 case "$component" in
-  all|revue|reviewhub|mcp) ;;
-  *) echo 'Usage: scripts/test.sh [all|revue|reviewhub|mcp]' >&2; exit 2 ;;
+  revue) component=review ;;
+  reviewhub) component=github ;;
 esac
 
-if [ "$component" = all ] || [ "$component" = revue ]; then
-  (cd "$root/plugins/vim-revue" && sh test/run.sh && python3 test/regressions.py)
+case "$component" in
+  all|review|github|mcp) ;;
+  *) echo 'Usage: scripts/test.sh [all|review|github|mcp]' >&2; exit 2 ;;
+esac
+
+if [ "$component" = all ] || [ "$component" = review ]; then
+  (cd "$root/plugins/vim-code-review" && sh test/run.sh && python3 test/regressions.py)
 fi
-if [ "$component" = all ] || [ "$component" = reviewhub ]; then
-  (cd "$root/plugins/vim-reviewhub" && python3 -m unittest discover -s test -p 'test_*.py' && python3 test/run_integration.py)
+if [ "$component" = all ] || [ "$component" = github ]; then
+  (cd "$root/plugins/vim-code-review-github" && python3 -m unittest discover -s test -p 'test_*.py' && python3 test/run_integration.py)
 fi
 if [ "$component" = all ] || [ "$component" = mcp ]; then
   (cd "$root/plugins/vim9-mcp" && npm run check && npm test)

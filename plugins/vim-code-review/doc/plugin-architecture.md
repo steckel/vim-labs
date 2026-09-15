@@ -1,4 +1,4 @@
-# One review UX, composable plugins
+# One code-review UX, counterparty plugins
 
 Architecture roadmap, 2026-09-14. The current provider contract remains version
 1; the checkpoint below distinguishes implemented behavior from planned work.
@@ -7,58 +7,61 @@ Implementation checkpoint: backend bindings and a bundled local backend now
 use the version-1 request contract. Local Git captures, SQLite conversations,
 inline replies, reopen, retained follow-up captures, and shared conversation
 across revisions are implemented. Existing provider callbacks retain
-their draft keys. See [the implemented backend API](provider-api.md); package
-extraction and Git notes below remain proposed. Local assignment storage and
+their draft keys. See [the implemented backend API](provider-api.md). The shared
+UI and GitHub package directories now use `vim-code-review` and
+`vim-code-review-github`; agent package extraction and Git notes remain proposed.
+Local assignment storage and
 scoped MCP participation have an [implemented backend core](participant-mcp.md);
 Vim assignment selection, outcome navigation and cancellation are implemented;
 participant launch/resume adapters remain planned.
 
-Revue is the place where a person inspects a change, leaves anchored feedback,
-hands that feedback to someone or something, and reviews the next revision.
-GitHub, Piper, Codex, and Claude can participate in that same loop.
+The public organizing question is **“Who am I reviewing this with?”**
+`vim-code-review` supplies the shared interface. Counterparty integrations
+supply GitHub reviews, Codex sessions, or Claude sessions. Git captures and
+local conversation storage are shared internals, not separate public plugins.
 
-The core UI object is a review session backed by a selected plugin. The backend
-owns the review's durable identity, conversation, revisions, and workflow.
-Revue displays its comparisons, threads, and available actions through a common
-contract. A session can represent a GitHub PR, a Piper review, or local
-human/agent iteration before commit.
+A review session has a durable identity, conversation, comparisons, and a
+workflow supplied through a backend binding. The GitHub integration uses native
+GitHub objects. Planned Codex and Claude integrations will combine their runtime
+with shared local review storage and captured source. A review conversation is
+not the agent runtime's transcript; it must survive Vim and agent restarts.
 
-The local workflow is a peer backend, provisionally `revue-local`. It supplies
-the review service that a local workspace otherwise lacks. Opening a GitHub
-review does not require creating a local review or adopting its lifecycle.
+The existing internal local backend remains usable through `:RevueLocal` while
+agent integrations are built. It is an implementation building block, not a
+fourth counterparty or an additional package users must install. It continues
+to support standalone review and fixtures without requiring an agent.
 
-The [session storage and MCP proposal](session-storage-mcp.md) develops this
-into backend-routed agent participation, durable local conversations, and
-optional Git notes checkpoints owned by the local backend.
+## Public plugins and internal responsibilities
 
-## Review backends and supporting integrations
-
-A review backend supplies both reads and supported writes for its reviews.
-“Destination” means the backend instance and review targeted by an operation;
-it is not a separate plugin type or contract.
-
-| Integration | Meaning | Candidate implementations |
+| Public package | Review experience | Supporting implementation |
 | --- | --- | --- |
-| Review backend | Load reviews, comparisons, and threads; accept feedback; own lifecycle and reconciliation | Local review, GitHub, Piper integration |
-| Agent participant | Accept a feedback batch, continue a chosen agent session, emit progress and results | Codex, Claude |
-| Content adapter | Supply immutable workspace content and comparisons to a backend | Git, jj |
-| Exporter | Produce a portable artifact or checkpoint | Markdown/JSON, Git notes |
+| `vim-code-review` | Shared files, diffs, cards, composers, navigation and action dispatch | Normalized contracts, drafts, recovery and reusable local session helpers |
+| `vim-code-review-github` | Review a GitHub PR with its people and bots | Native review storage/actions, authentication and GitHub comparison semantics |
+| `vim-code-review-codex` (planned) | Iterate on changes with a selected Codex session | Shared captures/conversation store plus a Codex runtime adapter |
+| `vim-code-review-claude` (planned) | Iterate on changes with a selected Claude session | The same review machinery plus a Claude runtime adapter |
 
-The local backend combines content adapters with its own conversation store;
-GitHub loads and updates its native review objects. Content adapters and
-exporters can remain internal helpers until reuse warrants separate packages.
-An agent plugin owns its runtime and transport and can participate in any
-compatible backend. A read-only backend exposes a subset of the same contract.
+Within a plugin, separate durable review operations, agent runtime operations,
+content acquisition, and optional export. This separation avoids duplicating
+SQLite persistence or Git comparison logic in every agent integration; it does
+not create public Git/local-storage/participant packages that users must assemble.
+Git and jj supply content; neither supplies a discussion counterparty. Git notes
+remain optional checkpoint transport, not the required conversation database.
 
-A plugin declares supported actions and connection-specific availability.
-Revue uses shared placements and interactions, with accurate labels such as
-“Publish review” and “Send to Codex.” Starting an agent run and approving a
-review remain different operations. A plugin cannot claim capabilities merely
-because its service resembles another one.
+A review backend supplies reads and supported writes. An operation's destination
+is its owning backend instance and review, not a second destination-only plugin
+contract. An integration may use a runtime adapter when acting as a participant
+in another review. This leaves room for a GitHub review to involve Codex without
+moving the PR's authoritative conversation out of GitHub. The interaction design
+for that combination is deferred to the [handoff backlog](review-handoffs.md).
+
+Capabilities describe supported actions and connection-specific availability.
+The UI uses accurate labels such as “Publish review” and “Send to Codex.”
+Starting an agent run and approving a review remain separate operations. A
+plugin cannot infer service permissions from the selected counterparty name.
 
 ## Ownership across backends
 
-| Shared Revue layer | Backend plugin |
+| Shared Code Review layer | Counterparty integration / backend |
 | --- | --- |
 | Cards, diff layout, navigation, composers | Review discovery, identity, and lifecycle |
 | Normalized snapshots, anchors, threads, capabilities | Content acquisition and revision semantics |
@@ -71,13 +74,15 @@ draft has been accepted. Keep native states and action labels; local review
 readiness, GitHub approval, and a Piper decision need not mean the same thing.
 
 Persistence implementation is private to each backend. SQLite and Git notes
-are choices for `revue-local`, with no mandatory database for other backends.
+are implementation choices for agent-backed reviews; remote backends need no
+mandatory local conversation database.
 The shared contract must work with a remote or fixture backend that has no
 local review store, agent runtime, or Git repository.
 
 ## The user-facing loop
 
-1. Choose a change: working-tree edits, a branch comparison, a PR, or a CL.
+1. Choose a counterparty and change: a GitHub PR, or a Codex/Claude session
+   bound to a workspace and captured changes (agent integrations planned).
 2. Use the existing file tree, diff panes, comment cards, and draft composer.
 3. Accumulate a review across files. Every new comment is local until delivered.
 4. Open the batch panel: select comments and add a summary.
@@ -92,19 +97,18 @@ A proposed batch panel might say:
 ```text
 Working tree · captured revision 3
 6 comments across 3 files
-Review: Local · “Completion cleanup”
-Participant: Codex · selected agent session
+Review with Codex · “Completion cleanup”
+Session: selected Codex session
 
 [ Preview batch ]  [ Send 6 comments ]
 ```
 
-Participant selection is independent of backend selection: Claude can work in
-a local review, or Codex can participate in a GitHub review when supported.
-Replies and review actions normally return to the review's owning backend.
-Cross-backend transfer, such as publishing selected local feedback to a GitHub
-PR, explicitly names the target backend and review and retains source mappings.
-It uses that backend's ordinary write operations. It does not require a
-destination-only provider abstraction.
+A review may later involve another counterparty. A Codex review can lead to a
+GitHub PR, and an existing GitHub comment can be sent to Codex for help. These
+are future linked workflows, not a destructive switch of the original review's
+identity or conversation owner. Keep original authorship, source comparisons,
+message IDs, and operation receipts. Sharing feedback with an agent does not
+by itself post an agent response to the PR. See the [deferred workflow questions](review-handoffs.md).
 
 Available combinations depend on the connection and an appropriate workspace.
 Selecting a remote change does not silently check it out or give an agent an
@@ -117,23 +121,28 @@ or an automatic forwarding rule.
 
 ## Two libraries and small integration packages
 
-Provisional package names:
+**`vim-code-review` is the base name** within Vim Labs. The implemented packages
+are `vim-code-review` (formerly `vim-revue`) and `vim-code-review-github`
+(formerly `vim-reviewhub`). Their directories and installation references use
+the new names. Existing Vim commands, autoload namespaces, configuration keys,
+backend IDs, and persistence paths retain their names for compatibility.
 
-- `vim-review-cards`: anchored card presentation, usable in ordinary buffers.
-- `vim-revue`: normalized review contract, diff layout, composers, draft recovery,
-  capability dispatch, and shared UX.
-- `revue-local`: durable local reviews, captured revisions, conversation storage,
-  human/agent iteration before commit, and optional Git notes export/import.
-- `revue-github`: PR loading, remote review actions, and thread synchronization.
-- `revue-piper`: the workspace/change and review interfaces available internally.
-- `revue-codex`: Codex session selection, batch execution, and event translation.
-- `revue-claude`: equivalent participation through Claude's supported interface.
+The planned counterparties are `vim-code-review-codex` and
+`vim-code-review-claude`; no placeholder plugin is advertised as implemented.
+A future Piper integration can use `vim-code-review-piper` once its supported
+interfaces and product scope are established. Git capture, local storage,
+exports, and agent runtime helpers remain implementation details.
 
-Git/jj sources and file/clipboard export can be bundled with the local backend.
-Keep the existing `:Revue` entry point through a compatibility path during
-extraction; packaging should not force a separate manual installation initially.
-ReviewHub already supplies the GitHub integration boundary; migrate its bridge
-incrementally rather than renaming or replacing the working companion first.
+The reusable inline-card library is a separate presentation primitive, usable
+in ordinary buffers. Its independent package name remains undecided. The live
+editor plugin/server `vim9-mcp` is separate from the code-review family. The
+assignment-scoped review MCP currently remains with the shared local machinery.
+
+Git/jj sources and file/clipboard export stay bundled. The existing `:Revue`
+entry points remain available; packaging does not require a storage migration.
+The GitHub package keeps the working ReviewHub bridge and its native review
+semantics. Agent plugin extraction should reuse these contracts and the local
+store rather than introduce another conversation format.
 
 The card library accepts a buffer attachment, an anchor, presentation data,
 and action callbacks. It owns wrapping, display properties, highlights,
@@ -255,12 +264,12 @@ it does not create an implicit local conversation alongside every remote review.
    screenshots and key behavior. Exercise it in an ordinary buffer too.
 2. Define the backend boundary against the working GitHub bridge and a local
    fixture. Verify that neither needs the other's store or lifecycle.
-3. Build `revue-local`: route frozen Git/jj comparisons into rich cards, add
-   durable conversations and batches, and prove recovery with a fixture
-   participant. Retain existing entry points and the legacy submission callback.
-4. Implement Codex as the first real participant: send one batch, receive a
-   result, capture changed files, and review the next snapshot.
-5. Add Claude through the same contract. Revise the contract only for concrete
+3. Reuse the implemented local captures, durable conversations, batches, and
+   recovery as shared internals for agent-backed review. Retain existing entry
+   points and the legacy submission callback.
+4. Implement `vim-code-review-codex` as the first agent counterparty: send one
+   batch, receive inline replies, capture changed files, and review the next snapshot.
+5. Add `vim-code-review-claude` through the same contract. Revise the contract only for concrete
    differences exposed by that second integration.
 6. Migrate GitHub batch publishing behind the backend contract while retaining
    existing remote behavior. Implement Piper after interface discovery.

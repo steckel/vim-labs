@@ -540,7 +540,7 @@ class GitHub:
         if method != "GET" and not self.token:
             raise Failure("Sign in first: gh auth login --hostname " + self.conn["host"] + " --web", "auth")
         headers = {"Accept": "application/vnd.github.raw+json" if raw else "application/vnd.github+json",
-                   "User-Agent": "vim-reviewhub", "X-GitHub-Api-Version": "2022-11-28"}
+                   "User-Agent": "vim-code-review-github", "X-GitHub-Api-Version": "2022-11-28"}
         if self.token:
             headers["Authorization"] = "Bearer " + self.token
         data = None if body is None else json.dumps(body).encode()

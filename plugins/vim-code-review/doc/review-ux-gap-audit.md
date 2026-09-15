@@ -1,7 +1,7 @@
 # GitHub → Revue: current interaction audit
 
 Audited **2026-09-14** against the current Revue working tree and the adjacent
-`vim-reviewhub` provider. Status describes this working tree, not a release.
+`vim-code-review-github` provider. Status describes this working tree, not a release.
 The [GitHub reference](github-review-ux-spec.md) holds the detailed external
 specification; the [backlog](interaction-backlog.md) retains stable UX-01–26
 stories and acceptance contracts. Earlier incremental findings are preserved in

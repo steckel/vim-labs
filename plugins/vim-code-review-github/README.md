@@ -1,14 +1,20 @@
-# ReviewHub
+# Vim Code Review · GitHub
+
+The GitHub counterparty integration for `vim-code-review`, formerly packaged
+as `vim-reviewhub` (ReviewHub). Existing `:Reviews` and `:ReviewOpen` commands
+and configuration remain available.
 
 A tree-style GitHub pull-request browser for Vim 9.1+. Expand a PR, read its
-conversation, and open code in [vim-revue](../vim-revue) to read and respond
+conversation, and open code in [vim-code-review](../vim-code-review) to read and respond
 to inline discussions. Both panes show the PR's exact revisions; opening a
 review does not switch your branch or edit your checkout.
 
 ## Install
 
-Install this repository and `vim-revue` using your Vim package manager or
-place/symlink both under `~/.vim/pack/plugins/start/`. Requires Python 3.9+
+Install the `plugins/vim-code-review-github` and `plugins/vim-code-review`
+directories from Vim Labs using your Vim package manager, or symlink both
+under `~/.vim/pack/plugins/start/`. See the [collection setup](../../README.md#install-selected-plugins).
+Requires Python 3.9+
 and Vim with `+job`, `+channel`, `+textprop`, and `+diff`.
 
 Install [GitHub CLI](https://cli.github.com/) and authenticate:
@@ -106,7 +112,7 @@ python3 -m unittest discover -s test -p 'test_*.py' -v
 python3 test/run_integration.py
 ```
 
-The second command expects the sibling `../vim-revue` checkout. It starts
+The second command expects the sibling `../vim-code-review` checkout. It starts
 real Vim in a PTY against a deterministic provider fixture and tests the
 tree, discussion panels, mappings, draft recovery and send outcomes. HTTP
 tests use a loopback server and never post to GitHub.
@@ -117,4 +123,4 @@ Source-available under Apache License 2.0 **with the Commons Clause 1.0**.
 Personal and workplace use are permitted; selling products or services whose
 value derives entirely or substantially from this software is restricted.
 This is not plain Apache-2.0 or OSI open source. See [LICENSE](LICENSE) and
-the [Vim Labs licensing notes](../../plugins/vim-revue/doc/licensing.md).
+the [Vim Labs licensing notes](../../plugins/vim-code-review/doc/licensing.md).

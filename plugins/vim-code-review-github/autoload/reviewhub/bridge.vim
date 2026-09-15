@@ -14,7 +14,7 @@ function! reviewhub#bridge#Open(connection, snapshot, index) abort
     return revue#review#OpenReview(a:snapshot,
           \ function('reviewhub#bridge#Request', [a:connection, a:snapshot.number]), a:index)
   catch /^Vim\%((\a\+)\)\=:E117/
-    echoerr 'ReviewHub: install vim-revue to view code. PR browsing is available with :Reviews.'
+    echoerr 'ReviewHub: install vim-code-review to view code. PR browsing is available with :Reviews.'
     return ''
   endtry
 endfunction

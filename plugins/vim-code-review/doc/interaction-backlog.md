@@ -11,7 +11,7 @@
 > original UX-01–26 contracts.
 
 Audit date: **2026-09-14**. Baseline: the current dirty working trees of Revue
-and adjacent `vim-reviewhub`, including the discussion/batch foundation and
+and adjacent `vim-code-review-github`, including the discussion/batch foundation and
 resolution/recovery foundation. Historical findings below are retained alongside
 their subsequent verification. Individual inline collapsing is already removed.
 This is a backlog, not a claim that the proposed interactions
@@ -25,6 +25,19 @@ checks still listed in that spec. Status describes working-tree behavior, not
 a released version. No real provider write was performed.
 
 ## Current audit: what to implement next
+
+### Deferred counterparty handoffs
+
+Public packages use `vim-code-review` with GitHub, Codex, and Claude
+integrations. Git capture and local persistence are shared internals. The
+[architecture](plugin-architecture.md) is the current package decision;
+historical package proposals below are superseded.
+
+After the first agent-counterparty loop (UX-25c), discuss
+[UX-25d: local Codex review → GitHub PR](review-handoffs.md#ux-25d--a-codex-review-evolves-into-a-github-pr)
+and [UX-25e: quote a PR comment → send to Codex](review-handoffs.md#ux-25e--quote-a-github-comment-and-send-it-to-codex).
+Both are deferred workflow design, not part of the package rename or a claim
+that PR creation and cross-counterparty handoff are available.
 
 ### Remaining delivery queue — reconciled September 14
 
@@ -1687,8 +1700,8 @@ separate concern. No global toggle is authorized by this backlog.
 | Normalized objects and operations | [Provider API](provider-api.md), including the thread-state extension |
 | Shared ownership and proposed extraction boundary | [Plugin architecture](plugin-architecture.md) |
 | Frozen local capture and backend limitations | [Local backend contract](provider-api.md#bundled-local-backend), [`revue_local.py`](../python/revue_local.py) |
-| Companion actor rules, native review batches, GraphQL resolution scaffolding | [`reviewhub.py`](../../vim-reviewhub/python/reviewhub.py): `action_rules`, `batch`, `thread_states`, `change_thread_state` |
-| Companion already provides query, pagination, empty/error states | [`reviewhub.vim`](../../vim-reviewhub/autoload/reviewhub.vim): `Open`, `Search`, `s:Listed` |
+| Companion actor rules, native review batches, GraphQL resolution scaffolding | [`reviewhub.py`](../../vim-code-review-github/python/reviewhub.py): `action_rules`, `batch`, `thread_states`, `change_thread_state` |
+| Companion already provides query, pagination, empty/error states | [`reviewhub.vim`](../../vim-code-review-github/autoload/reviewhub.vim): `Open`, `Search`, `s:Listed` |
 
 The companion links point outside this repository and require that sibling
 checkout. They are audit references, not runtime dependencies of Revue.

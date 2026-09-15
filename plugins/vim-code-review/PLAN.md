@@ -1,9 +1,16 @@
-**Two-plugin review system: design and implementation plan**
+**Historical GitHub extraction plan**
+
+The current package and counterparty decisions are in the
+[architecture](doc/plugin-architecture.md). Public packages are now
+`vim-code-review` and `vim-code-review-github`, with Codex and Claude
+integrations planned. Git capture and local storage are internal helpers.
+The checkpoints and sequencing below retain the earlier implementation history;
+they are not the current package roadmap.
 
 Design follow-up (2026-09-14): [One review UX, composable plugins](doc/plugin-architecture.md)
 explores an independent card library, review backends, and agent participants
 for GitHub, Piper, Codex, and Claude. Local human/agent iteration before commit
-is a peer backend (`revue-local`), with its own conversation store and workflow.
+uses the internal local backend, with its own conversation store and workflow.
 The shared layer owns presentation, the review contract, and pending draft
 recovery. These proposed boundaries do not change the shipped version-1
 provider contract or the current ownership described below.
@@ -53,7 +60,7 @@ receipt completeness, failure unpacking, and restart recovery are tested.
 Server-side pending-review synchronization and revision switching
 remain further work.
 
-Current delivery: the companion lives at `../vim-reviewhub` and is installed
+Current delivery: the companion lives at `../vim-code-review-github` and is installed
 alongside Revue. It provides the PR tree, conversation preview, pinned file
 contents, existing threads, inline comments/replies, and review decisions.
 Revue now has a provider-neutral snapshot entry point, multiline persistent
@@ -66,8 +73,8 @@ anonymous public reads. Internal-provider integration and the remaining
 roadmap features are not complete.
 
 Build a GitHub-like review workflow in Vim using two independently useful
-plugins: `vim-revue` for reviewing code and a companion, provisionally named
-`vim-reviewhub`, for finding and interacting with PR/CL providers. The names
+plugins: `vim-code-review` for reviewing code and a companion, provisionally named
+`vim-code-review-github`, for finding and interacting with PR/CL providers. The names
 of commands and new APIs below are proposed.
 
 Planning defaults: retain Vim 9.1+ and Vim9script; ship a GitHub workflow first;
@@ -79,7 +86,7 @@ instead of requiring a new browsing UI.
 
 **1. Product boundary and ownership**
 
-| Responsibility | vim-reviewhub | vim-revue |
+| Responsibility | vim-code-review-github | vim-code-review |
 | --- | --- | --- |
 | Connections, authentication, account/host selection | Owns | Receives opaque connection identity |
 | PR/CL lists, queries, pagination, saved filters | Owns | No dependency |
@@ -273,9 +280,9 @@ but the GitHub release and non-Git fixture work are independent of it.
 
 | Repository | Proposed modules and changes |
 | --- | --- |
-| vim-revue | Keep `plugin/revue.vim` for commands and `review.vim` as the facade; extract `session.vim`, `model.vim`, `diff.vim`, `draft.vim`, `submit.vim`, `ui/`, and `source/local.vim` as their tasks land |
-| vim-revue | Keep Git/jj implementations under `vcs/`; change dispatch to a repository-bound adapter; add contract docs and fixtures under `doc/` and `test/` |
-| vim-reviewhub | `plugin/reviewhub.vim`; `autoload/reviewhub/{connections,providers,inbox,details,transport,cache,bridge}.vim`; adapters under `providers/{github,internal}.vim`; tests and help |
+| vim-code-review | Keep `plugin/revue.vim` for commands and `review.vim` as the facade; extract `session.vim`, `model.vim`, `diff.vim`, `draft.vim`, `submit.vim`, `ui/`, and `source/local.vim` as their tasks land |
+| vim-code-review | Keep Git/jj implementations under `vcs/`; change dispatch to a repository-bound adapter; add contract docs and fixtures under `doc/` and `test/` |
+| vim-code-review-github | `plugin/reviewhub.vim`; `autoload/reviewhub/{connections,providers,inbox,details,transport,cache,bridge}.vim`; adapters under `providers/{github,internal}.vim`; tests and help |
 
 Extract modules incrementally with behavior tests. Do not start with a large
 rewrite or build a generic plugin framework. Keep provider calls out of UI

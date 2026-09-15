@@ -8,9 +8,9 @@ Revue was originally extracted from Curtis Steckel's vim-ai-code. Earlier
 versions of Revue were labeled MIT; this notice does not revoke rights granted
 for those versions. Separately installed dependencies retain their licenses.
 
-GitHub interface screenshots in plugins/vim-revue/doc/research/github-review/
+GitHub interface screenshots in plugins/vim-code-review/doc/research/github-review/
 and third-party quotations are included for review-interface
 analysis. GitHub's interface and marks and the depicted contributions remain
 the property of their respective owners. Revue's license does not grant rights
 to that third-party material. Sources and observation context are documented
-in plugins/vim-revue/doc/github-review-ux-spec.md. No GitHub endorsement is implied.
+in plugins/vim-code-review/doc/github-review-ux-spec.md. No GitHub endorsement is implied.

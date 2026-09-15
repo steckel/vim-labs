@@ -4,7 +4,7 @@
 # GitHub → Revue: current UX gaps and delivery backlog
 
 Audited **2026-09-14**, against the current uncommitted Revue and adjacent
-`vim-reviewhub` working trees. This is the current planning view; the
+`vim-code-review-github` working trees. This is the current planning view; the
 [26-story backlog](interaction-backlog.md) retains detailed contracts and
 implementation history. Its UX IDs remain stable. This audit proposes work;
 it does not authorize publishing feedback or implement these proposals.
@@ -397,7 +397,7 @@ refinement; each current action reads just one page.
   story contracts. [Actions](../autoload/revue/actions.vim),
   [maps](../autoload/revue/maps.vim), [timeline](../autoload/revue/timeline.vim),
   [local backend](../python/revue_local.py), and
-  [GitHub adapter](../../vim-reviewhub/python/reviewhub.py) are the code basis.
+  [GitHub adapter](../../vim-code-review-github/python/reviewhub.py) are the code basis.
 - **Earlier audit verification:** nine focused local checks cover comments, messages,
   interactions, layout, compact chrome, action discovery, discussion discovery,
   feedback continuation and timeline. Exact commands and outcomes are in the

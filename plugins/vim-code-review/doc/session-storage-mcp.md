@@ -1,4 +1,4 @@
-# Local review backend, MCP participation, and Git notes
+# Agent-review storage, MCP participation, and Git notes
 
 Design proposal, 2026-09-14. Extends [the plugin architecture](plugin-architecture.md).
 The checkpoint below distinguishes implemented behavior from the remaining
@@ -18,15 +18,21 @@ and Git notes remain proposed. The current API is documented in
 
 ## Decision
 
-Make local human/agent iteration before commit a backend plugin, provisionally
-`revue-local`, alongside GitHub and Piper. Revue owns the shared presentation
-and review contract. Each backend owns its reviews, conversation, revisions,
-and lifecycle; Codex and Claude supply optional participant integrations.
+Expose agent-backed review through `vim-code-review-codex` and
+`vim-code-review-claude`, alongside `vim-code-review-github`. The shared
+`vim-code-review` layer owns presentation, contracts, and reusable session
+machinery. There is no separate public local or Git plugin to install.
 
-The local backend needs its own durable store because it supplies the review
-service for a workspace. Use a version-control-independent model internally,
-with Git notes as optional checkpoint transport. Its review can outlive Vim or
-an agent runtime without imposing local storage on a GitHub or Piper review.
+The current internal local backend supplies captured source, durable review
+conversations, receipts, and assignment scope. Agent integrations will compose
+that machinery with their runtime adapters. The current `:RevueLocal` workflow,
+storage paths, backend identifiers, and recovery behavior remain available;
+changing public package names does not migrate stored sessions.
+
+Use a version-control-independent storage model internally, with Git notes as
+optional checkpoint transport. An agent-backed review can outlive Vim or an
+agent runtime without imposing a local conversation store on a GitHub review.
+The agent runtime transcript and the review conversation are distinct records.
 
 MCP can be a shared gateway to backend capabilities. Conversation storage is
 a backend responsibility, not a prerequisite imposed by MCP. Remote reviews
@@ -41,12 +47,13 @@ The reusable card library stays presentation-only. A card renders a thread
 from the session; an agent reply updates that thread and therefore the card.
 Neither storage nor MCP needs to know which Vim window currently displays it.
 
-## The local backend interaction
+## Planned agent-counterparty interaction
 
-1. Select code and leave a comment in the existing inline composer.
+1. Open a review with Codex or Claude, bound to a workspace and captured source.
+   Select code and leave a comment in the shared inline composer.
 2. Choose “Ask Codex about this thread,” or collect several threads into a batch.
-3. The participant adapter starts or resumes an agent with the selected scope,
-   frozen snapshot, and access to Revue's MCP tools.
+3. The counterparty integration uses its runtime adapter to start or resume an
+   agent with the selected scope, frozen snapshot, and access to review MCP tools.
 4. The agent reads a thread with its code context and replies to its stable ID.
    Quotes and suggestions use the same card presentation as human comments.
 5. A proposed fix references a new snapshot or patch. The card shows
@@ -67,13 +74,18 @@ describe the review concern. A failed run cannot erase a comment or resolve it.
 ```text
 Vim + review cards ──────────────┐
                                ├── Review contract / capability dispatch
-Agent clients ────── MCP ────────┘       ├── Local backend ── SQLite
-                                       ├── GitHub backend ── GitHub
-                                       └── Piper backend ── supported service
-
-Codex / Claude participant adapters start or resume runs for compatible backends.
-The local backend composes content adapters and optional Git notes export/import.
+Agent clients ────── MCP ────────┘       ├── GitHub integration ── GitHub reviews
+                                       ├── Codex integration ── Codex runtime
+                                       └── Claude integration ── Claude runtime
+                                                  │
+                                      shared captures / local review store
 ```
+
+Codex and Claude integrations in this diagram are planned. They reuse the
+internal local backend and compose content adapters and optional checkpoint
+export. Runtime adapters may also participate in compatible remote reviews.
+The [handoff backlog](review-handoffs.md) defers the design of evolving a Codex
+review into a GitHub PR and sending an existing PR comment to an agent.
 
 A small local companion can host backend dispatch for Vim and MCP. Both clients
 call the same operations with the same validation. The local backend owns its
@@ -138,7 +150,7 @@ provenance. Merely opening a remote review must not create this second review.
 
 ## Local backend storage scope
 
-Use SQLite inside `revue-local` for its first store, outside the checkout, with a stable
+Use the shared internal local backend's SQLite store, outside the checkout, with a stable
 project ID and explicit workspace bindings. Avoid identifying a project solely
 by its absolute path or remote URL: paths move, and repositories can have
 several worktrees. Keep the storage interface small; interchangeable database

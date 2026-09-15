@@ -170,7 +170,7 @@ Configure a stdio-capable client to launch this argv, substituting the real path
 store and returned assignment ID:
 
 ```text
-python3 /path/to/vim-revue/python/revue_mcp.py --store STORE --assignment ASSIGNMENT_ID
+python3 /path/to/vim-code-review/python/revue_mcp.py --store STORE --assignment ASSIGNMENT_ID
 ```
 
 The server negotiates MCP **2025-11-25**, requires initialization, and advertises

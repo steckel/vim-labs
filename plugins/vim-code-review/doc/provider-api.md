@@ -552,7 +552,7 @@ checks token scopes, repository permissions, and other policy at submission.
 If actor lookup fails (including unsupported token identity endpoints), review
 decisions requiring a verified actor are unavailable until it can be verified.
 
-See `../vim-reviewhub/autoload/reviewhub/bridge.vim` and its fixture provider
+See `../vim-code-review-github/autoload/reviewhub/bridge.vim` and its fixture provider
 for working adapters. No ReviewHub import is required inside Revue.
 
 ## Thread resolution

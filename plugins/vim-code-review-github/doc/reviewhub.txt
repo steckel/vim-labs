@@ -4,7 +4,7 @@
 :Reviews [owner/repo-or-url]
         Open a PR tree. Without an argument, use the current checkout's origin.
         Enter/o/l expands a PR. h collapses it. / searches. R refreshes.
-        Open Conversation or a file to engage through vim-revue.
+        Open Conversation or a file to engage through vim-code-review.
 
                                                                 *:ReviewOpen*
 :ReviewOpen https://github.com/owner/repo/pull/123
@@ -23,7 +23,7 @@ The message composer uses normal Vim editing. :w saves locally. Ctrl-S or
 Drafts survive closing/restarting Vim. Failed sends retain drafts; unknown
 outcomes are reconciled before retrying. A changed PR revision requires reopening.
 
-Requires Vim 9.1+, Python 3.9+, and vim-revue for the code UI. Run
+Requires Vim 9.1+, Python 3.9+, and vim-code-review for the code UI. Run
 `gh auth login --hostname github.com --web` to enable authenticated access.
 Public browsing works anonymously with lower API limits.
 

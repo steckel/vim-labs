@@ -12,7 +12,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 store = Path(tempfile.mkdtemp(prefix="reviewhub-test-"))
-env = dict(os.environ, REVIEWHUB_ROOT=str(ROOT), REVUE_ROOT=str(ROOT.parent / "vim-revue"),
+env = dict(os.environ, REVIEWHUB_ROOT=str(ROOT), REVUE_ROOT=str(ROOT.parent / "vim-code-review"),
            REVUE_TEST_STORE=str(store), TERM="xterm")
 master, slave = pty.openpty()
 proc = subprocess.Popen(["vim", "-N", "-u", os.environ.get("REVUE_TEST_VIMRC", "NONE"), "-n", "-S", str(ROOT / "test/integration.vim")],

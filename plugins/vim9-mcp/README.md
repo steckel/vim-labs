@@ -174,4 +174,4 @@ Source-available under Apache License 2.0 **with the Commons Clause 1.0**.
 Personal and workplace use are permitted; selling products or services whose
 value derives entirely or substantially from this software is restricted.
 This is not plain Apache-2.0 or OSI open source. See [LICENSE](LICENSE) and
-the [Vim Labs licensing notes](../../plugins/vim-revue/doc/licensing.md).
+the [Vim Labs licensing notes](../../plugins/vim-code-review/doc/licensing.md).

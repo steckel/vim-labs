@@ -4,23 +4,42 @@ Experimental Vim plugins and MCP tools by Curtis Steckel. This repository is
 a home for alpha and beta work: interfaces can change, and each component has
 its own requirements and validation limits.
 
+The code-review family uses **`vim-code-review`** as its base name, with
+integrations organized around who you review with: GitHub, Codex, or Claude.
+Git comparisons and local conversation storage are shared implementation
+details. See the [architecture](plugins/vim-code-review/doc/plugin-architecture.md).
+
 ## Components
 
 | Component | What it does | Status |
 | --- | --- | --- |
-| [Revue](plugins/vim-revue) | Diff review, inline discussion cards, durable local reviews, and agent assignments | Alpha |
-| [ReviewHub](plugins/vim-reviewhub) | GitHub PR discovery and the GitHub backend for Revue | Alpha |
+| [Code Review](plugins/vim-code-review) | Shared diff review, inline discussion cards, composers, and supporting session machinery | Alpha |
+| [Code Review · GitHub](plugins/vim-code-review-github) | GitHub PR discovery, conversations, and review actions | Alpha |
 | [Vim9 MCP](plugins/vim9-mcp) | MCP access to live Vim sessions, buffers, selections, and editing tools | Alpha |
 
-Revue and ReviewHub share one review interface. Revue can also work locally
-without GitHub. Vim9 MCP is independently installable and includes both a Vim
-plugin and its Node.js MCP server.
+Planned integrations are **`vim-code-review-codex`** and
+**`vim-code-review-claude`**. They will combine shared change capture and durable
+review conversations with their agent runtime. These packages are not yet
+implemented. There are no separate Git, local-storage, or local-agent packages
+to install.
 
-Revue also has a separate, assignment-scoped
-[review MCP server](plugins/vim-revue/doc/participant-mcp.md) for agents to read
-selected discussions and reply inline. It lives with Revue's Python local
+Code Review and its GitHub integration share one interface. The bundled local
+review commands remain available while agent integrations are developed.
+Vim9 MCP is independently installable and includes both a Vim plugin and its
+Node.js MCP server.
+
+Code Review also has a separate, assignment-scoped
+[review MCP server](plugins/vim-code-review/doc/participant-mcp.md) for agents to read
+selected discussions and reply inline. It lives with the shared Python local
 backend. The live-editor MCP and the review-assignment MCP serve different
 purposes; neither requires the other.
+
+The package directories were renamed from `vim-revue` and `vim-reviewhub`.
+Existing installations should update runtime-path entries or package symlinks
+to the directories below. Vim commands (`:Revue*`, `:Reviews`), configuration,
+and persisted identities retain their existing names, preserving draft and
+review recovery. Replace the old installation entries instead of loading both
+copies of a plugin.
 
 ## Install selected plugins
 
@@ -37,14 +56,14 @@ package directory. For example, from the cloned repository:
 
 ```sh
 mkdir -p "$HOME/.vim/pack/vim-labs/start"
-ln -s "$PWD/plugins/vim-revue" "$HOME/.vim/pack/vim-labs/start/vim-revue"
-ln -s "$PWD/plugins/vim-reviewhub" "$HOME/.vim/pack/vim-labs/start/vim-reviewhub"
+ln -s "$PWD/plugins/vim-code-review" "$HOME/.vim/pack/vim-labs/start/vim-code-review"
+ln -s "$PWD/plugins/vim-code-review-github" "$HOME/.vim/pack/vim-labs/start/vim-code-review-github"
 ```
 
-Restart Vim and run `:helptags ALL`. Revue and ReviewHub require Vim 9.1+;
-the local review backend needs Python 3.9+ with SQLite. ReviewHub also needs
+Restart Vim and run `:helptags ALL`. Both review components require Vim 9.1+;
+the local review backend needs Python 3.9+ with SQLite. The GitHub integration also needs
 Python 3.9+ and uses the GitHub CLI for authenticated access. See the
-[component setup](plugins/vim-reviewhub/README.md#install).
+[component setup](plugins/vim-code-review-github/README.md#install).
 
 To install the live-editor MCP as well, with Node.js 22+ available:
 
@@ -63,26 +82,27 @@ In a Git checkout, `:RevueLocal HEAD` captures saved changes into a local
 review. Use `c` to comment, `t` to read threads, and `r` to reply. Drafts and
 accepted local comments persist across Vim restarts.
 
-With ReviewHub installed and GitHub authentication configured, `:Reviews
+With the GitHub integration installed and authentication configured, `:Reviews
 owner/repo` opens the pull-request browser. GitHub publication uses explicit
 review actions and confirmation; local drafts are distinct from posted comments.
 
 For a fixture-only walkthrough, run:
 
 ```sh
-python3 plugins/vim-revue/tools/ux_trial.py
+python3 plugins/vim-code-review/tools/ux_trial.py
 ```
 
 This creates an isolated trial and opens a separate Vim instance. It does not
-publish comments. The [trial guide](plugins/vim-revue/doc/ux-trial.md) explains
+publish comments. The [trial guide](plugins/vim-code-review/doc/ux-trial.md) explains
 the exercise and observation record.
 
 ## Design and development
 
-- [Review architecture and backend boundary](plugins/vim-revue/doc/plugin-architecture.md)
-- [GitHub UX reference](plugins/vim-revue/doc/github-review-ux-spec.md)
-- [Current UX comparison and backlog](plugins/vim-revue/doc/review-ux-gap-audit.md)
-- [Parity validation and remaining limits](plugins/vim-revue/doc/parity-validation.md)
+- [Review architecture and backend boundary](plugins/vim-code-review/doc/plugin-architecture.md)
+- [GitHub UX reference](plugins/vim-code-review/doc/github-review-ux-spec.md)
+- [Current UX comparison and backlog](plugins/vim-code-review/doc/review-ux-gap-audit.md)
+- [Parity validation and remaining limits](plugins/vim-code-review/doc/parity-validation.md)
+- [Future agent reviews and GitHub handoff](plugins/vim-code-review/doc/review-handoffs.md)
 - [Live-editor MCP feature catalog](plugins/vim9-mcp/docs/feature-catalog.md)
 
 The test suites use temporary repositories and fixture transports. From the
@@ -92,7 +112,7 @@ repository root, after installing the MCP dependencies:
 ./scripts/test.sh
 ```
 
-Use `./scripts/test.sh revue`, `reviewhub`, or `mcp` to run one component's
+Use `./scripts/test.sh review`, `github`, or `mcp` to run one component's
 suite. Python 3, Vim, Git, and Node.js are required for the combined run.
 
 The GitHub adapter's automated tests do not prove every real account/permission
@@ -109,5 +129,5 @@ including hosting and certain consulting/support services. This is not plain
 Apache-2.0 or OSI open source.
 
 See [LICENSE](LICENSE), [NOTICE](NOTICE), and the
-[licensing notes](plugins/vim-revue/doc/licensing.md), including the earlier MIT
+[licensing notes](plugins/vim-code-review/doc/licensing.md), including the earlier MIT
 versions of Revue. Third-party research material retains its owners' rights.

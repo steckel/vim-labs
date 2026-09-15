@@ -1,4 +1,10 @@
-# revue
+# Vim Code Review
+
+The shared review interface in Vim Labs, formerly packaged as `vim-revue`.
+The `vim-code-review-*` integrations represent review counterparties: GitHub
+today, with Codex and Claude planned. Change capture, conversation persistence,
+and assignment transport are supporting internals. Existing `:Revue*`
+commands, configuration keys, and stored review identities are retained.
 
 A standalone diff review UI for Vim. Navigate changed files against a
 base revision, view them side by side, drop comments on specific
@@ -12,14 +18,16 @@ compiled comments to the clipboard instead.
 
 ## Install
 
-Drop this repo under `~/.vim/pack/plugins/start/revue` (native Vim
-packages) or your plugin manager of choice, then `:helptags ALL` once
+Install the `plugins/vim-code-review` directory from Vim Labs using native Vim
+packages or your plugin manager, then `:helptags ALL` once
 to pick up `doc/revue.txt`. Requires Vim 9.1+.
+The [Vim Labs setup](../../README.md#install-selected-plugins) includes package
+symlink examples. Add the component directory, not the collection root.
 
 ## Usage
 
 For a GitHub PR tree, conversations, and inline replies, install the companion
-[vim-reviewhub](../vim-reviewhub) and run `:Reviews` inside a GitHub checkout.
+[vim-code-review-github](../vim-code-review-github) and run `:Reviews` inside a GitHub checkout.
 Use `c` in a code pane (or `V` then `c` for a range), `t` to read threads,
 and `r` in a thread to reply. `C` opens the conversation. Drafts are saved
 locally; Ctrl-S or `:RevueSend` in the composer publishes after confirmation.

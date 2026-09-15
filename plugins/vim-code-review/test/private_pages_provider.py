@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('private_fixture', ROOT.parent / 'vim-reviewhub/test/test_feedback_pages.py')
+spec = importlib.util.spec_from_file_location('private_fixture', ROOT.parent / 'vim-code-review-github/test/test_feedback_pages.py')
 fixture = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fixture)
 

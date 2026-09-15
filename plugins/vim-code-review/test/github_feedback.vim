@@ -1,7 +1,7 @@
 set nocompatible nomore
 let g:root = expand('<sfile>:p:h:h')
 execute 'set runtimepath^=' . fnameescape(g:root)
-execute 'set runtimepath^=' . fnameescape(fnamemodify(g:root, ':h') . '/vim-reviewhub')
+execute 'set runtimepath^=' . fnameescape(fnamemodify(g:root, ':h') . '/vim-code-review-github')
 let g:revue_draft_dir = $REVUE_CAP_STORE . '/drafts'
 let g:reviewhub_command = ['python3', g:root . '/test/github_feedback_provider.py']
 let g:connection = {'host': 'fixture.test', 'repo': 'team/project'}
