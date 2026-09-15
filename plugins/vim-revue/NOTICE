@@ -1,0 +1,15 @@
+Revue (vim-revue)
+Copyright 2026 Curtis Steckel
+
+This distribution is licensed under Apache License 2.0 subject to the Commons
+Clause 1.0 condition included in LICENSE. It is not plain Apache-2.0.
+
+Originally extracted from Curtis Steckel's vim-ai-code. Earlier versions were
+labeled MIT; this notice does not revoke rights granted for those versions.
+
+GitHub interface screenshots in doc/research/github-review/ and third-party
+quotations in the research documentation are included for review-interface
+analysis. GitHub's interface and marks and the depicted contributions remain
+the property of their respective owners. Revue's license does not grant rights
+to that third-party material. Sources and observation context are documented
+in doc/github-review-ux-spec.md. No GitHub endorsement is implied.

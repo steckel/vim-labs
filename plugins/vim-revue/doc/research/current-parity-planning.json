@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current planning reconciliation, not a new feature implementation or authenticated UI study",
+  "inspected": [
+    "autoload/revue/maps.vim",
+    "autoload/revue/session.vim",
+    "autoload/revue/surface.vim",
+    "autoload/revue/message_history.vim",
+    "python/revue_local.py",
+    "../vim-reviewhub/python/reviewhub.py"
+  ],
+  "visuals_reopened": [
+    "output/auxiliary-surfaces/80-history.png",
+    "output/reanchor/80-preview.png"
+  ],
+  "verification": "Final Revue suite process exit 0 observed; retained logs include 36 local backend tests. Earlier provider and integration logs reviewed, not rerun.",
+  "implementation_evidence": "output/reanchor/validation.json",
+  "sources_rechecked": [
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request",
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/"
+  ],
+  "corrections": [
+    "History styling, message deletion and local draft movement have implemented cores",
+    "Remove stale claims of missing history contrast and multiline command header",
+    "Split bounded refresh and private inventory paging into delivery cuts",
+    "Keep unfamiliar-user and real service permission verification separate from features"
+  ],
+  "remote_mutations": 0
+}

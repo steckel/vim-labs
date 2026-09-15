@@ -1,0 +1,1081 @@
+*revue.txt*    Standalone diff review UI
+
+Author:  Curtis Steckel
+License: Apache 2.0 with Commons Clause 1.0 (source-available; see LICENSE)
+
+==============================================================================
+CONTENTS                                                     *revue-contents*
+
+    1. Introduction .......................... |revue-introduction|
+    2. Requirements .......................... |revue-requirements|
+    3. Commands .............................. |revue-commands|
+    4. Keymaps ............................... |revue-keymaps|
+    5. Configuration .......................... |revue-config|
+    6. Extending .............................. |revue-extending|
+    7. VCS backends ........................... |revue-vcs|
+    8. Rich review interactions ............... |revue-interactions|
+
+==============================================================================
+1. INTRODUCTION                                          *revue-introduction*
+
+revue navigates changed files against a base revision, shows them side
+by side, and collects line comments into one compiled message. It has
+no opinion on what happens to that message — see |revue-extending|.
+
+==============================================================================
+2. REQUIREMENTS                                          *revue-requirements*
+
+- Vim 9.1+
+- A git or jj repository (see |revue-vcs|)
+
+==============================================================================
+3. COMMANDS                                                 *revue-commands*
+
+                                                         *:RevueReviewActions*
+:RevueReviewActions     In a rich review session, choose an action grouped by
+                        Read, Write and Review. Default: <LocalLeader>a;
+                        mapping ID: review-actions. Commands and Plug mapping
+                        remain available with default mappings disabled.
+
+                        The chooser identifies the selected file/comparison
+                        or message/draft,
+                        displays configured bindings and unavailable reasons,
+                        exposes review purpose/general conversation and
+                        bounded loading for an unloaded history discussion,
+                        and distinguishes local saving, private preparation,
+                        and publication. Existing confirmation and receipt
+                        rules apply. Changes during the prompt invalidate
+                        the choice. g? includes the guide and all bindings.
+                        The message-specific a menu remains unchanged.
+                        Read actions expose comparison selection, latest and
+                        previous return, original discussion/draft code and
+                        local Viewed progress. Irrelevant return/progress
+                        actions are omitted; unavailable history explains why.
+
+                                             *<Plug>(revue-review-actions)*
+<Plug>(revue-review-actions)
+                        Open the contextual review action chooser.
+
+Composer/preview layout:~
+Common comment, reply, file, and review drafts show compact target and delivery
+context. Full review context follows the rendered preview body; unavailable
+actions and missing-source disclosures remain above the body. Read-only
+operations and edit/publication previews retain their detailed target context.
+Preview cards use g:revue_comment_width, including 0 for the full pane width.
+Focused layouts quiet the status bars of minimized review panes. RevueQuietBar
+defaults to Normal; user window minimums and source coordinates are preserved.
+
+                                                                     *:Revue*
+:Revue [revision]       Open review mode. With no argument, diffs
+                        against |g:revue_default_base|; with one,
+                        diffs against that revision instead.
+
+==============================================================================
+4. KEYMAPS                                                    *revue-keymaps*
+
+                                                     *<Plug>(revue-open)*
+<Plug>(revue-open)      Open review mode against the default base. Map
+                        it to a key of your choice; there is no default
+                        binding.
+
+Inside review mode:~
+  <CR>                Open file under cursor
+  ]f / [f             Next / previous file
+  V then c            Select lines, add a comment
+  s                   Submit all comments
+  q                   Close review
+  ?                   Help
+
+==============================================================================
+5. CONFIGURATION                                                *revue-config*
+
+                                                    *g:revue_default_base*
+g:revue_default_base   Revision to diff against when none is given to
+                        |:Revue|.
+                        Default: `'main'`
+
+                                                   *g:RevueSubmitCallback*
+g:RevueSubmitCallback  Funcref(message: string, context: dict<any>),
+                        called on submit — see |revue-extending|. Must
+                        start with a capital letter (Vim9 Funcref-value
+                        naming rule). Unset: comments are copied to the
+                        clipboard instead.
+
+==============================================================================
+6. EXTENDING                                                *revue-extending*
+
+|revue#review#Open()| takes an optional dict with two keys:
+
+    base       revision to diff against, overriding
+               |g:revue_default_base| for this call
+    context    an opaque dict passed through unchanged to
+               |g:RevueSubmitCallback|
+
+Example: >
+    def MySubmit(message: string, context: dict<any>)
+      " send message wherever it needs to go
+    enddef
+    g:RevueSubmitCallback = MySubmit
+
+    call revue#review#Open({context: {thread_id: 42}})
+<
+==============================================================================
+7. VCS BACKENDS                                                    *revue-vcs*
+
+autoload/revue/vcs.vim dispatches to a backend per working directory.
+Both git and jj are implemented. In a repo colocated with both (jj's
+usual adoption path: `jj git init --colocate` on an existing git
+repo), jj is checked first and wins — a colocated repo answers yes to
+both `jj root` and `git rev-parse --show-toplevel`, so checking git
+first would mean jj is never selected in the one setup it's most
+likely to be used in.
+
+A backend implements:
+>
+    RepoRoot(): string
+    CurrentRevision(repo: string): string
+    DiffNameStatus(repo: string, base: string): list<dict<any>>
+    ShowFile(repo: string, ref: string, relpath: string): dict<any>
+    RawDiff(repo: string, base: string, relpath: string,
+            old_relpath: string = ''): string
+<
+`old_relpath` carries a rename's prior path (git only — jj's rename
+tracking isn't exposed by the commands revue uses today).
+
+==============================================================================
+8. RICH REVIEW INTERACTIONS                              *revue-interactions*
+
+Provider reviews and :RevueLocal use immutable source snapshots and persistent
+drafts. These mappings differ from the original :Revue callback/clipboard UI.
+Inline cards remain expanded. Their virtual rows never become source lines;
+use a discussion view for ordinary text search, selection, and copying.
+
+Reading layout:~
+  :RevueFocus         Maximize current pane; repeat to restore (<LocalLeader>z)
+  :RevueRestoreLayout Restore split sizes, or leave a single-window reading tab
+  :RevueFiles         Hide/reopen the file sidebar
+
+New discussions, composers and previews use full-area reading tabs on narrow
+terminals. Original source windows and their positions remain in the review tab.
+Closing returns through the original message and source positions. Existing tabs
+are not moved when the terminal resizes. Hidden discussions update without a
+visible tab switch or leaving Insert mode in the active editor.
+
+Source Focus and split mode use native Vim window maximization. Other splits
+retain minimum rows or columns; buffers and diff navigation remain available. Long
+virtual cards may still exceed a source window; :RevueThread opens their complete
+real text for scrolling/searching. Reply/preview carry focused reading forward,
+and :RevueClose returns through the originating views and their split sizes.
+In focused source, :RevueClose restores the layout before closing the review.
+
+Sizing restores exactly when the window arrangement and terminal size are
+unchanged, and fits saved proportions after a terminal resize. If windows were
+manually rearranged, Revue preserves user windows. If all source windows have
+been closed, following code recreates the review in a separate tab and says so.
+Closing the session removes its own windows and preserves user-created buffers,
+splits and tabs. Native window sizing remains available.
+
+                                                   *g:revue_reading_layout*
+  'auto'  Default: reading tabs on narrow terminals, splits on wider terminals.
+  'tab'   Reading tabs at every size, including with auto_focus disabled.
+  'split' Keep the earlier split layout and native maximization.
+The setting applies when a discussion/editor/preview window is created.
+Nested views opened from a reading tab continue in reading tabs in auto mode.
+
+                                                     *g:revue_auto_focus*
+Automatic sizing defaults on below 120 columns or 32 rows. Setting
+g:revue_auto_focus = 0 disables the narrow-screen choice for new flows in auto
+mode and automatic source maximization. Explicit :RevueFocus still works.
+                                                 *g:revue_narrow_columns*
+Set g:revue_narrow_columns to change the column threshold (default 120).
+                                                   *g:revue_comment_width*
+Card reading layout defaults to 100 columns including framing/padding; set
+g:revue_comment_width = 0 for the full available width. Backgrounds and outer
+borders span the source pane so diff highlighting cannot fill the unused margin.
+
+Source views:~
+  c / V then c        Comment on a source line / range
+  r                   Reply from any line in a discussion's range
+  t                   List the file's discussions
+  <LocalLeader>t      Focus one discussion (choose if ranges overlap)
+  ]t / [t             Next / previous discussion anchor
+  ]c / [c             Native Vim diff navigation, unchanged
+  / and ?             Native forward/backward search, unchanged
+  g?                  Contextual commands and active mappings
+
+Discussion views:~
+  ]m / [m             Next / previous message
+  a                   Selected message's action menu
+  Q / visual Q        Quote whole message / selected body text into a reply
+  gy                  Copy message body; a register prefix is supported
+  gx                  Open the selected message's web permalink, if available
+  r                   Reply to the selected thread
+  <CR>                Jump to its current source anchor
+  q                   Close panel and return to its origin
+
+Composers preserve native editing keys, including q for macro recording.
+:w saves the local draft; Ctrl-S or :RevueSend submits to the review backend
+after confirmation. :RevuePreview opens a read-only rendered preview alongside
+the existing discussion. Context shown above the draft is virtual text and is
+never included in the message. :RevueClose saves and returns to the origin;
+:RevueDiscard explicitly discards the draft. The statusline reports save state.
+An unknown submission remains locked while the backend checks for its receipt.
+Use :RevueCheckReceipt to retry a lookup. A failed lookup leaves delivery unknown;
+it does not unlock editing, discard, or batch unpacking.
+
+Thread resolution:~
+  :RevueResolve       Resolve the selected thread in place
+  :RevueReopen        Reopen the selected thread in place
+  :RevueCheckThreadState  Check this thread's uncertain resolution outcome
+  :RevueCheckReceipt  Check an uncertain single or batch operation without posting
+
+Resolve/reopen also appear in the selected message's action menu when permitted.
+Cards and the discussion index show state independently of outdated anchors.
+All replies remain expanded. Explicit Resolve/Reopen sends without a composer
+or additional confirmation; waiting and failed/unknown states appear beside the
+thread. Multiple threads at an anchor require an explicit selection. The empty-
+body operation survives restart. While it is unknown, use :RevueCheckThreadState
+or Check resolution outcome in the message menu; Resolve/Reopen cannot change
+or resend that intent. Known failures retry the same explicit command. Activity
+retains operation details and :RevueCheckReceipt in its read-only operation view.
+Unsupported actions explain their unavailability. Unrelated drafts and native
+Insert mode remain intact when the response arrives.
+GitHub recovery can confirm that the requested state is observed, without
+claiming this operation caused it. Accepted outcomes stay visible beside refresh
+errors in durable local history; the refreshed snapshot supplies displayed state.
+
+Delivery history and new messages:~
+  :RevueActivity      Show outcomes, pending operations, receipts, refresh errors
+  :RevueOpenOperation Inspect the selected pending operation (Enter in Activity)
+  :RevueCopyReceipt [register]  Copy the selected delivery receipt as JSON
+  :RevueNextUnread    Visit the next newly observed message (wraps)
+  :RevueMarkRead      Acknowledge the selected message
+  :RevueMarkThreadRead  Acknowledge a selected code thread
+
+These actions have Plug mappings and no default keys except Activity's Enter.
+Refresh marks new stable message IDs after the initial baseline, including your
+own newly observed replies. It preserves selection and draft text; viewing a
+message does not mark it read. Existing-message edits do not count as arrivals.
+Read state is local to the review key, not synced GitHub notification state.
+Messages without IDs cannot be marked reliably. Refresh remains manual.
+Activity retains the last 200 outcomes (g:revue_activity_limit). Pending drafts
+are not limited. Acceptance and refresh success are separate facts, and receipt
+recovery never republishes an unknown operation. NOT SAVED reports failure to
+persist local state; current text/receipts remain in this Vim. Backend-owned
+conversation bodies are not duplicated in activity history.
+
+Backend review history:~                           *revue-timeline*
+
+  :RevueReadiness       Inspect checks and review requirements (read-only)
+  :RevueReloadReadiness Reload observations for the current head
+  :RevueMoreChecks      Load another reported-check page
+  :RevueCancelReadiness Cancel a read; retain previous observations
+  :RevueReadinessLink   Open selected readiness details (default gx)
+  :RevueCopyReadinessLink Copy selected details link (default gy)
+
+Readiness requires a backend capability and the latest full comparison.
+Required checks are separate from check results; skipped and neutral remain
+separate from passed. Stale or unavailable observations are explicit. Reported
+checks may omit missing required checks and other policy. No merge action is
+provided. Close returns to the originating view; reload preserves other drafts.
+See doc/readiness.md for coverage and the backend contract.
+
+  :RevueTimeline        Open typed backend history, newest first
+  :RevueOlderEvents     Load an earlier page, retaining the selected event
+  :RevueReloadTimeline  Replace the inventory with the newest page
+  :RevueCancelTimeline  Ignore the outstanding read; retain loaded entries
+  :RevueEventDiscussion Open the selected event's loaded message (Enter)
+  :RevueEventComparison Open the event's verified source comparison
+  :RevueLoadEventDiscussion
+                        Fetch this discussion, or one page; open exact message
+  :RevueEventLink       Open its web link (gx)
+  :RevueCopyEventLink   Copy its web link (gy)
+
+Closing a discussion returns to the same event and position. If its message is
+unloaded, :RevueLoadEventDiscussion fetches its complete thread when the backend
+supports that target; otherwise it loads one feedback page. It opens the exact
+message if found. Targeted loading preserves the page cursor and overall coverage.
+GitHub requires a native thread ID and current comparison; private/mixed threads
+retain ordinary paging via :RevueLoadMoreFeedback. Repeat explicitly for another
+page; it never drains the review automatically. :RevueCancelFeedback cancels this read. Moving to a
+different event/view or reloading history prevents automatic navigation; loaded
+feedback remains available. When paging is exhausted or unsupported, use refresh
+or the event link. Unavailable does not establish that a message was deleted.
+Failed/cancelled reads retain previous text;
+late results do not steal another panel or composer's focus. History loads do
+not mark messages read, resolve threads, or publish. Reload explicitly checks
+for newer activity; ordinary feedback refresh does not update the timeline.
+GitHub requires authenticated GraphQL access and labels unknown event detail.
+Local history projects retained captures/current messages; it does not record
+every edit or lifecycle transition. Event bodies remain in memory, separate
+from durable local delivery Activity. :RevueEventComparison opens a backend-
+verified comparison; :RevueReturnContext returns to the exact history event.
+The event displays its base/head and provenance. Local captures and reviews
+retain this source, including older reviews recoverable from saved receipts.
+GitHub's reviewed head alone does not establish its original PR base; those
+events explain the unavailable comparison and retain their browser link.
+
+Message rendering and metadata:~                    *revue-message-rendering*
+
+Card and discussion headers share backend-provided author roles, Bot, Edited,
+Updated, Pending review and Saved locally cues. Author identifies the review's
+creator. A timestamp change alone says Updated; it does not prove a body edit.
+Labels are display metadata, never grants of permission. Missing metadata is
+omitted. Pending metadata does not synchronize native pending reviews.
+
+Nested blockquotes retain fenced code insets, list indentation/numbering and
+[x]/[ ] task markers. Heading text uses RevueCardHeading. A quoted suggestion
+is shown as quoted code, never as a proposed replacement at the current anchor.
+With extremely narrow/deep quote containers, text stays visible without adding
+another inset. Inline code/links and unsupported markup remain readable Markdown;
+the card renderer does not implement all GitHub HTML/CSS or full GFM parsing.
+Source virtual rows have one highlight type per row. Complete raw Markdown is
+available in the focused thread, using normal Vim syntax, motions and selection.
+
+RevueMessageFocus highlights the selected message header in a real-text thread
+or conversation. It follows message motions/refresh/return and clears in Help or
+other views. Card boundaries remain unchanged. RevueCopyMessage and RevueQuote
+operate on original body text, excluding header metadata and visual rails.
+
+Draft preview uses the draft's original cached source for context and suggestion
+before/after, even when a newer comparison is open. Missing source/threads retain
+the target identity with an explicit explanation. Preview never applies code or
+publishes feedback. RevueClose returns to the unaltered editor and cursor.
+
+File-level comments:~                              *revue-file-comments*
+  :RevueFileComment     Create/reopen feedback about the selected whole file
+  :RevueFileThreads     Read the selected file's discussions, file comments first
+
+Both commands work from file-list rows or managed source panes. There are no
+default keys; <Plug>(revue-file-comment), <Plug>(revue-file-threads), and the
+file-comment/file-threads entries in g:revue_mappings allow customization.
+File-list headings have no target. Creation requires explicit backend support;
+unsupported backends explain how to leave review-wide conversation feedback.
+
+A file draft preserves the comparison, current path and original rename path.
+It has no side or line coordinates, and needs no source content. This supports
+binary, deleted and unavailable files. Same-file invocation reopens existing
+edits; Preview identifies the whole-file target. Permission loss or a changed
+comparison retains text; uncertain delivery remains frozen for receipt recovery.
+
+File cards sit above source (above the base pane for deleted files), labeled
+File discussion. Open FileThreads to select a thread and reply, quote, resolve
+or reopen it. Line discussions follow file discussions in the real-text panel.
+Jump goes to the start of the file, not an inferred comment line. Outdated or
+absent-file discussions remain in discovery. All comments remain expanded.
+GitHub sends file comments individually; its current REST review batch adapter
+does not offer them. The local backend accepts them in atomic feedback batches.
+
+Comments outside diff hunks:~                       *revue-unchanged-lines*
+
+The local backend accepts RevueComment and RevueSuggest on any valid line range
+in a changed file's immutable captured text, including unchanged lines outside
+the hunks. Base/head coordinates and renamed paths retain their normal meanings.
+This does not add unchanged files to the review. Binary, absent or unavailable
+source sides cannot have line anchors; use RevueFileComment for those files.
+
+Backends declare their supported scope. Missing metadata preserves the legacy
+diff-hunk restriction. GitHub currently declares that restriction explicitly:
+creation beyond hunks is not verified through its API, although GitHub's web UI
+supports it. Revue explains the browser/whole-file alternatives. Received
+outside-hunk threads remain visible in discussion/search and replyable regardless
+of the creation policy. RevueNextThread, RevuePreviousThread and RevueJump open
+native code folds hiding the selected line. They do not collapse comments.
+
+The composer/preview marks ranges outside the hunks and shows immutable source
+context. A policy change prevents new submission (including review batches)
+while retaining the draft. Unknown delivery still uses receipt-only recovery,
+even if anchor support or permissions are later removed.
+
+Creating suggestions:~                              *revue-suggestions*
+
+Applying a received suggestion:~                    *revue-apply-suggestion*
+  :RevueApplySuggestion  Read-only application preview for the selected message
+
+In a current head-side discussion, select a message containing one unquoted
+suggestion block. The command and message menu ask the backend for its exact
+application plan. No default key is assigned; configure apply-suggestion.
+:RevueSend confirms the preview. :RevueClose retains it; the next Apply reopens
+the same operation. :RevueDiscard removes a known unsent/failed operation.
+
+The local backend saves the replacement to the workspace and captures saved
+files using the review's existing untracked-file choice. No commit, staging,
+push, comment publication or thread resolution occurs. Unsaved buffers are not
+reloaded; a modified target buffer blocks a new apply. The complete saved file
+and suggestion message must still match the preview. :RevueLatest opens the
+resulting comparison. The original message shows Applied to workspace (or a
+separate observed-result label during recovery), independent of resolution.
+
+After an interrupted response use :RevueCheckReceipt in the retained operation
+or open it through Activity. Recovery never rewrites the file: it returns the
+saved receipt or compares the original/result hashes. A divergent file remains
+unknown for inspection. A failed result capture is reported separately from a
+successful file write. GitHub service commits and batch application are not
+provided by this local workspace action; use the service link when appropriate.
+
+Authoring a new suggestion:~
+  :RevueSuggest              Propose replacement of the current head-side line
+  :{start},{end}RevueSuggest  Propose replacement of a source range
+  :'<,'>RevueSuggest         Use the selected range
+
+Available in managed source windows when the backend explicitly supports
+head-side suggestions. No default key is assigned. <Plug>(revue-suggest) works
+in normal and visual mode; g:revue_mappings.suggest configures both mappings.
+The selected range must be valid for the backend's anchor scope (see
+|revue-unchanged-lines|). New suggestions cannot target a stale comparison.
+
+The draft starts with the exact immutable source in a suggestion fence. Edit
+the replacement and put explanation outside that fence. Tabs, indentation and
+literal backticks are retained. Remove every line between the fences to propose
+deletion; retaining one blank line proposes one blank replacement line.
+Validation requires exactly one closed top-level suggestion fence. Quoted or
+ordinary-code-contained fences do not count; offset syntax is not supported.
+
+Repeating the command at the same comparison/path/side/range reopens the draft
+without replacing its edits. RevuePreview shows the original-source before/after;
+RevueClose returns to editing. Virtual context wraps to the composer width.
+Send and review batches use ordinary comment delivery and receipt recovery.
+Permission loss, stale targets and validation failures retain the draft text.
+Unknown submissions remain frozen and can only reconcile their receipts.
+Creation, preview and submission propose code; none edits files or makes commits.
+
+Discussion discovery:~                             *revue-discovery*
+  :RevueDiscussions [text]     Search full bodies across the loaded review
+  :RevueDiscussionFilter {field} [value]   Set one discussion filter
+  :RevueDiscussionFilter clear           Reset all discussion filters
+  :RevueOpenDiscussion        Open selected message/draft (Enter in index)
+
+Fields: text, path, author, kind, state, anchor. Multiple calls combine filters.
+Text/path/author match case-insensitive literal substrings; spaces are accepted
+without quoting. Other fields use completion and these values:
+  kind:   all, thread, conversation, draft
+  state:  all, unresolved, resolved, unknown, draft, failed, submitting
+  anchor: all, current, outdated, none
+An empty enum value means all; an empty text value clears that field. Invalid
+values keep the previous filter. With no text argument, RevueDiscussions retains
+the current query. Use clear to remove it. Filters last for this Vim session.
+
+Search includes full loaded message bodies; / and ? search the displayed text,
+which uses bounded excerpts. Counts distinguish matching threads and matching
+messages, matching conversation messages and local draft items. An index entry
+opens its exact message; an item inside a frozen batch opens that batch without
+making it editable. RevueClose returns to the same result. An absent-file thread
+stays readable without inventing a source location. If refresh removes the
+selected result, the cursor moves to the heading, not another actionable item.
+Search does not fetch every historical comparison or unloaded backend page.
+
+  :RevueLoadMoreFeedback  Load another page of complete discussions/messages
+  :RevueCancelFeedback    Ignore the outstanding page, retaining loaded feedback
+
+These actions appear in the contextual guide when supported. Large local
+reviews initially load 50 discussion/message units, with all replies in each
+loaded thread. Older pages become searchable without producing [new] markers.
+Failure/cancellation retains the cursor, selection and typing; retry requests
+the same page. A refresh supersedes outstanding page reads. Changed feedback invalidates a local cursor; refresh
+before continuing. Signed-in GitHub reviews load up to 20 complete threads and
+50 general comments per page; review summaries remain fully loaded. Nested
+reply pages finish before exposing a discussion, including private replies.
+Unavailable or incomplete GraphQL access uses the complete reader. GitHub verifies the actor,
+source, PR update marker and available counts; changes request refresh. Thread counts/filters cover loaded
+feedback. Timeline paging is separate.
+Coverage rows describe loaded data independently of the current filter, with a
+known total when supplied. Complete, partial, loading, failed, unsupported and
+unknown are distinct; missing/invalid metadata says completeness unknown.
+Resolution-state and private-review coverage may be unavailable even when public
+comments are readable. Empty results mean no match in loaded feedback only.
+RevueRefresh retries the review. During loading, the prior data stays searchable;
+failure retains it and the selected result. A successful refresh replaces the
+inventory while preserving stable message targets and unsent text. This remains
+separate from LoadMoreFeedback continuation and does not enable polling.
+
+Bounded refresh:~                                  *revue-refresh*
+  :RevueRefresh          Start a fresh feedback read
+  :RevueContinueRefresh  Read one more page of the pending replacement
+  :RevueCancelRefresh    Discard the pending replacement; retain this view
+
+The local and signed-in GitHub adapters opt into this workflow. Each action
+requests one outer feedback page. A partial replacement stays separate from
+what you are reading until it contains every previously loaded message ID, or
+its cursor is exhausted. The old search scope and coverage remain visible.
+A status-bar cue and the action guide work from source, discussion and composer.
+Continue retries a failed page; Refresh discards the candidate and starts again.
+Cancel ignores late results; it does not promise to abort the backend's network
+request. Loading older displayed feedback is unavailable until you finish or
+cancel the replacement. Replies are complete within each loaded thread.
+
+An accepted replacement preserves existing message selection, draft text,
+Insert mode and cursor. If messages are no longer reported after exhaustion,
+the view uses the nearest available position and explicitly reports their
+absence. This does not establish why they disappeared. A different source is
+observed as Latest without switching the code or moving drafts. Changing the
+selected comparison invalidates an outstanding read. Restart discards candidate
+content and marks a saved in-progress refresh interrupted; use Refresh again.
+Candidates and source/message bodies are never persisted in the outbox.
+
+An identical refreshed snapshot updates status and local reading metadata without
+rebuilding rich discussion buffers, draft context or source annotations. Changed
+content or permissions still refresh those views. Loading, failure and cancel
+indicators remain visible in status bars; the discussion index, activity and
+anchor preview also update their status-dependent content.
+
+Changed refreshes reuse matching comment-body rendering and Markdown spans in
+bounded memory-only caches. Text, source context, card width and Markdown context
+changes invalidate the affected body. Metadata and actions always use current
+state. Cache limits never truncate comments; excess content renders normally.
+
+The page limit does not bound file/review lists, nested replies, or local store
+read cost. Signed-out access and unsupported/incomplete paging use complete
+reads. Legacy providers keep their complete-refresh contract. Broader remote
+latency tuning remains separate work.
+
+Private feedback pages:~                           *revue-private-pages*
+  :RevuePending              Inspect private review headers and loaded comments
+  :RevueLoadMoreFeedback     Load more complete threads, including private replies
+  :RevueVerifyPending        Load and verify the complete selected private review
+  :RevueCancelVerifyPending  Ignore the outstanding verification result
+
+Private comments remain inside their full thread, including private replies to
+public roots. Each Pending review reports loaded/total comment counts. The
+comment index and inline view show only loaded feedback. Partial records retain
+a read-generation identity, not a publication version. Commands and the action
+guide disable publishing/discarding until VerifyPending obtains the complete
+review and its version. Even if every private comment is visible, full review
+verification is still required. Summary editing also requires that full record;
+individual loaded comment edits use their own versions and native permissions.
+
+Verification is read-only and never submits or discards. Its result binds actor,
+review, comparison, inventory generation and exact comment set. A changed review,
+refresh or comparison rejects the result, keeping loaded feedback and drafts.
+Cancel ignores late results. Leaving the view or entering Help does not redirect
+the result to another review or move focus. Verification bodies stay in memory;
+a restarted session obtains fresh private headers and can verify again. Once
+verified, publication/discard still require their existing preview/confirmation
+and backend preflight. Unknown writes continue to use receipt recovery.
+
+When a private comment from a fully verified review is not in a loaded thread,
+Pending retains its text; load more feedback to open the discussion. Private
+root deletion with replies remains unsupported on GitHub. A connection that
+omits pending comments or cannot supply coherent private metadata uses the
+complete reader instead of presenting an incomplete review as complete.
+
+File filters and local progress:~                   *revue-viewed*
+  :RevueFileFilter {field} [value]   Set one file filter
+  :RevueFileFilter clear            Clear filters and revealed-file exceptions
+  :RevueViewed                      Mark selected tree/current source file
+  :RevueUnviewed                    Remove this content's Viewed mark
+  :RevueVerifyViewed                Retry pending/unavailable verification
+
+File fields:
+  path:    literal substring of current or old path, including spaces
+  status:  all, modified, added, removed, renamed, copied, changed
+  threads: all, any, none, unresolved, resolved, unknown, outdated
+  viewed:  all, viewed, unviewed, checking
+Unviewed includes checking/unverified files because none are confirmed Viewed.
+Next/previous file traverses the visible results. Filters do not change source
+selection. Jumping to feedback can reveal a hidden file, marked [revealed];
+changing a file filter clears these exceptions. An empty list is explicit.
+If the selected tree item disappears, selection moves to the Files header.
+
+Viewed is local progress, independent of approval, resolution and read markers.
+It does not hide cards or automatically advance. Marks are keyed to review,
+file identity and both sides of compared content. Changed content loses its
+mark; unchanged verified content retains it across comparisons/restarts.
+Reverting to previously acknowledged content can restore its mark. Source
+fingerprints use backend byte hashes when available, plus supplied line,
+newline, format and mode metadata; no unavailable metadata is guessed.
+
+Previously acknowledged files may require background reads on a new comparison.
+[checking] means verification is pending; [unverified] means content was not
+available. Reads do not steal focus. Mark/unmark uses the latest requested intent
+if a read is already pending. Closing before it completes cancels that unsaved
+intent. NOT SAVED reports persistence failure; metadata is retained in this Vim.
+Progress stores hashes/metadata in the local outbox, not a copy of source or
+published conversation. It does not synchronize GitHub's Viewed state.
+
+Comparison navigation:~
+  :RevueComparisons   List saved references and load backend comparison history
+  :RevueOpenComparison  Open the selected comparison (Enter in the picker)
+  :RevueLatest        Inspect the latest comparison returned by refresh
+  :RevuePreviousComparison  Return to the previous comparison (toggles)
+  :RevueLoadHistory   Reload backend history from the comparison picker
+  :RevueResumeComparison  Retrieve the last saved comparison after restarting Vim
+  :RevueDraftComparison  Inspect the open draft's immutable comparison
+  :RevueThreadComparison  Inspect the selected discussion's original source
+  :RevueReturnContext  Return to the exact discussion position before inspection
+  :RevueCopyComparison [register]  Copy the selected full reference as JSON
+  :RevueRangeStart [base|head]  Set range start from selected original comparison
+  :RevueRangeEnd [base|head]  Set range end; both endpoint commands default to head
+  :RevueOpenRange     Inspect selected endpoints as a new comparison
+  :RevueClearRange    Clear endpoints and cancel a pending range-open response
+
+Range commands are available in the comparison picker and its action guide.
+The picker displays exact endpoints and backend comparison semantics before
+opening. Select original captures/commit comparisons as endpoints, not derived
+ranges or one-file original contexts. Range selection persists separately from
+the displayed comparison.
+Clearing endpoints does not close displayed source or discard drafts.
+
+Local ranges compare retained contents against a shared captured Git baseline;
+Git and the workspace are not reread. Renames display as removal/addition.
+GitHub currently supports ranges whose start is the merge base (ancestor), and
+reports unsupported or capped comparisons explicitly. New inline/file feedback
+and review submission require Latest; replies keep their existing thread IDs.
+Viewing a range never re-anchors feedback or advances the latest capture.
+
+Refresh retains displayed code and reports a newer comparison. Source/panel
+statuslines identify latest versus historical code. Each comparison has separate
+file caches and positions. Returning from a composer restores its original
+comparison/file/side/message; a manually closed source/discussion window can be
+recreated. Arbitrary split topology is not reconstructed. Existing drafts never
+move to new line numbers. Stale inline/review writes are blocked; replies retain
+thread IDs and still require current permissions. Unknown writes remain eligible
+for receipt recovery. The backend still validates fresh writes before publishing.
+References, selected file/side, and view positions persist in the local outbox;
+source and conversation bodies do not. Startup opens the backend's current
+comparison; Resume explicitly retrieves the saved selection. Unavailable history
+or a mismatched response keeps current source and drafts intact. A response does
+not move focus after navigation changed or the originating draft was edited.
+
+GitHub lists its current PR comparison and reachable commit comparisons (first
+parent for merge commits). Saved refs can recover older commits when still
+available. The local backend exposes retained frozen captures per review. Historical
+GitHub lookup retrieves current discussion, placing only verified original-head
+anchors inline; other threads remain readable with original diff context.
+The comparison API's 300-file boundary is rejected when completeness cannot be
+verified. Non-ancestor GitHub ranges and complete abandoned-history discovery
+remain pending. Local historical navigation refreshes the shared
+conversation while reusing immutable source; it does not poll continuously.
+
+Moving a local draft:~                            *revue-reanchor*
+  :RevueReanchorDraft   Begin from a local draft; open the latest comparison
+  :[range]RevueReanchorHere  Preview the selected file/source location
+  :RevueAcceptReanchor  Save the previewed move locally; send nothing
+  :RevueCancelReanchor  Return to the original draft without moving it
+
+These commands have no default keys. The action guide exposes them in context;
+<Plug>(revue-reanchor-here) also supports Visual selection. Whole-file drafts
+select a file rather than a line range. Close a preview to choose again, or use
+Cancel to return to its original composer. Help preserves the preview/return path.
+
+Only independent local line/file-comment drafts in draft or known-failed state
+can move. Suggestions retain their complete body and require a supported target
+side; verify the replacement against the new code before sending. Replies, edits,
+private-review operations, frozen batches and uncertain submissions cannot move.
+
+The original reference and text remain unchanged until explicit acceptance.
+Preview names old/new source and location, displays available excerpts, and labels
+missing original source. Target selection must use the latest comparison and its
+normal comment-anchor policy; unchanged-line restrictions still apply.
+Refresh, changed draft text, permission loss or a changed comparison invalidate
+acceptance. Saving failure rolls back the move and retains the preview.
+
+Acceptance atomically replaces the local draft with a fresh submission ID,
+unchanged body and reanchored_from metadata containing its previous ID/reference.
+The full draft Preview includes that origin. A prior batch selection is cleared;
+choose the moved draft again explicitly. No backend message is moved or created.
+The location picker is session-only: closing Vim before acceptance leaves the
+original draft. An accepted move survives restart through the existing outbox.
+
+Original discussion source:~                       *revue-original-context*
+ThreadComparison follows a retained local original comparison, or asks a capable
+backend to verify the selected discussion's original source. GitHub verifies its
+original commit/path/range against the recorded diff excerpt. The resulting view
+contains one file at that commit and its first parent, labeled "original code
+context". This does not reconstruct the full original PR comparison. A matching
+base-side excerpt is labeled as a parent match; the original PR base remains
+unverified. Deleted file context uses the parent file; a root commit has an empty
+base. Unavailable or mismatched source leaves the discussion and original diff
+readable, with an explanation instead of substituting new code.
+
+ReturnContext restores the prior comparison, message and position in this Vim
+session, recreating the managed discussion panel if necessary. Saved original
+source references and reply drafts can reopen after restart, but the transient
+ReturnContext origin is not persisted; Latest opens current review code instead.
+Delayed reads do not steal focus after selecting another message or opening Help.
+New source feedback/reviews require Latest. Replies and lifecycle actions still
+use the existing thread and current backend permissions; reading never re-anchors.
+
+Capturing a follow-up local revision:~              *revue-capture*
+  :RevueCapture [tracked|all]  Prepare capture settings, then RevueSend to save
+  :RevueCapture!              Include untracked files
+  :RevueThreadComparison     Open selected discussion's original source
+
+Capture is an explicit backend capability and has no default key. It reads the
+review's bound workspace against its fixed original base; unsaved buffers are
+excluded. With no argument it retains the previous untracked-file setting.
+Legacy records without settings default to excluded and say so in the preview.
+An existing pending capture retains its settings; inspect it or discard a known
+unsent operation before requesting different settings. Unknown results can only
+check their receipt. Capture operations are not review-batch items.
+
+Capture retains review identity, discussion and previous source. New comparisons
+are offered through Latest/Comparisons, without switching the current view or
+moving old drafts. Identical content reuses its comparison; an empty subsequent
+diff is valid. Capture does not edit/stage/commit files or resolve discussions.
+New comments/reviews on historical local source are disabled; replies and explicit
+resolution still address the shared stable thread IDs. Changed/unproven source
+anchors show original context as outdated. Whole-file targets and unchanged
+source-side hashes can retain verified placement across captures. Arbitrary
+line-shift remapping is not implemented.
+
+ThreadComparison follows a backend-provided original reference to the original
+file, side and range. It opens native folds hiding the target. Late history
+responses preserve the existing focus/typing rules. Capture receipts and history
+survive restart; no agent runtime or MCP server is required for this workflow.
+
+Inline cards advertise the focused discussion command for selecting/quoting a
+message. When discussions share a source anchor, the chooser retains the chosen
+thread ID across refresh, but cancels if that thread or source selection moves.
+The discussion header shows configured message motions, actions and quote keys;
+unmapped actions show their commands instead.
+
+Useful buffer-local commands:~
+  :RevueBatch         Preview/select saved drafts for one review batch
+  :RevueToggleDraft   Check/uncheck the draft under the batch cursor (Space)
+  :RevueEditDraft     Reopen a draft from the batch queue (Enter)
+  :RevueSendBatch     Submit selected feedback; recover a frozen unknown batch
+  :RevueUnpackBatch   Restore editable drafts after a known batch failure
+  :RevueThread        Focus a discussion at the current source range
+  :RevueThreads       List file discussions
+  :RevueNextThread    Move to next discussion (:RevuePreviousThread reverses)
+  :RevueNextMessage   Move to next message (:RevuePreviousMessage reverses)
+  :[range]RevueComment  Create a source comment, including explicit Ex ranges
+  :[range]RevueQuote  Quote a message or line range within one message body
+  :[range]RevueQuoteAttributed  Quote with author and source permalink
+  :RevueCopyMessage [register]  Copy the selected message's raw Markdown
+  :RevueCopyLink [register]     Copy its permalink; missing links are explicit
+  :RevueOpenLink      Open the selected message's web permalink (gx)
+  :RevueBodyLinks     Choose a labeled link, then open or copy its destination
+  :RevueBodyURLs      Find explicit web addresses, including code examples
+  :RevueEditMessage   Edit the selected published message when supported
+  :RevueEditBase      Accept a refreshed message version, keeping your edit text
+  :RevueDeleteMessage Preview deletion of the selected saved message
+  :RevueMessageHistory       Read the selected message's available edit history
+  :RevueOlderMessageEdits    Load older edits, retaining the selected entry
+  :RevueReloadMessageHistory Reload history for the current message version
+  :RevueCancelMessageHistory Ignore an outstanding read; retain loaded entries
+  :RevueHistoryMessageLink   Open the original message on its service (gx)
+  :RevueReactions     Load reaction counts and your state on the selected message
+  :RevueReact         Execute the labeled reaction action (Enter in chooser)
+  :RevueStartPending  Prepare a new private review with an optional summary
+  :RevueSavePending   Prepare private delivery of this inline/file/reply draft
+  :RevueReplyPending  Prepare a private reply to the selected thread
+  :RevuePending       Inspect private reviews saved on the backend
+  :RevueOpenPending   Open the selected native pending comment (Enter)
+  :RevuePublishPending [event]  Prepare publication of that pending review
+  :RevueDeletePendingComment   Preview deletion of one private comment
+  :RevueDiscardPending         Preview deletion of that entire private review
+  :RevueEditPending            Edit the selected private summary or comment
+  :RevuePendingBase   Accept refreshed pending contents, keeping your summary
+  :RevueActions       List valid message actions
+  :RevuePreview       Preview a draft without publishing
+  :RevueHelp          Show contextual help
+  :RevueClose         Return from a panel/composer, or close the review
+
+                                                *:RevueDeleteMessage*
+Deletion is available from a message's action menu and the contextual guide when
+the backend advertises exact-message scope. The read-only preview names the
+message, author, location and effect, and shows its original text. Close preview
+and use :RevueSend to confirm. :RevueDiscard cancels this local operation; it
+does not delete remote feedback. Private comments use :RevueDeletePendingComment.
+
+Changed text, permissions or actor require inspecting the message again. Unknown
+outcomes retain the frozen operation through restart and use :RevueCheckReceipt;
+they never resend deletion. Accepted deletion returns beside the removed message
+when a neighboring message exists. A failed refresh remains explicit; acceptance
+and a refreshed conversation are separate facts. Activity retains exact targets.
+
+Local comments, replies, file comments and general feedback support deletion by
+their local owner. Other messages retain the thread identity; an empty thread is
+removed. Local audit events and receipts are retained. Review decisions use
+separate actions. GitHub supports your published inline and general comments;
+it checks viewerCanDelete and current content before sending. Published review
+summaries and roots with replies are unavailable. No atomic conditional DELETE
+is documented, so a concurrent edit or reply after preflight remains a limitation.
+GitHub recovery requires a complete review-specific inventory for the verified
+actor. A 404 or lost access alone never establishes deletion. Observed absence
+does not identify which request deleted the message.
+
+                                                *:RevueMessageHistory*
+Message history is read-only and separate from review-wide Timeline and delivery
+Activity. Enter from an exact message's action menu or :RevueMessageHistory.
+Use :RevueReviewActions for available reads and :RevueClose to return to the
+same message. Unsupported histories have capability reasons and an original
+message link when supplied; the link does not promise a direct edit-history URL.
+
+Entries use contrasting headers, literal recorded text and muted provenance.
+When all loaded revisions share identical source details, those details appear
+once below the entries. Different source details remain beside each revision;
+the history's coverage and content limitations remain at the top.
+Wrapping and resizing do not insert spaces or lines into recorded bodies.
+Reload, cancellation, changed versions and Help preserve identity; late reads
+cannot overwrite another message's history. All reported entries stay expanded.
+Coverage and scope remain visible; an empty result means no entries reported.
+
+Local history uses retained before/after edit events. Supported public GitHub
+messages use native edit content, which may include creation and is not promised
+to be a reconstructed diff. Redacted content stays unavailable. Private GitHub
+history and deleting revisions are unsupported. Bodies are session-only, not
+copied to the outbox. History access does not publish or acknowledge feedback.
+
+                                                *:RevueBodyLinks*
+RevueBodyLinks lists labeled links for the selected thread/conversation message.
+It has no default key; use <Plug>(revue-body-links) or g:revue_mappings. The chooser
+shows full destinations before opening or copying to register ". 0/empty cancels.
+GitHub uses a read-only fetch of its rendered message HTML, bound to the exact
+message/body/version. Relative destinations follow that HTML, not a guessed file
+or branch base. Stale/late results cannot act on another message. If the backend
+read is unavailable, :RevueBodyURLs can inspect explicit addresses locally.
+
+Other backends use a conservative local reader for inline/reference links,
+autolinks and bare HTTP(S) URLs outside code. Optional message.resolved_links maps
+relative destinations to explicit web URLs; unresolved/unsupported destinations
+show a reason and cannot open. This subset is not a full GFM/HTML parser.
+
+                                                *:RevueBodyURLs*
+RevueBodyURLs retains the explicit-address finder, including code examples and
+reference definitions. Repeated addresses appear once. Balanced parentheses and
+angle-delimited punctuation are retained. Both link commands preserve drafts,
+source position and message text; opening uses Vim's netrw browser opener.
+
+                                                *:RevueQuoteAttributed*
+RevueQuoteAttributed quotes the selected message or a selected body range, with
+an escaped author and an optional source permalink. It appends to an editable
+matching reply; existing text and private/public delivery remain intact. Plain
+Q/:RevueQuote remain unattributed unless g:revue_quote_attribution is set to 1.
+Quoted suggestion fences remain quotes, never active replacement proposals.
+
+Preview cards style inline code, emphasis, nested emphasis, strike-through and
+links, omitting their formatting delimiters. Raw discussion buffers preserve all
+Markdown and add highlight spans, so native yanks, searches, quote ranges and
+RevueCopyMessage retain original text. Source-card virtual rows use readable
+labels but retain code/emphasis markers: Vim supports one highlight per virtual
+row. Full HTML, tables and unsupported Markdown remain literal. Theme groups:
+RevueInlineCode, RevueInlineStrong, RevueInlineEmphasis, RevueInlineStrongEmphasis,
+RevueInlineStrike, RevueInlineLink. Terminal font/style support determines the
+visible bold/italic/strike-through appearance.
+
+Use :RevueStartPending to prepare a private review with an optional summary.
+An existing pending review opens its inventory. In an inline or suggestion draft,
+:RevueSavePending prepares private delivery: it creates a review if none exists,
+or adds to the verified existing review. Whole-file drafts can be added after
+starting a pending review. Inspect the preview, close it and :RevueSend to confirm
+Save privately. :w only saves locally. These drafts cannot be published in a batch.
+The pending review and source revision are bound explicitly; an older pending
+source cannot receive new line/file threads here; replies use thread identity. Unknown creation/addition only checks its
+receipt. Existing uncertain creation is reused rather than creating another.
+
+Native pending reviews are separate from the local outbox. :RevuePending shows
+the verified actor's server review summary, private comments and source revision.
+Its compact header keeps unpublished state and loaded/total counts visible.
+Use :RevueReviewActions for continuation, verification and publication actions.
+:RevuePublishPending selects a decision and opens an editable publication summary.
+Preview lists every included server comment and excludes local outbox drafts.
+Changed pending contents retain your preparation; inspect the current comments
+in preview and :RevuePendingBase to accept them explicitly without replacing your
+summary. Unknown publication only checks its receipt. GitHub uses preflight
+checks; concurrent edits after that check can race publication. Private root
+threads cannot send published replies or resolve before publication.
+
+                                                          *:RevueStageBatch*
+:RevueStageBatch        Select local drafts to save into a private review.
+                        Space selects, Enter edits, :RevueSendBatch confirms.
+                        Includes comments/suggestions, file feedback and replies.
+                        Creates a private review if needed; never publishes it.
+                        Mapping ID: stage-batch; no default key.
+
+Private queues save one item at a time and retain each receipt before continuing.
+GitHub waits one second between saves. Failure pauses the queue; accepted items
+remain saved. :RevueCheckReceipt only reads the uncertain step, including after
+restart. Confirm remaining writes with :RevueSendBatch after recovery.
+:RevueUnpackBatch returns only unsaved items if all outcomes are known; it never
+deletes accepted feedback or the native review. Unknown queues cannot be unpacked.
+Review decisions and unselected drafts remain in the outbox. Publication/discard
+surfaces an unfinished private queue first. The backend rechecks each save; a
+browser-side publication/change can stop a queue after earlier items were saved.
+
+Replies and quotes on a private thread or selected private message stay private.
+:RevueReplyPending deliberately keeps a reply to a published thread private.
+It requires an existing pending review. :RevueSavePending converts an editable
+ordinary reply draft explicitly, preserving its body. Reply privately is also in
+the message action menu. Quotes append to an editable matching reply; frozen or
+incompatible drafts reopen without appending. Existing drafts never silently
+switch between public and private delivery. Private replies use stable thread
+identity, so an older pending source can receive them without new line anchors.
+Unknown replies can only check their receipts, including after publication.
+
+:RevueEditPending edits the selected private summary or comment. A private comment
+also supports :RevueEditMessage from its focused discussion. Preview shows the
+original, current and proposed text. :RevueEditBase accepts a refreshed message
+version while retaining your replacement. Save privately changes that body only;
+it does not submit the review. Private summaries may be cleared. If the review
+is published, unavailable or changes owner, the private edit remains retained.
+Publication/discard first reopens any unfinished edits for that review. Unknown
+edits require receipt recovery. A concurrent browser publication after backend
+preflight can still race the edit because GitHub offers no atomic state check.
+
+                                            *:RevueDeletePendingComment*
+:RevueDeletePendingComment opens an exact-body deletion preview for the selected
+private message in :RevuePending or a focused discussion. The message action
+menu and :RevueReviewActions expose it; no default deletion key is installed.
+:RevueClose returns to the read-only operation, then :RevueSend asks to delete.
+:RevueDiscard cancels the local operation. Other comments, summary and local
+drafts remain. A root without replies may leave no thread to display.
+
+The backend must advertise individual message scope. GitHub supports replies
+and roots without replies here; roots with replies require verified deletion
+semantics before enabling them. Body/version, ownership, publication state and
+permission changes block submission. An unknown receipt freezes the operation;
+:RevueCheckReceipt only reads its outcome, including after restarting Vim.
+A verified absence is labeled as an observation, not attribution. Lost access
+or a missing parent review does not establish deletion. Browser actions after
+preflight can still race GitHub's unconditional delete endpoint.
+
+:RevueDiscardPending prepares deletion of the selected native review and opens a
+full preview of its private summary and comments. Close preview, then :RevueSend
+requires an explicit Delete confirmation. :RevueDiscard cancels only the local
+operation. Other outbox drafts remain intact. Changed server contents require
+cancelling and preparing a new operation after refresh. Unknown deletion stays
+frozen; :RevueCheckReceipt reads server state without deleting again. Successful
+absence checks are labeled as absence for the verified actor, not proof of who
+deleted it. Published reviews cannot be discarded. Concurrent edits after the
+backend's preflight check can still race deletion.
+
+Optional personal service progress is available from a selected source file:
+:RevueServiceProgress reads its service actor, Viewed state and observed head.
+:RevueMarkServiceViewed and :RevueUnmarkServiceViewed send explicit personal
+service updates; :RevueCheckServiceViewed checks uncertain saved intent without
+repeating writes. These commands have no default keys. The local content-based
+Viewed mark remains independent; comments stay expanded. Service writes use the
+existing durable outbox and Activity. Source/actor changes or unavailable reads
+retain uncertain intent. GitHub's path-based API has no atomic expected-head
+parameter, so service marks cannot prove acknowledgement of exact file content.
+
+Reaction footers show counts and [you] when the backend knows your state. Use
+:RevueReactions in a discussion to load the selected message's complete choices.
+Choose a row and press Enter or :RevueReact to execute its explicit Add or Remove
+action. Opening the chooser and moving the cursor send nothing. There is no
+separate draft composer or confirmation for this acknowledgement. The operation
+is persisted before sending; repeated activation while it is in progress cannot
+send another request. :RevueClose returns to the same message.
+Below the choices, People who reacted lists names when supplied by the backend.
+Names are read-only; Enter on a name never adds or removes a reaction. Missing
+account details and unsupported participant lists are labeled separately. Names
+and counts describe the last read; :RevueReactions reloads them.
+Reaction details have no default opening key; <Plug>(revue-reactions) is available.
+An unavailable actor keeps counts readable and disables add/remove. Only your
+reaction is removable. A rejected operation offers Retry with its original intent;
+an actor change disables that retry. Unknown operations offer Check outcome using
+the original operation ID, including after restart and loss of reaction-read
+permission. This checks a receipt without repeating a write. Activity retains
+the operation and existing receipt-recovery commands remain available there.
+Reactions never resolve a thread or approve a review, and
+reaction footers do not contaminate copied/quoted Markdown. GitHub review-summary
+and pending-review reactions are not implemented by this adapter.
+
+Published-message edits require explicit backend and message permission. They
+retain the exact message ID, original body/version and replacement text. Use
+:RevuePreview to compare the original and proposed bodies; if refreshed text
+differs, the preview also shows the current message. :RevueRefresh works in the
+composer with no default key. A conflict keeps your edit. After reviewing all
+three bodies, :RevueEditBase accepts the loaded current version as the new base
+with confirmation and preserves your replacement. Nothing is merged silently.
+Sending an uncertain edit only checks its receipt. Discarding an edit draft
+never deletes the published message. Edits are sent separately from batches.
+The local backend checks versions atomically. GitHub checks before updating,
+but its documented API has no atomic version precondition. Private pending
+editing is described above; published-message deletion remains unsupported.
+
+Batch support is supplied by the backend. GitHub accepts inline comments and
+one optional review decision in one review; replies and general conversation
+must be sent separately. Local reviews save supported items in one transaction.
+An unknown outcome locks the frozen batch; sending again checks receipts only.
+Unselected drafts remain available. Batches are local outbox operations, not
+synchronized GitHub pending reviews. See doc/provider-api.md for the contract.
+
+                                              *g:revue_no_default_mappings*
+Set g:revue_no_default_mappings = 1 before opening a rich review to suppress
+default keys. Commands and <Plug> mappings remain available in each relevant
+buffer. This setting does not affect the original :Revue interface.
+
+                                                        *g:revue_mappings*
+Override an action's key by its ID, or use an empty string to leave it unmapped:
+>
+  let g:revue_mappings = {'reply': 'gr', 'next-thread': ']r', 'help': '<Leader>?'}
+<
+Explicit overrides apply even when shipped defaults are disabled. :RevueHelp
+lists the action IDs through their <Plug>(revue-ACTION) names and actual keys.
+Examples include <Plug>(revue-reply), <Plug>(revue-quote), and
+<Plug>(revue-preview). Visual quote/comment and insert-mode send have matching
+mode-specific <Plug> mappings. Buffer roles expose only applicable commands.
+
+==============================================================================
+
+LOCAL PARTICIPANT ASSIGNMENTS                          *revue-assignments*
+
+Requires an assignment-capable backend (currently local). Configure recipients:
+>
+  let g:revue_participants = [{'id': 'local-agent', 'label': 'Local coding agent'}]
+<
+:RevueAssign            Choose loaded saved line/file messages. A selected thread
+                       message starts selected. General conversation is excluded.
+:RevueToggleAssignment  Select/remove this message (Space by default, maximum 50).
+:RevuePrepareAssignment Choose participant and preview full scope (Enter).
+
+The preview includes full selected bodies and the retained comparison. Participants
+can read whole selected threads, including later replies. Close the preview to
+return to the durable read-only operation; :RevueSend confirms local assignment
+creation. :RevueDiscard cancels an unsent operation. Unknown outcomes stay frozen
+and :RevueCheckReceipt recovers the original assignment across restart. The
+assignment ID remains in :RevueActivity. Assignment does not start an agent or
+change source, message text or resolution. Outcome/cancel UI is described below; :RevueRunParticipant now previews
+start/resume through the first runtime adapter. See doc/participant-mcp.md for the owner API and scoped MCP.
+
+ASSIGNMENT OUTCOMES                                    *revue-assignment-outcomes*
+
+:RevueAssignments         Read assignments for this review; Enter opens outcomes.
+:RevueOpenAssignment      Open selected assignment outcomes.
+:RevueAssignmentDetails   Inspect exact identifiers and retained source references.
+:RevueAssignmentDiscussion Open the selected outcome's original message (Enter).
+:RevueAssignmentReply     Open its latest loaded participant reply.
+:RevueAssignmentComparison Inspect the assigned comparison.
+:RevueAssignmentResult    Inspect the selected outcome's verified result capture.
+:RevueReloadAssignments   Read current outcomes; preserve loaded results on error.
+:RevueCancelAssignmentsRead Cancel this read; retain loaded results.
+:RevueCancelAssignment    Preview revoking this assignment's MCP access.
+
+Close returns from a discussion to the exact outcome; :RevueReturnContext returns
+from inspected source. Missing feedback remains explicit: refresh/load more before
+following unavailable messages. No assignment polling is automatic. Cancellation
+keeps replies and outcomes and does not stop an OS process. Close its preview then
+use :RevueSend to confirm. Uncertain results use :RevueCheckReceipt, including after
+restart; stale assignment versions require a fresh cancellation preview. An agent's
+addressed outcome never implies thread resolution, approval or a commit.
+
+Outcome reading uses compact identifiers and keeps original feedback, participant
+outcome and result source visible. :RevueAssignmentDetails opens ordinary,
+read-only text with the full assignment, participant, message, run and source
+identifiers. Select an outcome first to inspect its metadata; otherwise it lists
+all selected messages. Native yank copies exact values. This is a snapshot of
+the loaded record: close and reload outcomes for updates. Close returns to the
+same outcome and reading position. No comment is collapsed. The command has no
+default key; configure g:revue_mappings['assignment-details'] or use the guide.
+
+vim:tw=78:ts=8:ft=help:norl:
+
+Participant runtime:~
+  :RevueRunParticipant  Preview start/resume from assignment outcomes.
+
+Configure a runtime dictionary on a g:revue_participants entry with adapter
+'codex', executable 'codex', and sandbox 'workspace-write' or 'read-only'.
+Opening the preview starts nothing. Close it to the saved operation, then use
+:RevueSend to confirm. :RevueReloadAssignments reads process state/outcomes;
+:RevueCheckReceipt recovers an unknown operation without dispatching. Resume
+uses the exact recorded session and original runtime settings. A completed
+process does not resolve, approve, capture or commit. Cancellation revokes MCP
+access and does not stop an OS process. :RevueAbandonRun previews releasing only
+an unstarted prepared run, including one with an outdated assignment version.
+It preserves assignment access and comments, rejects a run that starts while the
+preview is open, and supports the same frozen receipt recovery. The optional
+custom mapping name is abandon-run; no default key is added. See doc/participant-runtime.md for the contract and
+remaining real-model validation; test evidence uses a deterministic executable.

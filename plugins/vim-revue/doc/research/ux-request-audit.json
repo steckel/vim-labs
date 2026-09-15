@@ -1,0 +1,64 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current user-requested GitHub versus Revue audit and prioritized interaction backlog; planning only",
+  "source_sha256": {
+    "autoload/revue/maps.vim": "a1110eaeb50c8c3d9a173a9170dbb2e2f25236a9cf86f5ecec7af767d87ac740",
+    "autoload/revue/actions.vim": "988b2645164ee4a60a7f8055c8e765d18659a74126b8e5d29534f920a56d7847",
+    "autoload/revue/session.vim": "c9eb5247142ff9d6add9b2a43c14a9c39d4fb67a7d83257b9a91ca7b4eb0672e",
+    "autoload/revue/comments.vim": "738d1af03a1202eb621f78e8f40bbe964d4c0e99f28b3646485ebe03c31f5e53",
+    "test/comments.vim": "9dad6bf45c4c74ebb959323ae3a13116cd73899fe45a012a0cf5c63008808b01",
+    "test/thread_entry.vim": "fa426cb3040ae18f2df63ee894a289436c0a414a1ff7097fa9ff8f43faa5b689",
+    "test/action_guide.vim": "10a5afedb28920cb2cda3e4206c9cdf05d689ef41f7d11c08eda5855ad763b70",
+    "test/reading_tabs.vim": "f6d84e43ac7813067086510b7c7c328e540259a104d29da4273d6b4d5cc1577d"
+  },
+  "checks": [
+    {
+      "command": "python3 test/thread_entry.py",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "command": "python3 test/action_guide.py",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "command": "python3 test/reading_tabs.py",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/comments.vim",
+      "exit_code": 0,
+      "status": "PASS"
+    }
+  ],
+  "sources_reopened": [
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/commenting-on-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request",
+    "https://docs.github.com/en/get-started/accessibility/keyboard-shortcuts"
+  ],
+  "retained_images_inspected": [
+    "doc/research/github-review/07-outdated-thread.png",
+    "output/rich-replies/120-discussion.png"
+  ],
+  "findings": [
+    "Focused thread entry and exact-message action routes exist; unfamiliar-user discovery remains unproven.",
+    "Native real-text selection is a deliberate adaptation; compare visual continuity using matching card/reader fixtures.",
+    "Private/public/local delivery distinctions and expanded comments are existing behavior to preserve.",
+    "Read-only readiness and workspace suggestion application have implemented cores; service commits and full policy enumeration remain separate gaps.",
+    "Initial long-thread rendering and historical comparison continuity remain refinement/extension targets; prior performance evidence is retained, not remeasured.",
+    "First iteration packet now gives observable tasks, implementation handoff criteria and boundaries using existing UX IDs."
+  ],
+  "limits": [
+    "No production edits",
+    "No full-suite run",
+    "No fresh authenticated GitHub UI walkthrough or remote mutations",
+    "No new screenshot capture",
+    "No unfamiliar-user study",
+    "No real agent runtime execution",
+    "Retained images differ in content and age; not a paired current-layout benchmark"
+  ]
+}

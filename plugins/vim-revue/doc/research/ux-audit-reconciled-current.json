@@ -1,0 +1,85 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current user-requested interaction audit; documentation only",
+  "checks": [
+    {
+      "command": "python3 test/action_guide.py",
+      "exit_code": 0,
+      "output": "action guide: PASS (delivery, permissions, exact messages, comparison/original navigation, local Viewed, unavailable source, refresh during menus, custom mappings)\n"
+    },
+    {
+      "command": "python3 test/rich_replies.py",
+      "exit_code": 0,
+      "output": "rich replies: PASS (inline spans, semantic links, exact attributed quotes, raw copy, Unicode, widths)\n"
+    },
+    {
+      "command": "python3 test/reading_tabs.py",
+      "exit_code": 0,
+      "output": "reading tabs: PASS (whole-area views, exact return, actual Insert mode during hidden refresh, user splits and cleanup)\n"
+    },
+    {
+      "command": "python3 test/reactions.py",
+      "exit_code": 0,
+      "output": "reactions: PASS (counts/actor, exact targets, add/remove, delayed reads, frozen restart)\n"
+    },
+    {
+      "command": "python3 test/feedback_lookup.py",
+      "exit_code": 0,
+      "output": "feedback lookup: PASS (exact target, whole thread, paging overlap/cycles, coverage, cancellation, focus, stale responses)\n"
+    },
+    {
+      "command": "python3 test/staging.py",
+      "exit_code": 0,
+      "output": "private staging: PASS (new/existing reviews, mixed items, partial saves, exact receipts, safe unpack, four-process recovery, disk failure, publication isolation)\n"
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/comments.vim",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "full_suite_rerun": false,
+  "authenticated_browser_walkthrough": false,
+  "remote_mutations": 0,
+  "real_agent_run": false,
+  "user_study": false,
+  "inspected_sha256": {
+    "autoload/revue/maps.vim": "b84e1eae722bbc030bd9b74bd45458a9bda1b85ed15ba576579b9d985e798905",
+    "autoload/revue/actions.vim": "31d4298ee4455cb624feb61af540ca8b1a4938c58c6a8f336dcaeb58feeef3e9",
+    "autoload/revue/session.vim": "cb7ec3e97cca9fda281ab2ed8dab483fb30fbce72fdfab28c999f048699663ad",
+    "autoload/revue/layout.vim": "b3004fe077b75cea7a1464352445c8b846d9f4c8d98c418bdf3a6f0b7e6417d3",
+    "autoload/revue/comments.vim": "27dd75c23a0413bb59cecc900f72baaf97280a08ade395a2506721c944320034",
+    "autoload/revue/runtime.vim": "9243cc7447eca06410b8d479225395bb8c5d5d569640bb7ad7ddd5f9c013e25f",
+    "python/revue_local.py": "e33149f4d69529c1c0aa2a9472b998d14105d4e083c2faeb7fabae3c0c88e827",
+    "../vim-reviewhub/python/reviewhub.py": "7e0fe126268d1553c080c64d53c64d7b55b1a99bb3ec207cd7a2825d9cad4fd0"
+  },
+  "sources_rechecked": [
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/viewing-a-pull-request-review",
+    "https://docs.github.com/en/get-started/accessibility/keyboard-shortcuts"
+  ],
+  "retained_evidence": [
+    "output/reading-tabs/validation.json",
+    "output/feedback-lookup/validation.json",
+    "output/direct-reactions/validation.json"
+  ],
+  "limits": [
+    "Focused fixture checks do not establish unfamiliar-user discoverability or live GitHub mutation permissions.",
+    "Reading tabs and targeted history lookup are implemented cores, superseding earlier partial status.",
+    "Participant run helpers exist but no session/maps start-resume entry point is wired."
+  ],
+  "retained_visuals_reopened": [
+    "doc/research/github-review/07-outdated-thread.png",
+    "output/participant-mcp/80-inline-agent-reply.png",
+    "output/rich-replies/120-discussion.png",
+    "output/reading-tabs/80-tab.png"
+  ],
+  "documentation_changes": [
+    "Current audit consolidated; prior audit preserved in doc/review-ux-gap-audit-history.md.",
+    "Backlog queue reconciled and sequentially ordered; implemented increments separated.",
+    "Historical narrative explicitly distinguished from current planning."
+  ]
+}

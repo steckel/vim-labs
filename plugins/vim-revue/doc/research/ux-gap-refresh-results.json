@@ -1,0 +1,95 @@
+{
+  "audit_date": "2026-09-14",
+  "scope": "Current uncommitted vim-revue and adjacent vim-reviewhub; planning refresh only",
+  "environment": [
+    "VIM - Vi IMproved 9.1 (2024 Jan 02, compiled Apr 18 2026 20:29:32)",
+    "macOS version - arm64",
+    "Included patches: 1-1752"
+  ],
+  "passed_checks": [
+    {
+      "test": "test/interactions.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "test": "test/messages.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "test": "test/layout.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "test": "test/chrome.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/comments.vim"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "python3",
+        "test/discovery.py"
+      ],
+      "exit_code": 0,
+      "output": "discovery: PASS (filters, exact targets, refresh, drafts, Viewed revisions/restart, delayed reads)\n"
+    },
+    {
+      "command": [
+        "python3",
+        "test/inventory.py"
+      ],
+      "exit_code": 0,
+      "output": "inventory: PASS (coverage states, partial search, refresh failure/retry, exact selection, draft retention)\n"
+    }
+  ],
+  "timeline": {
+    "command": "python3 test/timeline.py",
+    "outcome": "failed",
+    "observed": "test/timeline.vim line 45: Expected 2 but got 0; TimelinePick then reports Missing timeline event",
+    "assertions_after_first_page": "not reached",
+    "cause": "revue#timeline#Apply uses index([0, 1], completion); Vim distinguishes booleans from numbers",
+    "boolean_probe": {
+      "integer_one_index": 1,
+      "true_index": -1,
+      "false_index": -1,
+      "integer_zero_index": 0
+    },
+    "implementation_changed": false
+  },
+  "visual_artifacts_inspected": [
+    "output/rich-replies/120-preview.png",
+    "doc/research/github-review/07-outdated-thread.png"
+  ],
+  "visual_limit": "Existing Vim terminal-cell render and earlier GitHub browser capture; no fresh OS screenshot or authenticated browser walkthrough",
+  "official_sources_rechecked": [
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request"
+  ],
+  "full_suite_rerun": false,
+  "live_provider_writes": 0,
+  "remaining_validation": [
+    "Timeline tests beyond first page",
+    "Provider timeline contracts and live paging",
+    "Unfamiliar-user and screen-reader usability",
+    "Live private/public write permissions and deletion scope"
+  ]
+}

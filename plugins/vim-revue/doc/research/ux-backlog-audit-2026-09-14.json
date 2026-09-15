@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current user-requested UX audit; documentation only, existing working-tree code preserved.",
+  "checks": [
+    {
+      "command": "python3 test/action_guide.py",
+      "exit_code": 0,
+      "output": "action guide: PASS (delivery, permissions, exact messages, comparison/original navigation, local Viewed, unavailable source, refresh during menus, custom mappings)\n"
+    },
+    {
+      "command": "python3 test/rich_replies.py",
+      "exit_code": 0,
+      "output": "rich replies: PASS (inline spans, semantic links, exact attributed quotes, raw copy, Unicode, widths)\n"
+    },
+    {
+      "command": "python3 test/reactions.py",
+      "exit_code": 0,
+      "output": "reactions: PASS (counts/actor, exact targets, add/remove, delayed reads, frozen restart)\n"
+    },
+    {
+      "command": "python3 test/timeline.py",
+      "exit_code": 0,
+      "output": "timeline: PASS (older pages, deduplication, exact event/discussion return, bounded unloaded-target follow, cancellation, stale/malformed reads, draft retention)\n"
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/layout.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/comments.vim",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "full_suite_rerun": false,
+  "authenticated_browser_walkthrough": false,
+  "remote_mutations": 0,
+  "real_agent_run": false,
+  "user_study": false,
+  "lookup_validation": "Existing timeline paging tests only; targeted lookup is partial and not certified by these checks.",
+  "inspected_sha256": {
+    "autoload/revue/maps.vim": "b84e1eae722bbc030bd9b74bd45458a9bda1b85ed15ba576579b9d985e798905",
+    "autoload/revue/layout.vim": "7490744569572be77803d108f6a020081801c8857930ce099cdd5cb222296ced",
+    "autoload/revue/reaction.vim": "7aeedce96347ea5348283f57d1bcfbff989eeade06af7931667330a58317fcb8",
+    "autoload/revue/session.vim": "cf0f58b7cd21478c683ddc039269d2ebf4a56261d85b62ca835c54124628973d",
+    "autoload/revue/feedback.vim": "96414a87378573213594a4f953b0e84a5fe6703947093f3914c7576084ce1dc4",
+    "autoload/revue/suggestion.vim": "6e8ffefd3849d9657759a6aaa6a5d2262d5b55fc9805e68e88be0c9afed958f8",
+    "autoload/revue/runtime.vim": "9243cc7447eca06410b8d479225395bb8c5d5d569640bb7ad7ddd5f9c013e25f",
+    "doc/github-review-ux-spec.md": "9f70d22ba276e69d6f51ecb493952478bc95666691eb2ceee04fad11555693f1",
+    "doc/review-ux-gap-audit.md": "73eece06d4c14f420c089097d1972d3750c6e51f57f3517e9fcaa7592e615f2e",
+    "doc/interaction-backlog.md": "c902cf1029282549fe0cc33328d35e24b636d68155538923e4b02dd5133399d3"
+  },
+  "retained_visual_reopened": "output/assignment-density/80-after.png",
+  "visual_scope": "Retained isolated Vim terminal-cell render; no fresh OS screenshot.",
+  "sources_rechecked": [
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request"
+  ],
+  "findings": [
+    "Prioritize narrow reading geometry and exact-reply action discovery.",
+    "Direct reactions and compact assignment details are implemented cores; do not reschedule their original proposals.",
+    "Targeted lookup is partially wired, not validated by existing timeline paging tests.",
+    "Participant runtime lacks a mapped session start/resume route.",
+    "Keep individual comments expanded; global visibility and unified/split deferred.",
+    "Suggestion application, service Viewed/membership and head-bound readiness remain optional gaps."
+  ]
+}

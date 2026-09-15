@@ -1,0 +1,167 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current working-tree UX audit: focused isolated Vim fixtures; no provider writes or new authenticated browser walkthrough. Prior live reads and captures are retained evidence, not rerun.",
+  "checks": [
+    {
+      "name": "expanded cards",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/comments.vim"
+      ],
+      "returncode": 0,
+      "seconds": 0.33,
+      "output": ""
+    },
+    {
+      "name": "message actions",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/messages.vim"
+      ],
+      "returncode": 0,
+      "seconds": 0.43,
+      "output": ""
+    },
+    {
+      "name": "compact layout",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/chrome.vim"
+      ],
+      "returncode": 0,
+      "seconds": 0.45,
+      "output": ""
+    },
+    {
+      "name": "action guide",
+      "command": [
+        "python3",
+        "test/action_guide.py"
+      ],
+      "returncode": 0,
+      "seconds": 1.55,
+      "output": "action guide: PASS (delivery, permissions, exact messages, comparison/original navigation, local Viewed, unavailable source, refresh during menus, custom mappings)\n"
+    },
+    {
+      "name": "rich replies",
+      "command": [
+        "python3",
+        "test/rich_replies.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.54,
+      "output": "rich replies: PASS (inline spans, semantic links, exact attributed quotes, raw copy, Unicode, widths)\n"
+    },
+    {
+      "name": "private deletion",
+      "command": [
+        "python3",
+        "test/private_delete.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.47,
+      "output": "private deletion: PASS (exact reply, preview, stale body, permissions, isolation, restart recovery)\n"
+    },
+    {
+      "name": "edit history",
+      "command": [
+        "python3",
+        "test/message_history.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.29,
+      "output": "message history: PASS (exact reply, paging, redaction, stale reads, cancellation, Help/return, retained drafts)\n"
+    },
+    {
+      "name": "discussion discovery",
+      "command": [
+        "python3",
+        "test/discovery.py"
+      ],
+      "returncode": 0,
+      "seconds": 1.31,
+      "output": "discovery: PASS (filters, exact targets, refresh, drafts, Viewed revisions/restart, delayed reads)\n"
+    },
+    {
+      "name": "feedback continuation",
+      "command": [
+        "python3",
+        "test/feedback_pages.py"
+      ],
+      "returncode": 0,
+      "seconds": 0.73,
+      "output": "feedback pages: PASS (continuation, exact selection, cancellation, stale/malformed reads, deduplication, search, retained typing)\n"
+    },
+    {
+      "name": "history navigation",
+      "command": [
+        "python3",
+        "test/timeline.py"
+      ],
+      "returncode": 0,
+      "seconds": 1.18,
+      "output": "timeline: PASS (older pages, deduplication, exact event/discussion return, bounded unloaded-target follow, cancellation, stale/malformed reads, draft retention)\n"
+    }
+  ],
+  "sources_rechecked": [
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request",
+    "https://docs.github.com/en/communities/moderating-comments-and-conversations/tracking-changes-in-a-comment",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/"
+  ],
+  "findings": [
+    {
+      "story": "UX-21b",
+      "status": "supported core verified",
+      "basis": [
+        "autoload/revue/message_history.vim",
+        "autoload/revue/session.vim",
+        "python/revue_local.py",
+        "../vim-reviewhub/python/reviewhub.py",
+        "test/message_history.vim",
+        "output/message-history/live-read.json"
+      ],
+      "change": "Remove stale missing-history status; preserve supported public/local scope and redaction limits."
+    },
+    {
+      "story": "UX-18b",
+      "status": "presentation refinement proposed",
+      "basis": [
+        "output/chrome/80-reply.png",
+        "output/message-history/80-history.png",
+        "autoload/revue/message_history.vim"
+      ],
+      "change": "Reduce repeated chrome and extend established card hierarchy to auxiliary views; measure narrow reading before implementing."
+    },
+    {
+      "story": "UX-21a",
+      "status": "missing",
+      "basis": [
+        "autoload/revue/delete.vim",
+        "autoload/revue/maps.vim"
+      ],
+      "change": "Private deletion exists; published deletion needs a separate capability, scope preview and recovery."
+    }
+  ]
+}

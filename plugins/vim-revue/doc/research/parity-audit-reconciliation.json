@@ -1,0 +1,63 @@
+{
+  "date": "2026-09-14",
+  "scope": "Audit and backlog reconciliation only; no production-code changes in this pass.",
+  "checks": [
+    {
+      "command": "python3 test/action_guide.py",
+      "exit_code": 0,
+      "output": "action guide: PASS (delivery, permissions, exact messages, comparison/original navigation, local Viewed, unavailable source, refresh during menus, custom mappings)\n"
+    },
+    {
+      "command": "python3 test/rich_replies.py",
+      "exit_code": 0,
+      "output": "rich replies: PASS (inline spans, semantic links, exact attributed quotes, raw copy, Unicode, widths)\n"
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/layout.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/comments.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "python3 test/participants.py",
+      "exit_code": 0,
+      "output": ".......\n----------------------------------------------------------------------\nRan 7 tests in 1.943s\n\nOK\n"
+    }
+  ],
+  "inspected": [
+    "autoload/revue/maps.vim",
+    "autoload/revue/actions.vim",
+    "autoload/revue/layout.vim",
+    "python/revue_participants.py",
+    "doc/participant-mcp.md",
+    "doc/github-review-ux-spec.md",
+    "doc/review-ux-gap-audit.md",
+    "doc/interaction-backlog.md"
+  ],
+  "visual_evidence_reopened": [
+    "output/auxiliary-density/80-history.png",
+    "output/participant-mcp/80-inline-agent-reply.png"
+  ],
+  "visual_scope": "Retained isolated Vim terminal-cell renders, not fresh OS screenshots. Agent reply is from a synthetic MCP client.",
+  "sources_rechecked": [
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request"
+  ],
+  "findings": [
+    "Existing core review operations must not be scheduled again as missing.",
+    "Vim assignment selection, outcomes/cancel and real runtime integration remain missing despite implemented backend/MCP core.",
+    "Minimum managed-pane geometry consumes narrow-screen space; full-area reading is a proposal requiring comparison.",
+    "Message actions require real-text discussion selection; unfamiliar-user discoverability remains untested.",
+    "Changed-content parser and body reuse optimizations are complete for measured fixtures; cold-open and broader tail evidence remain.",
+    "Historical original PR bases and native GitHub mutation scope have explicit evidence limits."
+  ],
+  "remote_mutations": 0,
+  "full_suite_rerun": false,
+  "user_study": false,
+  "authenticated_browser_walkthrough": false
+}

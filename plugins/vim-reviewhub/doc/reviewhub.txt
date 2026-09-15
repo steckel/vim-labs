@@ -1,0 +1,35 @@
+*reviewhub.txt*  GitHub pull requests in a Vim tree
+
+                                                                   *:Reviews*
+:Reviews [owner/repo-or-url]
+        Open a PR tree. Without an argument, use the current checkout's origin.
+        Enter/o/l expands a PR. h collapses it. / searches. R refreshes.
+        Open Conversation or a file to engage through vim-revue.
+
+                                                                *:ReviewOpen*
+:ReviewOpen https://github.com/owner/repo/pull/123
+        Open a review directly without a checkout.
+
+                                                             *:ReviewRefresh*
+:ReviewRefresh
+        Refresh the active PR tree.
+
+In code panes: c comments on a line; V then c comments on the selected range.
+Enter/t opens code threads, r replies, C opens the conversation. In conversation,
+c adds a message. s composes a review decision. ]f/[f navigate files.
+
+The message composer uses normal Vim editing. :w saves locally. Ctrl-S or
+:RevueSend asks to publish. :RevueDiscard discards a draft. q closes views.
+Drafts survive closing/restarting Vim. Failed sends retain drafts; unknown
+outcomes are reconciled before retrying. A changed PR revision requires reopening.
+
+Requires Vim 9.1+, Python 3.9+, and vim-revue for the code UI. Run
+`gh auth login --hostname github.com --web` to enable authenticated access.
+Public browsing works anonymously with lower API limits.
+
+                                                   *g:reviewhub_python*
+g:reviewhub_python    Python executable, default 'python3'.
+                                                   *g:revue_draft_dir*
+g:revue_draft_dir     Persistent drafts, default ~/.vim/revue-drafts.
+
+vim:tw=78:ft=help:norl:

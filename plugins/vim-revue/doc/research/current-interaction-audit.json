@@ -1,0 +1,168 @@
+{
+  "date": "2026-09-14",
+  "scope": "Focused local fixture checks for planning refresh; no GitHub writes, full suite not rerun",
+  "checks": [
+    {
+      "name": "comments",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/comments.vim"
+      ],
+      "returncode": 0,
+      "output": "",
+      "seconds": 0.35
+    },
+    {
+      "name": "messages",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/messages.vim"
+      ],
+      "returncode": 0,
+      "output": "",
+      "seconds": 0.43
+    },
+    {
+      "name": "interactions",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/interactions.vim"
+      ],
+      "returncode": 0,
+      "output": "",
+      "seconds": 0.93
+    },
+    {
+      "name": "layout",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/layout.vim"
+      ],
+      "returncode": 0,
+      "output": "",
+      "seconds": 13.99
+    },
+    {
+      "name": "chrome",
+      "command": [
+        "vim",
+        "-Nu",
+        "NONE",
+        "-i",
+        "NONE",
+        "-n",
+        "-es",
+        "-S",
+        "test/chrome.vim"
+      ],
+      "returncode": 0,
+      "output": "",
+      "seconds": 0.46
+    },
+    {
+      "name": "action_guide",
+      "command": [
+        "python3",
+        "test/action_guide.py"
+      ],
+      "returncode": 0,
+      "output": "action guide: PASS (delivery, permissions, exact messages, comparison/original navigation, local Viewed, unavailable source, refresh during menus, custom mappings)\n",
+      "seconds": 1.51
+    },
+    {
+      "name": "discovery",
+      "command": [
+        "python3",
+        "test/discovery.py"
+      ],
+      "returncode": 0,
+      "output": "discovery: PASS (filters, exact targets, refresh, drafts, Viewed revisions/restart, delayed reads)\n",
+      "seconds": 1.37
+    },
+    {
+      "name": "feedback_pages",
+      "command": [
+        "python3",
+        "test/feedback_pages.py"
+      ],
+      "returncode": 0,
+      "output": "feedback pages: PASS (continuation, exact selection, cancellation, stale/malformed reads, deduplication, search, retained typing)\n",
+      "seconds": 0.75
+    },
+    {
+      "name": "timeline",
+      "command": [
+        "python3",
+        "test/timeline.py"
+      ],
+      "returncode": 0,
+      "output": "timeline: PASS (older pages, deduplication, exact event/discussion return, cancellation, stale/malformed reads, draft retention)\n",
+      "seconds": 0.27
+    }
+  ],
+  "findings": [
+    {
+      "story": "UX-06d",
+      "evidence": "code inspection",
+      "gap": "Conversation exists in maps and session but has no Read outcome in actions.vim",
+      "sources": [
+        "autoload/revue/maps.vim",
+        "autoload/revue/actions.vim",
+        "autoload/revue/session.vim"
+      ]
+    },
+    {
+      "story": "UX-20c",
+      "evidence": "code inspection",
+      "gap": "EventDiscussion checks only loaded snapshot messages; absent targets offer refresh or web link",
+      "sources": [
+        "autoload/revue/session.vim:s:EventDiscussionError",
+        "autoload/revue/session.vim:revue#session#EventDiscussion"
+      ]
+    },
+    {
+      "story": "UX-20b",
+      "evidence": "code inspection",
+      "gap": "Timeline actions lack evaluated-comparison navigation; GitHub reviewed_head does not establish original PR base",
+      "sources": [
+        "autoload/revue/maps.vim",
+        "../vim-reviewhub/python/reviewhub.py:timeline_event"
+      ]
+    }
+  ],
+  "official_sources_rechecked": [
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/viewing-a-pull-request-review",
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/"
+  ]
+}

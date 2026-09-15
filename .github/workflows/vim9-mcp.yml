@@ -1,0 +1,44 @@
+name: Test Vim9 MCP
+on:
+  push:
+    paths: ['plugins/vim9-mcp/**', '.github/workflows/vim9-mcp.yml']
+  pull_request:
+    paths: ['plugins/vim9-mcp/**', '.github/workflows/vim9-mcp.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            vim: system
+          - os: ubuntu-latest
+            vim: '9.0.0000'
+          - os: macos-latest
+            vim: system
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: plugins/vim9-mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: plugins/vim9-mcp/package-lock.json
+      - name: Install Linux tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y vim libncurses-dev
+      - name: Build minimum Vim
+        if: matrix.vim != 'system'
+        run: |
+          git clone --depth 1 --branch v9.0.0000 https://github.com/vim/vim.git "$RUNNER_TEMP/vim-baseline"
+          cd "$RUNNER_TEMP/vim-baseline"
+          ./configure --with-features=huge --disable-gui --without-x --disable-nls
+          make -j2
+          echo "VIM=$RUNNER_TEMP/vim-baseline/src/vim" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npm run check
+      - run: npm test

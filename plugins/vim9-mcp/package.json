@@ -1,0 +1,25 @@
+{
+  "name": "vim9-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Composable MCP capabilities for live Vim 9 sessions",
+  "bin": {
+    "vim9-mcp": "bin/vim9-mcp.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node bin/vim9-mcp.js",
+    "broker": "node bin/vim9-mcp.js broker",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "check": "node --check src/broker.js && node --check src/mcp.js && node --check src/schema.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "ajv": "^8.17.1",
+    "diff": "^8.0.2"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

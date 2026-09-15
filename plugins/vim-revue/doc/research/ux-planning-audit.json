@@ -1,0 +1,53 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current working-tree GitHub versus Revue interaction planning recheck; no application changes",
+  "inspection": {
+    "autoload/revue/session.vim": "3480fe9dd27ba723c374314f2f401a390f613da1718474759a0874b26afd0e72",
+    "autoload/revue/actions.vim": "ad1598d0717046db7ddd791a284456c89e4caedbf9124c0ddd03ffd1ecd7f611",
+    "autoload/revue/maps.vim": "707c9087ed8a93e64bed070c4c240dfcefe0bc0e087d6aa8dca993b31cdb279b",
+    "autoload/revue/comments.vim": "da7310a00c5752f709995dc8d9cd3bbd15d33eb30e6c68f848c49c69203f44d8",
+    "autoload/revue/suggestion.vim": "6e8ffefd3849d9657759a6aaa6a5d2262d5b55fc9805e68e88be0c9afed958f8",
+    "autoload/revue/progress.vim": "79cbda2a5f1eaf5fba0a26ead0a3b7ad16689b3d0b11236e32a4964a3bbd3b66",
+    "../vim-reviewhub/python/reviewhub.py": "7e0fe126268d1553c080c64d53c64d7b55b1a99bb3ec207cd7a2825d9cad4fd0"
+  },
+  "checks": [
+    {
+      "command": "python3 test/thread_entry.py",
+      "result": "PASS"
+    },
+    {
+      "command": "python3 test/action_guide.py",
+      "result": "PASS"
+    },
+    {
+      "command": "python3 test/suggestions.py",
+      "result": "PASS"
+    },
+    {
+      "command": "python3 test/reading_tabs.py",
+      "result": "PASS"
+    },
+    {
+      "command": "python3 test/thread_state.py",
+      "result": "PASS"
+    }
+  ],
+  "finding": {
+    "id": "UX-09b",
+    "status": "proposed",
+    "current_route": "ChangeThreadState creates or reopens a bodyless composer, then Send confirms before dispatch.",
+    "desired_route": "Explicit resolve/reopen with in-place waiting and result; preserve original receipt recovery and expanded discussion."
+  },
+  "official_sources_reopened": [
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/commenting-on-a-pull-request",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/"
+  ],
+  "limits": [
+    "No fresh authenticated GitHub walkthrough or remote mutation",
+    "No fresh screenshot capture or unfamiliar-user study",
+    "No full-suite rerun or real agent execution",
+    "Existing prior evidence remains separately dated and linked"
+  ]
+}

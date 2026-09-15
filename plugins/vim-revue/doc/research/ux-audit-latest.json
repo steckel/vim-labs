@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-14",
+  "scope": "GitHub versus present working-tree UX; planning refresh only",
+  "code_inspected": [
+    "autoload/revue/actions.vim",
+    "autoload/revue/maps.vim",
+    "autoload/revue/session.vim",
+    "test/comments.vim",
+    "doc/session-storage-mcp.md"
+  ],
+  "visuals_reopened": [
+    "output/private-pages/80-partial.png",
+    "output/auxiliary-surfaces/80-history.png"
+  ],
+  "visual_scope": "Retained isolated Vim terminal renders, not new OS screenshots",
+  "official_sources_reopened": [
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request"
+  ],
+  "test_evidence": "../../output/remote-latency/validation.json",
+  "no_new_user_study": true,
+  "no_live_mutation_test": true,
+  "result": "Prioritized interaction shortlist distinguishes refinements, validation, missing optional capabilities and the local-agent extension."
+}

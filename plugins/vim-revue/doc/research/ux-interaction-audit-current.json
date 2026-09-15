@@ -1,0 +1,74 @@
+{
+  "date": "2026-09-14",
+  "scope": "Current GitHub/Revue interaction audit and backlog refresh; documentation only.",
+  "checks": [
+    {
+      "command": "python3 test/action_guide.py",
+      "exit_code": 0,
+      "output": "action guide: PASS (delivery, permissions, exact messages, comparison/original navigation, local Viewed, unavailable source, refresh during menus, custom mappings)\n"
+    },
+    {
+      "command": "python3 test/rich_replies.py",
+      "exit_code": 0,
+      "output": "rich replies: PASS (inline spans, semantic links, exact attributed quotes, raw copy, Unicode, widths)\n"
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/layout.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "vim -Nu NONE -i NONE -n -es -S test/comments.vim",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "python3 test/participants.py",
+      "exit_code": 0,
+      "output": "Ran 12 tests in 4.126s\nOK\n"
+    }
+  ],
+  "inspected": [
+    "autoload/revue/maps.vim",
+    "autoload/revue/actions.vim",
+    "autoload/revue/layout.vim",
+    "autoload/revue/assignment.vim",
+    "autoload/revue/runtime.vim",
+    "autoload/revue/reaction.vim",
+    "autoload/revue/session.vim",
+    "python/revue_local.py",
+    "test/run.sh",
+    "test/participants.py",
+    "doc/github-review-ux-spec.md",
+    "doc/review-ux-gap-audit.md",
+    "doc/interaction-backlog.md"
+  ],
+  "visual_evidence_reopened": [
+    "output/auxiliary-density/80-history.png",
+    "output/assignment-outcomes/80-outcomes.png"
+  ],
+  "visual_scope": "Retained isolated Vim terminal-cell renders, not fresh screenshots, usability observations or a new live-agent demonstration.",
+  "sources_rechecked": [
+    "https://github.blog/changelog/2026-02-19-access-all-pull-request-comments-without-leaving-the-new-files-changed-page/",
+    "https://github.blog/changelog/2026-03-19-view-code-and-comments-side-by-side-in-pull-request-files-changed-page/",
+    "https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/incorporating-feedback-in-your-pull-request"
+  ],
+  "findings": [
+    "Current review features are established cores; do not schedule them again as missing.",
+    "Five focused check commands passed, including 12 participant tests; runtime.py and the full suite were not rerun in this audit.",
+    "Focus preserves sibling minimum dimensions, supporting a full-area reading prototype (UX-18c).",
+    "Reply actions require real-text discussion selection. Unfamiliar-user discovery remains unverified (UX-06/18).",
+    "Assignment view emits long IDs and repeated provenance; propose compact reading metadata with exact details retained (UX-18d).",
+    "Reaction selection creates a bodyless draft followed by Send confirmation; propose a direct explicit add/remove operation preserving receipts (UX-22b).",
+    "Assignment selection/outcome/cancel are implemented; old outstanding statements were corrected.",
+    "Runtime helpers and Python integration exist, but inspected session/maps/action guide expose no start/resume action. UX-25c remains partial.",
+    "GitHub original-base evidence, unsupported mutation scopes, broad performance measurements and optional apply/readiness/Viewed/membership remain separate backlog work.",
+    "Individual collapse remains removed; global comment visibility and unified/split remain deferred."
+  ],
+  "remote_mutations": 0,
+  "full_suite_rerun": false,
+  "runtime_tests_rerun": false,
+  "real_agent_run": false,
+  "user_study": false,
+  "authenticated_browser_walkthrough": false
+}

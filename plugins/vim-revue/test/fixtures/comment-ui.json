@@ -1,0 +1,88 @@
+{
+  "snapshot": {
+    "version": 1,
+    "key": "local/comment-ui-fixture",
+    "display_id": "LOCAL PREVIEW",
+    "title": "Comment UI \u00b7 replies, quotes & suggestions",
+    "author": "alex",
+    "state": "local fixture",
+    "body": "Local UI fixture. No GitHub changes.",
+    "url": "",
+    "reviewers": [],
+    "base": "basefixture",
+    "head": "headfixture",
+    "snapshot": "comment-ui-v2",
+    "conversation": [],
+    "review_actions": [],
+    "files": [
+      {
+        "id": "refs",
+        "path": "completion.vim",
+        "old_path": "completion.vim",
+        "status": "modified",
+        "patch": "@@ -1,8 +1,8 @@\n function! s:CompleteRefs(items, query) abort\n   let items = copy(a:items)\n-  let use_fuzzy = 1\n+  let use_fuzzy = !empty(a:query)\n   if use_fuzzy\n     return matchfuzzy(items, a:query)\n   endif\n   return items\n endfunction"
+      }
+    ],
+    "threads": [
+      {
+        "id": "local-thread",
+        "path": "completion.vim",
+        "side": "head",
+        "line": 3,
+        "start": 3,
+        "outdated": false,
+        "comments": [
+          {
+            "id": "local-root",
+            "author": "morgan",
+            "created": "2026-09-13T18:01:00Z",
+            "kind": "comment",
+            "body": "Could we keep prefix matching for very short queries?\n\n```suggestion\n  let use_fuzzy = strchars(a:query) >= 2\n```"
+          },
+          {
+            "id": "local-reply-1",
+            "author": "alex",
+            "created": "2026-09-13T18:04:00Z",
+            "kind": "comment",
+            "body": "> Could we keep prefix matching for very short queries?\n\nYes. I\u2019ll use the minimum length and preserve the original list."
+          },
+          {
+            "id": "local-reply-2",
+            "author": "sam",
+            "created": "2026-09-13T18:06:00Z",
+            "kind": "comment",
+            "body": "That works for me. Please cover an empty query too:\n\n```vim\ncall assert_equal(refs, CompleteRefs(refs, \"\"))\n```"
+          }
+        ]
+      }
+    ]
+  },
+  "content": {
+    "base": {
+      "kind": "text",
+      "lines": [
+        "function! s:CompleteRefs(items, query) abort",
+        "  let items = copy(a:items)",
+        "  let use_fuzzy = 1",
+        "  if use_fuzzy",
+        "    return matchfuzzy(items, a:query)",
+        "  endif",
+        "  return items",
+        "endfunction"
+      ]
+    },
+    "head": {
+      "kind": "text",
+      "lines": [
+        "function! s:CompleteRefs(items, query) abort",
+        "  let items = copy(a:items)",
+        "  let use_fuzzy = !empty(a:query)",
+        "  if use_fuzzy",
+        "    return matchfuzzy(items, a:query)",
+        "  endif",
+        "  return items",
+        "endfunction"
+      ]
+    }
+  }
+}

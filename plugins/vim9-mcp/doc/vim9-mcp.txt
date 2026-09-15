@@ -1,0 +1,37 @@
+*vim9-mcp.txt*  Composable MCP capabilities for Vim 9
+
+Requires Vim 9.0+ with +vim9script, +channel, +job, +timers, and Node.js 22+.
+Add the project to 'runtimepath' and run npm ci in its directory.
+The MCP client launches: node /absolute/path/vim9-mcp/bin/vim9-mcp.js
+
+COMMANDS                                             *vim9-mcp-commands*
+:VimMCPConnect       Connect/start the local broker.
+:VimMCPDisconnect    Disconnect and disable reconnection.
+:VimMCPStatus        Show session, socket, queue length, and last error.
+:VimMCPHistory       Show recent operation outcomes.
+:VimMCPReview {id}   Open a prepared change in diff scratch buffers.
+:VimMCPShareSelection Capture the last visual selection and its revision.
+
+MAPPING                                              *vim9-mcp-selection*
+  xmap <leader>ms <Plug>(VimMCPShareSelection)
+Characterwise, linewise and blockwise shapes are retained. Partial-cell blocks
+are display-only and do not expose exact editable targets.
+
+SETTINGS                                             *vim9-mcp-settings*
+g:vim9_mcp_autoconnect  Default v:true.
+g:vim9_mcp_node         Default 'node'. May be an absolute executable path.
+g:vim9_mcp_runtime      Optional private broker directory. Both clients and Vim
+                       must agree; otherwise use $VIM9_MCP_RUNTIME.
+g:vim9_mcp_advanced     Default v:false. Enables arbitrary Ex/macro execution.
+g:vim9_mcp_jobs         Named argv/cwd/errorformat job configurations.
+g:vim9_mcp_workflows    Named lists of MCP workflow steps.
+
+BEHAVIOR                                             *vim9-mcp-behavior*
+Read live buffers, prepare a change set, inspect the diff, then apply. Revisions
+are checked at application time. Save explicitly. Agent edits form one undo
+block per buffer. Multi-buffer application is not atomic. On timeout, inspect
+request_status using the request ID; never replay a mutation blindly.
+
+See README.md and docs/capabilities.md for examples, limits, and provider APIs.
+
+vim:tw=78:ts=8:noet:ft=help:norl:
