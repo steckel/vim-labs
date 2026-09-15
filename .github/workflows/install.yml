@@ -1,0 +1,20 @@
+name: Test native package installer
+on:
+  push:
+    paths: ['scripts/install.py', 'test/**', '.github/workflows/install.yml']
+  pull_request:
+    paths: ['scripts/install.py', 'test/**', '.github/workflows/install.yml']
+permissions:
+  contents: read
+jobs:
+  install:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Vim
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y vim
+      - run: python3 -m unittest discover -s test -p 'test_*.py' -v

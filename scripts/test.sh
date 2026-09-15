@@ -11,10 +11,13 @@ case "$component" in
 esac
 
 case "$component" in
-  all|review|github|mcp) ;;
-  *) echo 'Usage: scripts/test.sh [all|review|github|mcp]' >&2; exit 2 ;;
+  all|install|review|github|mcp) ;;
+  *) echo 'Usage: scripts/test.sh [all|install|review|github|mcp]' >&2; exit 2 ;;
 esac
 
+if [ "$component" = all ] || [ "$component" = install ]; then
+  (cd "$root" && python3 -m unittest discover -s test -p 'test_*.py')
+fi
 if [ "$component" = all ] || [ "$component" = review ]; then
   (cd "$root/plugins/vim-code-review" && sh test/run.sh && python3 test/regressions.py)
 fi

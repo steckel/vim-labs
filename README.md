@@ -50,6 +50,33 @@ git clone https://github.com/steckel/vim-labs.git
 cd vim-labs
 ```
 
+To install all three components as native Vim packages:
+
+```sh
+python3 scripts/install.py
+```
+
+This creates symlinks in `~/.vim/pack/vim-labs/start`, installs the MCP's locked
+Node.js dependencies with `npm ci`, and generates Vim help tags. It requires
+Vim, Python 3, and Node.js 22+ with npm. Restart Vim afterward. It does not edit
+your vimrc or MCP client configuration.
+
+For local development, run the same command from your development checkout;
+the symlinks use that checkout directly. To switch explicitly:
+
+```sh
+python3 scripts/install.py --source /path/to/your/vim-labs
+```
+
+Use `--vim-dir /path/to/vim-directory` for another Vim installation, or
+`--skip-deps` to keep dependencies you have already installed. Conflicting
+real plugin directories are left untouched and stop installation. Existing
+Vim Labs symlinks and legacy Revue/ReviewHub package symlinks are backed up
+under `~/.vim/vim-labs-backups` before switching, with a manifest recording
+their original paths and targets. The source checkouts are never moved.
+
+For a manual installation of selected components instead:
+
 The repository root is a collection, not a Vim plugin. Add the component
 directories you want to Vim's runtime path, or symlink them into a native
 package directory. For example, from the cloned repository:
@@ -112,7 +139,7 @@ repository root, after installing the MCP dependencies:
 ./scripts/test.sh
 ```
 
-Use `./scripts/test.sh review`, `github`, or `mcp` to run one component's
+Use `./scripts/test.sh install`, `review`, `github`, or `mcp` to run one component's
 suite. Python 3, Vim, Git, and Node.js are required for the combined run.
 
 The GitHub adapter's automated tests do not prove every real account/permission
