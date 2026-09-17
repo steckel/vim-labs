@@ -14,6 +14,11 @@ vim9script
 # backend but unused here; revisit if jj adds copy/rename tracking to
 # these outputs.
 
+# `cd <repo> && jj` is used instead of `jj -R <repo>` because `-R` does not
+# change the working directory, causing `jj diff` and `jj file show` to emit
+# and resolve paths relative to Vim's current working directory rather than
+# the repository root when invoked from a subdirectory.
+
 export def RepoRoot(): string
   var output = system('jj root 2>/dev/null')
   if v:shell_error != 0
@@ -24,7 +29,7 @@ enddef
 
 export def CurrentRevision(repo: string): string
   var cmd = printf(
-    'jj -R %s log -r @ --no-graph -T %s 2>/dev/null',
+    'cd %s && jj log -r @ --no-graph -T %s 2>/dev/null',
     shellescape(repo),
     shellescape('change_id.short(8)')
   )
@@ -37,7 +42,7 @@ enddef
 
 export def DiffNameStatus(repo: string, base: string): list<dict<any>>
   var cmd = printf(
-    'jj -R %s diff --from %s --summary 2>/dev/null',
+    'cd %s && jj diff --from %s --summary 2>/dev/null',
     shellescape(repo),
     shellescape(base)
   )
@@ -59,7 +64,7 @@ enddef
 
 export def ShowFile(repo: string, ref: string, relpath: string): dict<any>
   var cmd = printf(
-    'jj -R %s file show -r %s %s 2>/dev/null',
+    'cd %s && jj file show -r %s %s 2>/dev/null',
     shellescape(repo),
     shellescape(ref),
     shellescape(relpath)
@@ -73,7 +78,7 @@ enddef
 
 export def RawDiff(repo: string, base: string, relpath: string, old_relpath: string = ''): string
   var cmd = printf(
-    'jj -R %s diff --from %s --git -- %s 2>/dev/null',
+    'cd %s && jj diff --from %s --git -- %s 2>/dev/null',
     shellescape(repo),
     shellescape(base),
     shellescape(relpath)
