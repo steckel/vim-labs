@@ -31,6 +31,10 @@ def run_vim(fixture, mode='', cwd=None):
 
 
 same = file('same.py', BLOCK + STAY, STAY + BLOCK)
+INDENTED = ['    ' + line if line else line for line in BLOCK]
+indented = file('indented.py', BLOCK + STAY, STAY + INDENTED)
+dedented = file('dedented.py', INDENTED + STAY, STAY + BLOCK)
+tabbed = file('tabbed.py', BLOCK + STAY, STAY + ['\t' + line for line in BLOCK])
 source = file('source.py', BLOCK + STAY, STAY)
 target = file('target.py', STAY, STAY + BLOCK)
 # No source deletion => a copy must remain an addition.
@@ -39,6 +43,21 @@ edit = file('edit.py', BLOCK + STAY, ['def different_function(value):', '    ret
 tiny = file('tiny.py', ['}', ''] + STAY, STAY + ['}', ''])
 cases = [
     {'files': [same], 'count': 1, 'base': ['same.py', 1], 'head': ['same.py', 16]},
+    {'files': [indented], 'count': 1, 'base': ['indented.py', 1], 'head': ['indented.py', 16], 'reindented': 1, 'length': 3},
+    {'files': [dedented], 'count': 1, 'base': ['dedented.py', 1], 'head': ['dedented.py', 16], 'reindented': 1, 'length': 3},
+    {'files': [tabbed], 'count': 1, 'base': ['tabbed.py', 1], 'head': ['tabbed.py', 16], 'reindented': 1, 'length': 3},
+    # Nearby moves share a hunk but are separated by unchanged context.
+    {'files': [file('near.py', BLOCK + STAY[:5], STAY[:5] + INDENTED)],
+     'count': 1, 'base': ['near.py', 1], 'head': ['near.py', 6], 'reindented': 1, 'length': 3},
+    {'files': [file('up.py', STAY + INDENTED, BLOCK + STAY)],
+     'count': 1, 'base': ['up.py', 16], 'head': ['up.py', 1], 'reindented': 1, 'length': 3},
+    # Reformatting in place isn't a move, even with inserted lines above it.
+    {'files': [file('format.py', BLOCK + STAY, INDENTED + STAY)], 'count': 0},
+    {'files': [file('format.py', BLOCK + STAY, ['# new comment'] + INDENTED + STAY)], 'count': 0},
+    # Normalization must not turn a copy or a change inside a string into a move.
+    {'files': [file('copy.py', BLOCK + STAY, BLOCK + STAY + INDENTED)], 'count': 0},
+    {'files': [file('strings.py', ['print("meaningful spaces inside")'] + STAY,
+                    STAY + ['    print("meaningful  spaces inside")'])], 'count': 0},
     {'files': [source, target], 'count': 1, 'base': ['source.py', 1], 'head': ['target.py', 16]},
     {'files': [copy], 'count': 0}, {'files': [edit], 'count': 0}, {'files': [tiny], 'count': 0},
     # Two identical removed blocks and one added block provide no unique seed.
@@ -51,6 +70,7 @@ cases = [
      'count': 1, 'base': ['source.py', 1], 'head': ['target.py', 1]},
 ]
 run_vim({'cases': cases, 'files': [source, target]})
+run_vim({'cases': [], 'files': [source, file('target.py', STAY, STAY + INDENTED)]})
 
 for backend in ['git', 'jj']:
     if not shutil.which(backend):
@@ -74,7 +94,22 @@ for backend in ['git', 'jj']:
             (repo / f['path']).write_text('\n'.join(f['after']) + '\n')
         (repo / 'nested').mkdir()
         run_vim({'base': 'HEAD' if backend == 'git' else '@-', 'files': [source, target]}, backend, repo / 'nested')
-print('moves: PASS (matching, cross-file labels, cards, source integrity, cleanup, Git/jj from subdirectory)')
+    # Exercise the actual :Review panes, not just matching a synthetic patch.
+    for moved in [same, indented, dedented, tabbed]:
+        with tempfile.TemporaryDirectory(prefix='review-within-file-') as tmp:
+            repo = Path(tmp)
+            command('git', 'init', '-q', '-b', 'main')
+            command('git', 'config', 'user.name', 'Move Test')
+            command('git', 'config', 'user.email', 'moves@example.invalid')
+            (repo / moved['path']).write_text('\n'.join(moved['before']) + '\n')
+            command('git', 'add', '.')
+            command('git', 'commit', '-qm', 'base')
+            if backend == 'jj':
+                command('jj', 'git', 'init', '--colocate')
+            (repo / moved['path']).write_text('\n'.join(moved['after']) + '\n')
+            (repo / 'nested').mkdir()
+            run_vim({'file': moved}, 'within_file', repo / 'nested')
+print('moves: PASS (within-file/cross-file moves, reindentation, false positives, labels, source integrity, cleanup, Git/jj from subdirectory)')
 
 # jj's human summary compresses rename paths with {old => new}. Review
 # must use real source/target paths, including with spaces and braces.

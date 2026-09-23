@@ -108,9 +108,14 @@ file in the working-copy pane. Any edits made during the rename stay visible
 in the diff. Restart Vim after updating the plugin so already-loaded review
 code is replaced.
 
-Matching uses exact text and a unique changed-line seed, with at least 20
-letters/digits across the block. Tiny matches, ambiguous repeated blocks,
-copies without a deletion, and rewritten/indented code remain ordinary diffs.
+Matching allows a consistent change in leading indentation and requires a
+unique changed-line seed, with at least 20 letters/digits across the block.
+Reindented moves include **(indentation changed)** in their labels; both panes
+retain the actual source text. Only leading spaces and tabs are ignored;
+all other text must match.
+Tiny matches, ambiguous repeated blocks, copies without a deletion, and
+rewritten code remain ordinary diffs. Reindentation within the same replacement
+is treated as formatting, not a move, even when inserted lines shift its position.
 Incomplete provider patches can limit detection. Editing a quick-review source
 clears its displayed move markers; **R** in the sidebar recomputes them from
 saved changes. Rich local reviews retain their captured comparison.

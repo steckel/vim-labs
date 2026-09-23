@@ -7,21 +7,24 @@ function! s:Lines(files) abort
     let new = 0
     let left = 0
     let right = 0
+    let edit = 0
     for line in split(get(file, 'patch', ''), "\n", 1)
       let hunk = matchlist(line, '^@@ -\(\d\+\)\%(,\(\d\+\)\)\? +\(\d\+\)\%(,\(\d\+\)\)\? @@')
       if !empty(hunk)
+        let edit += 1
         let [old, new] = [str2nr(hunk[1]), str2nr(hunk[3])]
         let left = empty(hunk[2]) ? 1 : str2nr(hunk[2])
         let right = empty(hunk[4]) ? 1 : str2nr(hunk[4])
       elseif strpart(line, 0, 1) ==# '-' && left > 0
-        call add(sides.base, {'file': file.id, 'path': get(file, 'old_path', file.path), 'line': old, 'text': strpart(line, 1)})
+        call add(sides.base, {'file': file.id, 'path': get(file, 'old_path', file.path), 'line': old, 'text': strpart(line, 1), 'edit': edit})
         let old += 1
         let left -= 1
       elseif strpart(line, 0, 1) ==# '+' && right > 0
-        call add(sides.head, {'file': file.id, 'path': file.path, 'line': new, 'text': strpart(line, 1)})
+        call add(sides.head, {'file': file.id, 'path': file.path, 'line': new, 'text': strpart(line, 1), 'edit': edit})
         let new += 1
         let right -= 1
       elseif strpart(line, 0, 1) ==# ' ' && left > 0 && right > 0
+        let edit += 1
         let old += 1
         let new += 1
         let left -= 1
@@ -36,13 +39,22 @@ function! s:Adjacent(lines, first, second) abort
   return a:first >= 0 && a:second < len(a:lines) && a:lines[a:first].file ==# a:lines[a:second].file && a:lines[a:first].line + 1 == a:lines[a:second].line
 endfunction
 
+function! s:Match(before, after, shift) abort
+  return a:before.key ==# a:after.key &&
+        \ (empty(a:before.key) || a:after.indent - a:before.indent == a:shift)
+endfunction
+
 function! revue#moves#Detect(files) abort
   if !get(g:, 'revue_moved_lines', 1) | return [] | endif
   let sides = s:Lines(a:files)
   let index = {'base': {}, 'head': {}}
   for side in ['base', 'head']
     for i in range(len(sides[side]))
-      let text = sides[side][i].text
+      let row = sides[side][i]
+      " Ignore leading spaces/tabs only; all other whitespace and text matter.
+      let row.key = substitute(row.text, '^[ \t]*', '', '')
+      let row.indent = strdisplaywidth(matchstr(row.text, '^[ \t]*'))
+      let text = row.key
       if !has_key(index[side], text) | let index[side][text] = [] | endif
       call add(index[side][text], i)
     endfor
@@ -50,33 +62,38 @@ function! revue#moves#Detect(files) abort
   let used = {'base': {}, 'head': {}}
   let result = []
   for i in range(len(sides.base))
-    let text = sides.base[i].text
+    let text = sides.base[i].key
     let targets = get(index.head, text, [])
     " A unique nonblank seed avoids guessing between repeated boilerplate.
     if has_key(used.base, string(i)) || empty(trim(text)) || len(index.base[text]) != 1 || len(targets) != 1 | continue | endif
     let j = targets[0]
     if has_key(used.head, string(j)) | continue | endif
+    let shift = sides.head[j].indent - sides.base[i].indent
     let [first, target, last, ending] = [i, j, i, j]
     while s:Adjacent(sides.base, first - 1, first) && s:Adjacent(sides.head, target - 1, target) &&
-          \ !has_key(used.base, string(first - 1)) && !has_key(used.head, string(target - 1)) && sides.base[first - 1].text ==# sides.head[target - 1].text
+          \ !has_key(used.base, string(first - 1)) && !has_key(used.head, string(target - 1)) && s:Match(sides.base[first - 1], sides.head[target - 1], shift)
       let first -= 1
       let target -= 1
     endwhile
     while s:Adjacent(sides.base, last, last + 1) && s:Adjacent(sides.head, ending, ending + 1) &&
-          \ !has_key(used.base, string(last + 1)) && !has_key(used.head, string(ending + 1)) && sides.base[last + 1].text ==# sides.head[ending + 1].text
+          \ !has_key(used.base, string(last + 1)) && !has_key(used.head, string(ending + 1)) && s:Match(sides.base[last + 1], sides.head[ending + 1], shift)
       let last += 1
       let ending += 1
     endwhile
     let before = sides.base[first : last]
     let after = sides.head[target : ending]
     let content = join(map(copy(before), {_, row -> row.text}), "\n")
+    let reindented = map(copy(before), {_, row -> row.text}) !=# map(copy(after), {_, row -> row.text})
     " Consume rejected blocks too, so a large same-range match stays linear.
     for row in range(first, last) | let used.base[string(row)] = 1 | endfor
     for row in range(target, ending) | let used.head[string(row)] = 1 | endfor
     " Ignore tiny punctuation-only matches and replacements at the same range.
     if strchars(substitute(content, '[^[:alnum:]]', '', 'g')) < 20 ||
           \ (before[0].path ==# after[0].path && before[0].line == after[0].line) | continue | endif
-    call add(result, {'base': before, 'head': after})
+    " Reindentation in the same replacement is formatting, even if earlier
+    " insertions changed its line numbers. Require a distinct source/destination.
+    if reindented && before[0].file ==# after[0].file && before[0].edit == after[0].edit | continue | endif
+    call add(result, {'base': before, 'head': after, 'reindented': reindented})
   endfor
   return result
 endfunction
@@ -108,6 +125,7 @@ function! revue#moves#Paint(buf, side, file, moves, group) abort
     endfor
     let other = move[a:side ==# 'base' ? 'head' : 'base']
     let label = (a:side ==# 'base' ? 'Moved to ' : 'Moved from ') . other[0].path . ':' . other[0].line . '-' . other[-1].line
+    if get(move, 'reindented', 0) | let label .= ' (indentation changed)' | endif
     try
       call prop_add(rows[0].line, 0, {'bufnr': a:buf, 'type': 'ReviewMovedLabel', 'text': label, 'text_align': 'above'})
     catch

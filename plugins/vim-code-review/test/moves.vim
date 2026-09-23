@@ -26,7 +26,11 @@ try
       if case.count == 1 && !empty(moves)
         for side in ['base', 'head']
           call assert_equal(case[side], [moves[0][side][0].path, moves[0][side][0].line])
+          if has_key(case, 'length')
+            call assert_equal(case.length, len(moves[0][side]))
+          endif
         endfor
+        call assert_equal(get(case, 'reindented', 0), moves[0].reindented)
       endif
     endfor
     let g:revue_moved_lines = 0
@@ -50,6 +54,33 @@ try
     call assert_equal(g:fixture.files[1].after, getbufline(s.head, 1, '$'))
     call assert_equal(snapshot.threads, s.snapshot.threads)
     call revue#session#Close()
+  elseif $REVIEW_MOVES_MODE ==# 'within_file'
+    Review
+    call feedkeys('h', 'xt')
+    let head = bufnr()
+    let bases = filter(getbufinfo(), {_, b -> b.name =~# 'revue-base-'})
+    call assert_equal(1, len(bases))
+    let base = bases[0].bufnr
+    call assert_equal([1, 2, 3], sort(Signs(base, 'ReviewMovedFrom'), 'n'))
+    call assert_equal([16, 17, 18], sort(Signs(head, 'ReviewMovedTo'), 'n'))
+    call assert_equal(1, len(Labels(base)))
+    call assert_equal(1, len(Labels(head)))
+    call assert_equal(g:fixture.file.before, getbufline(base, 1, '$'))
+    call assert_equal(g:fixture.file.after, getbufline(head, 1, '$'))
+    call setline(16, 'changed_after_review()')
+    call feedkeys('h', 'xt')
+    doautocmd TextChanged
+    call assert_equal([], Signs(base, 'ReviewMovedFrom'))
+    call assert_equal([], Signs(head, 'ReviewMovedTo'))
+    call revue#review#RefreshSidebar()
+    call assert_equal([], Signs(head, 'ReviewMovedTo'), 'Never label stale unsaved content')
+    call setline(16, g:fixture.file.after[15])
+    setlocal nomodified
+    call revue#review#RefreshSidebar()
+    call assert_equal(1, len(Labels(head)))
+    call revue#review#Close()
+    call assert_equal([], Signs(head, 'ReviewMovedTo'))
+    call assert_equal([], Labels(head))
   elseif $REVIEW_MOVES_MODE ==# 'jj_inventory'
     let changes = revue#vcs#DiffNameStatus(revue#vcs#RepoRoot(), 'main')
     call assert_equal([
