@@ -37,66 +37,66 @@ try
   let g:id = revue#session#Open(g:fixture.snapshot, function('AssignmentHost'), 0)
   if g:recover
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/assignment')[0])
-    RevueActivity
+    ReviewActivity
     call search('unknown', 'w')
     let session = revue#session#Inspect(g:id)
     for row in keys(session.activityrows)
       if session.activityrows[row].operation ==# frozen.id | call cursor(str2nr(row), 1) | break | endif
     endfor
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(frozen.id, b:revue_draft)
     call assert_false(&modifiable)
     let g:revue_participants = []
-    RevueCheckReceipt
+    ReviewCheckReceipt
     let session = revue#session#Inspect(g:id)
     call assert_equal([], session.drafts)
     call assert_equal('assignment-1', session.last_receipt.assignment)
     call assert_match('No agent was started', session.last_outcome)
     call assert_equal('assignment-1', session.activity[-1].receipt.assignment)
   else
-    RevueThreads
-    RevueNextMessage
+    ReviewThreads
+    ReviewNextMessage
     let source = revue#discussion#Selected(revue#session#Inspect(g:id), line('.'))
-    RevueAssign
+    ReviewAssign
     call assert_equal('assignment-selection', b:revue_view)
-    RevueClose
+    ReviewClose
     call assert_equal(source.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-    RevueAssign
+    ReviewAssign
     call assert_equal(1, len(revue#session#Inspect(g:id).assignment_selection.selected))
     call assert_equal('<Plug>(revue-assignment-toggle)', maparg('<Space>', 'n'))
     call cursor(7, 1)
-    RevueToggleAssignment
+    ReviewToggleAssignment
     call assert_equal(0, len(revue#session#Inspect(g:id).assignment_selection.selected))
-    RevueToggleAssignment
+    ReviewToggleAssignment
     call cursor(10, 1)
-    RevueToggleAssignment
+    ReviewToggleAssignment
     call assert_equal(2, len(revue#session#Inspect(g:id).assignment_selection.selected))
     let g:revue_mappings = {'assignment-toggle': 'x', 'assignment-prepare': 'p'}
     call revue#session#AssignmentSelection()
     call assert_equal('<Plug>(revue-assignment-toggle)', maparg('x', 'n'))
     let actions = revue#session#ActionGuide()
     call assert_equal('p', filter(copy(actions), {_, a -> a.id ==# 'assignment-prepare'})[0].key)
-    RevueHelp
+    ReviewHelp
     let before = deepcopy(revue#session#Inspect(g:id).assignment_selection)
     call revue#session#ToggleAssignment()
     call assert_equal(before, revue#session#Inspect(g:id).assignment_selection)
-    RevueClose
+    ReviewClose
     call assert_equal('assignment-selection', b:revue_view)
     call assert_equal(2, len(revue#session#Inspect(g:id).assignment_selection.selected))
     let g:revue_participants = []
-    RevuePrepareAssignment
+    ReviewPrepareAssignment
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     let g:revue_participants = [{'id': 'test-agent', 'label': 'Test agent'}]
     call feedkeys("0\<CR>", 't')
-    RevuePrepareAssignment
+    ReviewPrepareAssignment
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     call feedkeys("1\<CR>", 't')
-    RevuePrepareAssignment
+    ReviewPrepareAssignment
     call assert_equal('preview', b:revue_view)
     call assert_match('2 selected messages', join(getline(1, '$'), "\n"))
     call assert_match('entire threads', join(getline(1, '$'), "\n"))
     call assert_equal(0, len(g:calls))
-    RevueClose
+    ReviewClose
     call assert_equal('draft', b:revue_role)
     call assert_false(&modifiable)
     let draft = revue#session#Inspect(g:id).drafts[-1]
@@ -114,11 +114,11 @@ try
     let oversized = deepcopy(draft)
     let oversized.targets = repeat([draft.targets[0]], 51)
     call assert_match('between 1 and 50', revue#assignment#Error(g:fixture.snapshot, oversized))
-    RevueSend
+    ReviewSend
     let session = revue#session#Inspect(g:id)
     call assert_equal('unknown', session.drafts[-1].state)
     call assert_false(&modifiable)
-    RevueDiscard
+    ReviewDiscard
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call assert_equal(1, len(g:calls))
   endif

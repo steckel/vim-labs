@@ -16,7 +16,7 @@ try
   call WaitLookup({-> !empty(revue#session#Inspect(g:id).loaded)})
   call assert_equal(50, len(revue#session#Inspect(g:id).snapshot.threads))
   let original_cursor = revue#session#Inspect(g:id).snapshot.feedback.cursor
-  RevueTimeline
+  ReviewTimeline
   call WaitLookup({-> !revue#session#Inspect(g:id).timeline.loading})
   let found = 0
   let target_event = get(filter(copy(revue#session#Inspect(g:id).timeline.items), {_, event -> get(get(event, 'target', {}), 'message', '') ==# 'reply-500'}), 0, {})
@@ -29,7 +29,7 @@ try
   endfor
   call assert_true(found, 'History must link the distant exact reply')
   let origin = line('.')
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call WaitLookup({-> !revue#session#Inspect(g:id).feedback_read.loading})
   let state = revue#session#Inspect(g:id)
   call assert_equal('', state.feedback_read.error)
@@ -37,10 +37,10 @@ try
   call assert_equal(original_cursor, state.snapshot.feedback.cursor)
   call assert_equal('partial', state.snapshot.inventory.threads.state)
   call assert_equal('reply-500', revue#discussion#Selected(state, line('.')).comment)
-  RevueClose
+  ReviewClose
   call assert_equal('timeline', b:revue_view)
   call assert_equal(origin, line('.'))
-  RevueLoadMoreFeedback
+  ReviewLoadMoreFeedback
   call WaitLookup({-> !revue#session#Inspect(g:id).feedback_read.loading})
   call assert_equal('', revue#session#Inspect(g:id).feedback_read.error)
   call assert_equal(101, len(revue#session#Inspect(g:id).snapshot.threads))

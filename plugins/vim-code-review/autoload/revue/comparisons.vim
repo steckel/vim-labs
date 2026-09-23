@@ -68,14 +68,14 @@ function! revue#comparisons#Navigation(session) abort
 endfunction
 
 function! revue#comparisons#View(session) abort
-  let view = {'lines': ['# Comparisons', ':RevueOpenComparison · :RevueLatest · :RevuePreviousComparison · :RevueClose',
-        \ ':RevueLoadHistory · :RevueResumeComparison restores the last saved selection',
+  let view = {'lines': ['# Comparisons', ':ReviewOpenComparison · :ReviewLatest · :ReviewPreviousComparison · :ReviewClose',
+        \ ':ReviewLoadHistory · :ReviewResumeComparison restores the last saved selection',
         \ 'Opening a comparison changes the source view; existing drafts keep their anchors.',
         \ get(a:session, 'history_status', 'Saved and observed references. Backend history is loaded when supported.')], 'rows': {}}
   let rule = get(get(a:session.comparisons[a:session.latest_comparison].snapshot, 'capabilities', {}), 'comparison_range', {})
   if !empty(rule) || !empty(get(a:session, 'range_selection', {}))
-    call extend(view.lines, ['', 'Range: select an endpoint row, then :RevueRangeStart [base|head] / :RevueRangeEnd [base|head]',
-          \ ':RevueOpenRange opens the selected endpoints · :RevueClearRange clears the selection',
+    call extend(view.lines, ['', 'Range: select an endpoint row, then :ReviewRangeStart [base|head] / :ReviewRangeEnd [base|head]',
+          \ ':ReviewOpenRange opens the selected endpoints · :ReviewClearRange clears the selection',
           \ get(rule, 'semantics', 'Range support is determined by this backend.')])
     for name in ['from', 'to']
       let endpoint = get(get(a:session, 'range_selection', {}), name, {})
@@ -96,7 +96,7 @@ function! revue#comparisons#View(session) abort
     let first = len(view.lines) + 1
     call add(view.lines, label . strpart(get(reference, 'base', '?'), 0, 12) . ' → ' . strpart(get(reference, 'head', '?'), 0, 12))
     if !empty(get(reference, 'label', '')) | call add(view.lines, '  ' . reference.label) | endif
-    call add(view.lines, strlen(id) <= 50 ? '  Comparison ' . id : '  :RevueCopyComparison copies the full reference')
+    call add(view.lines, strlen(id) <= 50 ? '  Comparison ' . id : '  :ReviewCopyComparison copies the full reference')
     if has_key(entry, 'snapshot')
       let files = len(entry.snapshot.files)
       let threads = len(entry.snapshot.threads)

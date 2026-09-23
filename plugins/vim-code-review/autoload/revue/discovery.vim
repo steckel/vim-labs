@@ -74,7 +74,7 @@ endfunction
 
 function! revue#discovery#View(session) abort
   let filters = get(a:session, 'discussionfilters', {})
-  let view = {'lines': ['# Review discussions', ':RevueOpenDiscussion · :RevueDiscussionFilter · :RevueDiscussions [text] · :RevueClose',
+  let view = {'lines': ['# Review discussions', ':ReviewOpenDiscussion · :ReviewDiscussionFilter · :ReviewDiscussions [text] · :ReviewClose',
         \ 'Filters: ' . revue#discovery#Summary(filters), '', ''], 'rows': {}}
   call extend(view.lines, revue#inventory#RefreshLines(a:session))
   call extend(view.lines, revue#feedback#Lines(a:session))
@@ -133,7 +133,7 @@ function! revue#discovery#View(session) abort
     endfor
   endfor
   let view.lines[3] = printf('%d matching threads (%d matching messages) · %d conversation messages · %d local drafts', counts.threads, counts.messages, counts.conversation, counts.drafts)
-  if empty(view.rows) | call add(view.lines, 'No discussions match in loaded feedback. :RevueDiscussionFilter clear resets filters.') | endif
+  if empty(view.rows) | call add(view.lines, 'No discussions match in loaded feedback. :ReviewDiscussionFilter clear resets filters.') | endif
   return view
 endfunction
 

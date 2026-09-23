@@ -44,7 +44,7 @@ function! PrivateEditHost(request, Done) abort
   endif
 endfunction
 function! SelectPrivate(reply) abort
-  RevuePending
+  ReviewPending
   for row in sort(keys(revue#session#Inspect(g:id).pendingrows), 'n')
     let target = revue#session#Inspect(g:id).pendingrows[row]
     if !a:reply && !has_key(target, 'target') || a:reply && get(get(target, 'target', {}), 'message', '') ==# g:fixture.snapshot.threads[0].comments[1].id
@@ -59,73 +59,73 @@ try
   if filereadable($REVUE_CAP_STORE . '/private-edit')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/private-edit')[0])
     call SelectPrivate(0)
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal(frozen.id, b:revue_draft, 'publication resumes unfinished private edit')
     call assert_false(&modifiable)
     let g:fixture.snapshot.capabilities.edit_pending.enabled = 0
-    RevueRefresh
-    RevueEditBase
-    RevueDiscard
+    ReviewRefresh
+    ReviewEditBase
+    ReviewDiscard
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(frozen, revue#session#Inspect(g:id).drafts[-1])
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     call assert_equal('', g:summary.body)
     call assert_equal(1, g:calls[-1].reconcile)
   else
     call SelectPrivate(0)
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     let publication = deepcopy(revue#session#Inspect(g:id).drafts[-1])
-    RevueClose
+    ReviewClose
     call SelectPrivate(1)
-    RevueEditPending
+    ReviewEditPending
     call assert_equal(publication.id, b:revue_draft, 'private editing reopens unfinished publication')
-    RevueDiscard
+    ReviewDiscard
     call SelectPrivate(1)
-    RevueOpenPending
-    RevueEditMessage
+    ReviewOpenPending
+    ReviewEditMessage
     let draft = deepcopy(revue#session#Inspect(g:id).drafts[-1])
     call assert_equal(g:fixture.snapshot.threads[0].comments[1].id, draft.message)
     call assert_equal('7', draft.pending_review)
     call setline(1, 'Revised private reply')
     if line('$') > 1 | 2,$delete _ | endif
-    RevuePreview
+    ReviewPreview
     call assert_match('Save privately in pending review #7', join(getline(1, '$'), "\n"))
     call assert_match('Revised private reply', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueClose
+    ReviewClose
+    ReviewClose
     call SelectPrivate(0)
-    RevueDiscardPending
+    ReviewDiscardPending
     call assert_equal(draft.id, b:revue_draft, 'discard resumes unfinished private edit')
     let message = revue#edit#Message(g:fixture.snapshot, draft)
     let message.publication = 'published'
-    RevueRefresh
-    RevueSend
-    RevueEditBase
+    ReviewRefresh
+    ReviewSend
+    ReviewEditBase
     call assert_equal([], g:calls, 'never reinterpret private edit as public edit')
     let message.publication = 'pending'
     let message.body = 'Browser changed private reply'
     let message.version = 'browser-edit'
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal([], g:calls)
-    RevuePreview
+    ReviewPreview
     call assert_match('Browser changed private reply', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueEditBase
+    ReviewClose
+    ReviewEditBase
     call assert_equal('Revised private reply', getline(1))
-    RevueSend
+    ReviewSend
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     call assert_equal('pending', revue#edit#Message(g:fixture.snapshot, draft).publication)
     call SelectPrivate(0)
-    RevueEditPending
+    ReviewEditPending
     call assert_equal('Private summary', getline(1))
     call assert_equal('PENDING', revue#session#Inspect(g:id).drafts[-1].message_kind)
     call setline(1, '')
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state, 'receipt without private target fields stays unknown')
     call assert_equal('', frozen.body, 'clearing a private summary is allowed')

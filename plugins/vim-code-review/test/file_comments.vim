@@ -56,11 +56,11 @@ try
   if filereadable($REVUE_CAP_STORE . '/frozen')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/frozen')[0])
     let g:fixture.snapshot.capabilities.file_comment.enabled = 0
-    RevueRefresh
-    RevueFileComment
+    ReviewRefresh
+    ReviewFileComment
     call assert_equal(frozen.body, join(getline(1, '$'), "\n"))
     call assert_false(&modifiable)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(g:writes))
     call assert_equal(1, g:writes[0].reconcile)
     call assert_equal(extend(deepcopy(frozen), {'state': 'submitting'}), g:writes[0].draft)
@@ -72,38 +72,38 @@ try
     call assert_equal(g:fixture.content.head.lines, getbufline(state.head, 1, '$'))
     call win_gotoid(bufwinid(state.tree))
     call cursor(1, 1)
-    RevueFileComment
-    RevueFileThreads
+    ReviewFileComment
+    ReviewFileThreads
     call assert_equal([], revue#session#Inspect(g:id).drafts, 'file-list headings have no action target')
     call win_gotoid(state.headwin)
-    RevueFileThreads
+    ReviewFileThreads
     call assert_match('## File discussion', getline(4), 'file discussions precede line threads')
     call assert_notmatch(':0-0', join(getline(1, '$'), "\n"))
-    RevueNextMessage
-    RevueNextMessage
+    ReviewNextMessage
+    ReviewNextMessage
     call assert_equal('file-reply', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-    RevueQuote
+    ReviewQuote
     call assert_equal('file-root', revue#session#Inspect(g:id).drafts[0].thread)
     call assert_match('> File reply text', join(getline(1, '$'), "\n"))
-    RevuePreview
+    ReviewPreview
     call assert_match('Reply · completion.vim · File discussion', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueClose
-    RevueJump
+    ReviewClose
+    ReviewClose
+    ReviewJump
     call assert_equal(state.head, bufnr())
     call assert_equal(1, line('.'))
-    RevueFileComment
+    ReviewFileComment
     call setline(1, ['Whole-file draft', '', 'Keep this text'])
     call revue#session#SaveDraft()
     let draft = deepcopy(revue#session#Inspect(g:id).drafts[-1])
     call assert_equal('file_comment', draft.kind)
     for key in ['side', 'start', 'end', 'line'] | call assert_false(has_key(draft, key)) | endfor
-    RevuePreview
+    ReviewPreview
     call assert_match('File comment preview', getline(1))
     call assert_match('Applies to the whole file', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueClose
-    RevueFileComment
+    ReviewClose
+    ReviewClose
+    ReviewFileComment
     call assert_equal(draft.body, join(getline(1, '$'), "\n"))
     call assert_equal(2, len(revue#session#Inspect(g:id).drafts), 'same file reopens existing edits')
     let snap = deepcopy(g:fixture.snapshot)
@@ -111,55 +111,55 @@ try
     call assert_match('Send file comment drafts separately', revue#batch#Error(snap, [draft]))
     call add(snap.capabilities.batch.kinds, 'file_comment')
     call assert_equal('', revue#batch#Error(snap, [draft]))
-    RevueClose
+    ReviewClose
     for path in ['logo.png', 'deleted.vim', 'unavailable.vim']
       call FileRow(path)
       let read_count = len(g:reads)
-      RevueFileComment
+      ReviewFileComment
       call assert_equal(read_count, len(g:reads), 'file comments do not require source reads')
       call assert_equal(path, revue#session#Inspect(g:id).drafts[-1].path)
       call setline(1, 'Concern about ' . path)
-      RevuePreview
+      ReviewPreview
       call assert_match(path, join(getline(1, '$'), "\n"))
       if path ==# 'unavailable.vim' | call assert_match('Renamed from previous.vim', join(getline(1, '$'), "\n")) | endif
-      RevueClose
-      RevueClose
-      RevueFileThreads
+      ReviewClose
+      ReviewClose
+      ReviewFileThreads
       call assert_match('## File discussion', getline(4))
       call assert_match(path, getline(1))
       let state = revue#session#Inspect(g:id)
       let side = path ==# 'deleted.vim' ? 'base' : 'head'
       call assert_true(len(filter(prop_list(1, {'bufnr': state[side]}), {_, p -> p.type ==# 'RevueCardBorder'})) > 0)
-      RevueJump
+      ReviewJump
       call assert_equal(state[side], bufnr())
     endfor
     call FileRow('completion.vim')
-    RevueOpen
-    RevueDiscussions Whole file concern
+    ReviewOpenFile
+    ReviewDiscussions Whole file concern
     call search('## completion.vim', 'W')
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_match('File discussion', getline(4))
-    RevueRefresh
+    ReviewRefresh
     call assert_match('File discussion', getline(4))
-    RevueClose
+    ReviewClose
     call FileRow('completion.vim')
-    RevueOpen
-    RevueFileComment
+    ReviewOpenFile
+    ReviewFileComment
     let g:fixture.snapshot.capabilities.file_comment = {'enabled': 0, 'reason': 'File comments disabled'}
     call revue#session#Refresh()
-    RevueSend
+    ReviewSend
     call assert_equal([], g:writes)
     call assert_equal(draft.body, join(getline(1, '$'), "\n"))
     let g:fixture.snapshot.capabilities.file_comment.enabled = 1
     let g:fixture.snapshot.head = 'newhead'
     let g:fixture.snapshot.snapshot = 'newcomparison'
     call revue#session#Refresh()
-    RevueSend
+    ReviewSend
     call assert_equal([], g:writes, 'stale file comments retain their original comparison')
     let g:fixture.snapshot.head = draft.head
     let g:fixture.snapshot.snapshot = draft.snapshot
     call revue#session#Refresh()
-    RevueSend
+    ReviewSend
     call assert_equal(1, len(g:writes))
     call assert_false(&modifiable)
     let frozen = filter(revue#session#Inspect(g:id).drafts, {_, d -> d.id ==# g:draft.id})[0]

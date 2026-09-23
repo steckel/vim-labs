@@ -60,11 +60,11 @@ try
     call assert_equal(1, len(filter(values(state.comparisons), {_, c -> has_key(c, 'snapshot')})), 'only the initial snapshot is loaded; saved history contains references')
     call assert_false(has_key(state.comparisons[g:a.snapshot], 'snapshot'))
     call assert_equal(g:a.snapshot, state.drafts[0].snapshot)
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'w')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(['Keep this original inline draft'], getline(1, '$'))
-    RevueSend
+    ReviewSend
     call assert_equal([], g:calls)
     call assert_equal(g:a.snapshot, revue#session#Inspect(g:id).drafts[0].snapshot)
     call revue#session#Close()
@@ -72,86 +72,86 @@ try
     " Composer return restores its original file, side and cursor after a file switch.
     call win_gotoid(state.basewin)
     call cursor(3, 4)
-    RevueComment
+    ReviewComment
     call setline(1, 'Keep this original inline draft')
     let editor = win_getid()
     call win_gotoid(state.headwin)
-    RevueNextFile
+    ReviewNextFile
     call assert_equal('other.vim', b:revue_file)
     call win_gotoid(editor)
-    RevueClose
+    ReviewClose
     call assert_equal('completion.vim', b:revue_file)
     call assert_equal('base', b:revue_side)
     call assert_equal([3, 4], [line('.'), col('.')])
     " Refresh sees B while A's source and draft stay frozen.
     let g:latest = deepcopy(g:b)
     let previous = win_getid()
-    RevueRefresh
+    ReviewRefresh
     let state = revue#session#Inspect(g:id)
     call assert_equal(previous, win_getid())
     call assert_equal(g:a.snapshot, state.snapshot.snapshot)
     call assert_equal(g:b.snapshot, state.latest_comparison)
     call assert_match('historical', &statusline)
-    call assert_match('RevueLatest', join(getbufline(state.tree, 1, '$'), "\n"))
-    RevueComparisons
+    call assert_match('ReviewLatest', join(getbufline(state.tree, 1, '$'), "\n"))
+    ReviewComparisons
     call assert_match('comparison-b', join(getline(1, '$'), "\n"))
     call search('\[latest\]', 'w')
-    RevueOpenComparison
+    ReviewOpenComparison
     call assert_equal(g:b.snapshot, b:revue_comparison)
     call assert_equal('renamed.vim', b:revue_file)
     call assert_match('comparison-b renamed.vim', getline(1))
     call assert_match('base-b', getwinvar(revue#session#Inspect(g:id).basewin, '&statusline'))
     call cursor(6, 2)
-    RevuePreviousComparison
+    ReviewPreviousComparison
     call assert_equal(g:a.snapshot, b:revue_comparison)
     call assert_equal('completion.vim', b:revue_file)
     call assert_match(g:a.snapshot, getline(1))
-    RevueLatest
+    ReviewLatest
     call assert_equal([6, 2], [line('.'), col('.')])
     " Source positions/caches cannot collide even when backend file IDs repeat.
     call assert_equal(3, len(g:reads))
-    RevuePreviousComparison
+    ReviewPreviousComparison
     call assert_equal(3, len(g:reads))
     call win_gotoid(revue#session#Inspect(g:id).headwin)
     call cursor(3, 1)
-    RevueThread
-    RevueNextMessage
+    ReviewThread
+    ReviewNextMessage
     let selected = revue#discussion#Selected(revue#session#Inspect(g:id), line('.'))
-    RevueReply
+    ReviewReply
     call setline(1, 'Reply to the original thread')
     let replywin = win_getid()
     " The original discussion window can be manually closed while composing.
     call win_gotoid(revue#session#Inspect(g:id).panelwin)
     close
     call win_gotoid(replywin)
-    RevueLatest
+    ReviewLatest
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call win_gotoid(replywin)
-    RevueClose
+    ReviewClose
     call assert_equal(g:a.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_equal(selected.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-    RevueActivity
+    ReviewActivity
     call search('## Pending · reply', 'w')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(['Reply to the original thread'], getline(1, '$'))
     " Reply remains targeted by thread identity even though B is the latest source.
-    RevueSend
+    ReviewSend
     call assert_equal(1, len(g:calls))
     call assert_equal(g:a.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     " A stale inline draft cannot be published while either A or B is displayed.
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'w')
-    RevueOpenOperation
-    RevueSend
+    ReviewOpenOperation
+    ReviewSend
     call assert_equal(1, len(g:calls))
     let olddraft = deepcopy(revue#session#Inspect(g:id).drafts[0])
-    RevueLatest
+    ReviewLatest
     call assert_equal(olddraft, revue#session#Inspect(g:id).drafts[0])
     " A delayed file response from B must not overwrite a return to A.
     let g:defer = 1
-    RevueNextFile
+    ReviewNextFile
     call assert_equal(1, len(g:requests_pending))
-    RevuePreviousComparison
+    ReviewPreviousComparison
     let active = win_getid()
     let pending = remove(g:requests_pending, 0)
     call pending.Done({'ok': 1, 'data': Contents(pending.request)})
@@ -159,7 +159,7 @@ try
     call assert_equal(g:a.snapshot, b:revue_comparison)
     call assert_match(g:a.snapshot, getline(1))
     let g:defer = 0
-    RevueLatest
+    ReviewLatest
     " B second file was not cached from the discarded stale callback; load it now.
     if !empty(g:requests_pending)
       let pending = remove(g:requests_pending, 0)
@@ -171,13 +171,13 @@ try
     let g:latest.snapshot = 'empty-comparison'
     let g:latest.head = 'empty-head'
     let g:latest.files = []
-    RevueRefresh
-    RevueLatest
+    ReviewRefresh
+    ReviewLatest
     let state = revue#session#Inspect(g:id)
     call assert_equal(-1, state.index)
     call assert_equal(['No changed files in this comparison.'], getbufline(state.head, 1, '$'))
     call assert_match('empty-head', getwinvar(state.headwin, '&statusline'))
-    RevuePreviousComparison
+    ReviewPreviousComparison
     call assert_equal(g:b.snapshot, b:revue_comparison)
     call assert_equal(olddraft, revue#session#Inspect(g:id).drafts[0])
     let disk = json_decode(join(readfile(revue#session#Inspect(g:id).draftpath), "\n"))

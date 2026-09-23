@@ -88,7 +88,7 @@ function! SelectStage(id) abort
   for [row, id] in items(state.batchrows)
     if id ==# a:id
       call cursor(str2nr(row), 1)
-      RevueToggleDraft
+      ReviewToggleDraft
       return
     endif
   endfor
@@ -105,46 +105,46 @@ try
   call assert_false(empty(revue#stage#Availability(denied)), 'empty backend reason must still deny private staging')
   if g:phase == 1
     call Source()
-    RevueFileComment
+    ReviewFileComment
     call setline(1, 'Review the whole completion file.')
-    RevueClose
+    ReviewClose
     call Source()
-    RevueReply
+    ReviewReply
     call setline(1, 'Please preserve prefix matching.')
-    RevueClose
+    ReviewClose
     call Source()
-    RevueSuggest
-    RevueClose
+    ReviewSuggest
+    ReviewClose
     call feedkeys("1\<CR>", 't')
-    RevueReview
+    ReviewReview
     call setline(1, 'Keep this decision for later publication.')
-    RevueClose
+    ReviewClose
     let drafts = revue#session#Inspect(g:id).drafts
     call assert_match('review decisions', revue#stage#Error(StageSnapshot(), [drafts[-1]], revue#stage#Binding(StageSnapshot())))
-    RevueStageBatch
+    ReviewStageBatch
     for item in drafts[:2] | call SelectStage(item.id) | endfor
     call assert_match('Saved one at a time', join(getline(1, '$'), "\n"))
-    RevueSendBatch
+    ReviewSendBatch
     call AwaitStage()
     let batch = PrivateBatch()
     call assert_equal('unknown', batch.state)
     call assert_equal(['unknown', 'waiting', 'waiting', 'waiting'], map(copy(batch.steps), {_, s -> s.state}))
     call assert_equal(1, g:server.writes)
-    RevueUnpackBatch
+    ReviewUnpackBatch
     call assert_equal(batch.id, PrivateBatch().id)
-    RevueRefresh
-    RevuePending
+    ReviewRefresh
+    ReviewPending
     call cursor(5, 1)
-    RevuePublishPending
+    ReviewPublishPending
     call assert_equal('batch', b:revue_view, 'publication surfaces uncertain creation')
     call assert_equal(batch.id, revue#session#Inspect(g:id).batchid)
   elseif g:phase == 2
     let batch = PrivateBatch()
     call assert_equal('unknown', batch.state)
     let g:fixture.snapshot.capabilities.stage_batch.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     call revue#session#Batch(batch.id)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call AwaitStage()
     call assert_equal(1, len(g:calls))
     call assert_equal(1, g:calls[0].reconcile)
@@ -152,34 +152,34 @@ try
     call assert_equal('7', PrivateBatch().pending_review)
     call assert_equal(1, g:server.writes)
     let g:fixture.snapshot.capabilities.stage_batch.enabled = 1
-    RevueRefresh
-    RevueSendBatch
+    ReviewRefresh
+    ReviewSendBatch
     call AwaitStage()
     call assert_equal(['accepted', 'accepted', 'failed', 'waiting'], map(copy(PrivateBatch().steps), {_, s -> s.state}))
     call assert_equal(2, g:server.writes)
     let saved = PrivateBatch().items[0].id
-    RevueUnpackBatch
+    ReviewUnpackBatch
     call assert_equal({}, PrivateBatch())
     let remaining = revue#session#Inspect(g:id).drafts
     call assert_equal(-1, index(map(copy(remaining), {_, d -> d.id}), saved))
     call assert_equal(['review', 'reply', 'comment'], map(copy(remaining), {_, d -> d.kind}))
     call assert_match('Keep this decision', remaining[0].body)
     let g:mode = 'bad-last'
-    RevueStageBatch
+    ReviewStageBatch
     for item in remaining[1:] | call SelectStage(item.id) | endfor
-    RevueSendBatch
+    ReviewSendBatch
     call AwaitStage()
     call assert_equal(['accepted', 'unknown'], map(copy(PrivateBatch().steps), {_, s -> s.state}))
     call assert_equal(4, g:server.writes)
     call assert_match('another private review', PrivateBatch().error)
-    RevueUnpackBatch
+    ReviewUnpackBatch
     call assert_equal('unknown', PrivateBatch().state)
   elseif g:phase == 3
     call assert_equal('unknown', PrivateBatch().state)
     let g:fixture.snapshot.capabilities.stage_batch.enabled = 0
-    RevueRefresh
-    RevueStageBatch
-    RevueCheckReceipt
+    ReviewRefresh
+    ReviewStageBatch
+    ReviewCheckReceipt
     call AwaitStage()
     call assert_equal({}, PrivateBatch())
     call assert_equal(1, len(g:calls))
@@ -195,34 +195,34 @@ try
   else
     let baseline = g:server.writes
     call Source()
-    RevueFileComment
+    ReviewFileComment
     call setline(1, 'A second whole-file observation.')
-    RevueClose
+    ReviewClose
     call Source()
-    RevueReply
+    ReviewReply
     call setline(1, 'A second reply for this discussion.')
-    RevueClose
+    ReviewClose
     let drafts = revue#session#Inspect(g:id).drafts
-    RevueStageBatch
+    ReviewStageBatch
     for item in drafts[1:] | call SelectStage(item.id) | endfor
     let g:mode = 'disk-fail'
-    RevueSendBatch
+    ReviewSendBatch
     call AwaitStage()
     call assert_equal(baseline + 1, g:server.writes, 'receipt persistence failure stops before the next item')
     call assert_equal(['unknown', 'waiting'], map(copy(PrivateBatch().steps), {_, s -> s.state}))
     call assert_match('local receipt persistence failed', PrivateBatch().error)
     call delete(revue#session#Inspect(g:id).draftpath . '.lock', 'd')
     let g:mode = 'fail-reply'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call AwaitStage()
     call assert_equal(['accepted', 'waiting'], map(copy(PrivateBatch().steps), {_, s -> s.state}))
     call assert_equal(baseline + 1, g:server.writes, 'receipt check does not save a waiting item')
-    RevueSendBatch
+    ReviewSendBatch
     call AwaitStage()
     call assert_equal(['accepted', 'failed'], map(copy(PrivateBatch().steps), {_, s -> s.state}))
     let child = PrivateBatch().steps[1].draft.id
     let g:mode = 'ok'
-    RevueSendBatch
+    ReviewSendBatch
     call AwaitStage()
     call assert_equal({}, PrivateBatch())
     call assert_equal(child, g:calls[-1].draft.id, 'known failure resumes the same unsaved operation')

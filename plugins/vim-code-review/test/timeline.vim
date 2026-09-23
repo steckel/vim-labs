@@ -36,56 +36,56 @@ endfunction
 try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'timeline', 'review': 'review', 'snapshot': g:fixture.snapshot, 'Request': function('TimelineHost')}, 0)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, 'Keep this unsent draft')
-  RevueClose
-  RevueTimeline
+  ReviewClose
+  ReviewTimeline
   call assert_match('Loading history', join(getline(1, '$'), "\n"))
   call g:pending[-1].Done({'ok': 1, 'data': Page(['b', 'c'], '', 'older')})
   call assert_equal(2, len(revue#session#Inspect(g:id).timeline.items))
   call TimelinePick('c')
-  RevueCopyEventLink
+  ReviewCopyEventLink
   call assert_equal('https://example.test/event/c', getreg('"'))
-  RevueOlderEvents
+  ReviewOlderEvents
   call assert_equal('older', g:pending[-1].request.cursor)
   call assert_equal('c', TimelineID())
   call g:pending[-1].Done({'ok': 0, 'error': 'Network unavailable'})
   call assert_equal('c', TimelineID())
   call assert_match('Network unavailable', join(getline(1, '$'), "\n"))
-  RevueOlderEvents
+  ReviewOlderEvents
   let cancelled = g:pending[-1]
-  RevueCancelTimeline
+  ReviewCancelTimeline
   call cancelled.Done({'ok': 1, 'data': Page(['a', 'b'], 'older', '')})
   call assert_equal(2, len(revue#session#Inspect(g:id).timeline.items))
-  RevueOlderEvents
+  ReviewOlderEvents
   let older = g:pending[-1]
-  RevueHelp
+  ReviewHelp
   let helpwin = win_getid()
   call older.Done({'ok': 1, 'data': Page(['a', 'b'], 'older', '')})
   call assert_equal(helpwin, win_getid())
   call assert_equal('help', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_equal('timeline', b:revue_view)
   call assert_equal('c', TimelineID())
   call assert_equal(['a', 'b', 'c'], map(copy(revue#session#Inspect(g:id).timeline.items), {_, e -> e.id}))
   call assert_match('Oldest available event reached', join(getline(1, '$'), "\n"))
-  RevueEventDiscussion
+  ReviewEventDiscussion
   call assert_equal('local-reply-2', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-  RevueReply
+  ReviewReply
   call setline(1, 'Reply from history; do not publish')
-  RevueClose
-  RevueClose
+  ReviewClose
+  ReviewClose
   call assert_equal('timeline', b:revue_view)
   call assert_equal('c', TimelineID())
-  RevueReloadTimeline
+  ReviewReloadTimeline
   let superseded = g:pending[-1]
-  RevueReloadTimeline
+  ReviewReloadTimeline
   call superseded.Done({'ok': 1, 'data': Page(['wrong'], '', '')})
   call assert_equal('c', TimelineID())
   call g:pending[-1].Done({'ok': 1, 'data': Page(['c', 'd'], '', 'next')})
   call assert_equal('c', TimelineID())
   call assert_equal(['c', 'd'], map(copy(revue#session#Inspect(g:id).timeline.items), {_, e -> e.id}))
-  RevueOlderEvents
+  ReviewOlderEvents
   call g:pending[-1].Done({'ok': 1, 'data': Page(['a'], 'WRONG', '')})
   call assert_equal(['c', 'd'], map(copy(revue#session#Inspect(g:id).timeline.items), {_, e -> e.id}))
   call assert_equal('c', TimelineID())

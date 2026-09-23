@@ -39,11 +39,11 @@ function! NavChoose(id) abort
   let choice = index(map(revue#session#ActionGuide(), {_, i -> i.id}), a:id) + 1
   call assert_true(choice > 0, a:id)
   call feedkeys(choice . "\<CR>", 't')
-  RevueReviewActions
+  ReviewReviewActions
 endfunction
 function! NavChanged(timer) abort
   let g:history[0].label = 'History refreshed while choosing a comparison'
-  RevueLoadHistory
+  ReviewLoadHistory
   call feedkeys(g:choice . "\<CR>", 't')
 endfunction
 try
@@ -55,8 +55,8 @@ try
   call NavChoose('conversation')
   call assert_match(g:a.body, join(getline(1, '$'), "\n"))
   call assert_equal({}, NavItem('conversation'))
-  RevueRefresh
-  RevueClose
+  ReviewRefresh
+  ReviewClose
   call assert_equal(state.headwin, win_getid())
   call assert_equal(3, line('.'))
   call assert_equal('gV', NavItem('comparisons').key)
@@ -75,12 +75,12 @@ try
   call cursor(1, 1)
   call assert_equal('Select a file first.', NavItem('viewed').reason)
   call win_gotoid(state.headwin)
-  RevueComment
+  ReviewComment
   call setline(1, 'Retain this draft on the first comparison.')
   call assert_equal('', NavItem('draft-comparison').reason)
-  RevueClose
+  ReviewClose
   let g:latest = deepcopy(g:b)
-  RevueRefresh
+  ReviewRefresh
   call assert_equal('', NavItem('latest').reason)
   call NavChoose('comparisons')
   call assert_equal('comparisons', b:revue_view)
@@ -97,34 +97,34 @@ try
   call assert_equal(g:a.snapshot, b:revue_comparison)
   call NavChoose('latest')
   call assert_equal(g:b.snapshot, b:revue_comparison)
-  RevueThreads
+  ReviewThreads
   call cursor(1, 1)
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   call assert_equal('local-reply-1', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   call assert_equal('', NavItem('thread-comparison').reason)
   call NavChoose('thread-comparison')
   call assert_equal(g:a.snapshot, b:revue_comparison)
   call assert_equal(g:a.threads[0].line, line('.'))
-  RevueThread
-  RevueNextMessage
+  ReviewThread
+  ReviewNextMessage
   call assert_match('does not provide the original comparison', NavItem('thread-comparison').reason)
-  RevueClose
-  RevueLatest
+  ReviewClose
+  ReviewLatest
   let g:latest.capabilities.comparisons = {'enabled': 1}
-  RevueRefresh
+  ReviewRefresh
   let g:history = [revue#comparisons#Reference(g:a), {'snapshot': 'uncached', 'base': 'old-base', 'head': 'old-head'}]
   call NavChoose('comparisons')
   call search('\[historical\]', 'w')
   let g:choice = index(map(revue#session#ActionGuide(), {_, i -> i.id}), 'open-comparison') + 1
   call timer_start(80, function('NavChanged'))
-  RevueReviewActions
+  ReviewReviewActions
   call assert_equal('comparisons', b:revue_view, 'reference changes during a menu must not switch source')
   call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
   " Uncached references remain visible but explain why they cannot be opened.
   let g:latest.capabilities.comparisons = {'enabled': 0}
-  RevueRefresh
-  RevueComparisons
+  ReviewRefresh
+  ReviewComparisons
   call search('Comparison uncached', 'w')
   call assert_match('cannot retrieve', NavItem('open-comparison').reason)
   call NavChoose('open-comparison')
@@ -133,7 +133,7 @@ try
   call assert_equal(g:a.snapshot, state.drafts[0].snapshot)
   call assert_equal('Retain this draft on the first comparison.', state.drafts[0].body)
   let g:latest.capabilities.comparisons = {'enabled': 0, 'refresh_on_open': 1, 'reason': 'History access changed'}
-  RevueRefresh
+  ReviewRefresh
   call assert_equal('History access changed', NavItem('previous-comparison').reason)
   call search('Comparison ' . g:a.snapshot, 'w')
   call assert_equal('History access changed', NavItem('open-comparison').reason)
@@ -150,7 +150,7 @@ try
   call assert_equal('', NavItem('conversation').key)
   call NavChoose('conversation')
   call assert_equal('conversation', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_equal('', NavItem('viewed').key)
   call assert_equal('', NavItem('verify-viewed').reason)
   let g:unavailable = 0

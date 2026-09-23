@@ -25,9 +25,9 @@ if empty(prop_type_get('RevueCommentAnchor'))
   })
 endif
 
-command! -nargs=? Revue call revue#review#Open(empty(<q-args>) ? {} : {base: <q-args>})
-command! -nargs=? -bang RevueLocal call revue#backends#local#Open(<q-args>, <bang>0)
-command! -nargs=0 RevueLocalReviews call revue#backends#local#List()
-command! -nargs=1 RevueLocalResume call revue#backends#local#Resume(<q-args>)
+command! -nargs=? Review call revue#review#Open(empty(<q-args>) ? {} : {base: <q-args>})
+command! -nargs=? -bang ReviewLocal call revue#backends#local#Open(<q-args>, <bang>0)
+command! -nargs=0 ReviewLocalReviews call revue#backends#local#List()
+command! -nargs=1 ReviewLocalResume call revue#backends#local#Resume(<q-args>)
 
 nnoremap <silent> <Plug>(revue-open) <Cmd>call revue#review#Open()<CR>

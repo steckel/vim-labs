@@ -31,7 +31,7 @@ function! DiscardHost(request, Done) abort
   endif
 endfunction
 function! SelectPending() abort
-  RevuePending
+  ReviewPending
   call cursor(5, 1)
 endfunction
 try
@@ -39,64 +39,64 @@ try
   if filereadable($REVUE_CAP_STORE . '/frozen-discard')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/frozen-discard')[0])
     call SelectPending()
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal(frozen.id, b:revue_draft, 'publication must reuse uncertain discard')
     call assert_false(&modifiable)
-    RevueDiscard
-    RevuePendingBase
+    ReviewDiscard
+    ReviewPendingBase
     let g:fixture.snapshot.capabilities.discard_pending.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(frozen, revue#session#Inspect(g:id).drafts[-1])
     call assert_equal(1, g:calls[-1].reconcile)
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call assert_equal('Keep this local draft', revue#session#Inspect(g:id).drafts[0].body)
     call assert_match('No pending reviews', join(getline(1, '$'), "\n"))
     call assert_match('absent for the verified actor', revue#session#Inspect(g:id).last_outcome)
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Keep this local draft')
-    RevueClose
+    ReviewClose
     call SelectPending()
     let g:fixture.snapshot.capabilities.discard_pending.enabled = 0
-    RevueRefresh
-    RevueDiscardPending
+    ReviewRefresh
+    ReviewDiscardPending
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     let g:fixture.snapshot.capabilities.discard_pending.enabled = 1
-    RevueRefresh
+    ReviewRefresh
     call cursor(5, 1)
-    RevueDiscardPending
+    ReviewDiscardPending
     call assert_equal('preview', b:revue_view)
     let preview = join(getline(1, '$'), "\n")
     call assert_match('Private browser summary', preview)
     call assert_match('Private comment to remove', preview)
     call assert_notmatch('Keep this local draft', preview)
-    RevueClose
+    ReviewClose
     call assert_false(&modifiable)
     let g:fixture.snapshot.pending_reviews.items[0].version = 'changed'
     let g:fixture.snapshot.pending_reviews.items[0].body = 'Browser edited summary'
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal([], g:calls)
-    RevuePreview
+    ReviewPreview
     call assert_match('Current pending review changed', join(getline(1, '$'), "\n"))
     call assert_match('Browser edited summary', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueDiscard
+    ReviewClose
+    ReviewDiscard
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call SelectPending()
-    RevueDiscardPending
-    RevueClose
+    ReviewDiscardPending
+    ReviewClose
     let g:mode = 'reject'
-    RevueSend
+    ReviewSend
     call assert_equal('failed', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_false(&modifiable)
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state)
     call assert_equal('Browser edited summary', frozen.pending_body)

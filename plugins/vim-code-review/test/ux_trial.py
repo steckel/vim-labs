@@ -19,11 +19,11 @@ with tempfile.TemporaryDirectory(prefix='revue-trial-test-') as directory:
 try
   let source = [win_getid(), bufnr(), getpos('.')]
   call feedkeys("1\<CR>", 't')
-  RevueThread
+  ReviewThread
   call cursor(1,1)
-  RevueNextMessage
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   let selected = revue#discussion#Selected(revue#session#Inspect(g:trial_session), line('.'))
   call assert_equal('local-reply-2', selected.comment)
   call cursor(selected.body_start, match(getline(selected.body_start), 'Please cover') + 1)
@@ -32,11 +32,11 @@ try
   call revue#session#Quote(1)
   let draft = join(getline(1,'$'), "\n")
   call assert_match('> Please cover an empty query too', draft)
-  RevuePreview
-  RevueClose
+  ReviewPreview
+  ReviewClose
   call assert_equal(draft, join(getline(1,'$'), "\n"))
-  RevueClose
-  RevueClose
+  ReviewClose
+  ReviewClose
   call assert_equal(source, [win_getid(), bufnr(), getpos('.')])
   call assert_equal([], g:trial_write_attempts)
   call TrialSave()

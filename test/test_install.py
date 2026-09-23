@@ -109,13 +109,15 @@ class InstallTest(unittest.TestCase):
             "let g:vim9_mcp_autoconnect = v:false\n"
             f"execute 'set packpath=' . fnameescape({quote(self.vim)})\n"
             "packloadall\n"
-            "let found = [exists(':Revue'), exists(':Reviews'), exists(':VimMCPStatus')]\n"
+            "let found = [exists(':Review'), exists(':ReviewLocal'), exists(':ReviewLocalReviews'), "
+            "exists(':ReviewLocalResume'), exists(':Reviews'), exists(':VimMCPStatus')]\n"
+            "let obsolete = getcompletion('Revue', 'command')\n"
             "let counts = map(['plugin/revue.vim', 'plugin/reviewhub.vim', 'plugin/vim9mcp.vim'], "
             "{_, path -> len(globpath(&runtimepath, path, 0, 1))})\n"
-            f"call writefile([json_encode({{'commands': found, 'copies': counts}})], {quote(result)})\nqa!\n")
+            f"call writefile([json_encode({{'commands': found, 'obsolete': obsolete, 'copies': counts}})], {quote(result)})\nqa!\n")
         subprocess.run(['vim', '-Nu', 'NONE', '-i', 'NONE', '-n', '-es', '-S', str(script)],
                        check=True, timeout=20)
-        self.assertEqual({'commands': [2, 2, 2], 'copies': [1, 1, 1]}, json.loads(result.read_text()))
+        self.assertEqual({'commands': [2] * 6, 'obsolete': [], 'copies': [1, 1, 1]}, json.loads(result.read_text()))
 
 
 if __name__ == '__main__':

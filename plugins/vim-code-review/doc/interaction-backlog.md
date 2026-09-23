@@ -57,7 +57,7 @@ Priorities express product value, not estimated implementation time.
 | Separate track · P2 | UX-25c · finish integration | Start/resume one agent → answer inline → review resulting capture | Start/resume UI and supervisor fixture core exist; prepared-run abandonment is implemented; real adapter and extended iteration validation remain |
 
 UX-22 participant inspection is now implemented for local feedback and supported
-GitHub published inline/general comments. `:RevueReactions` shows people grouped
+GitHub published inline/general comments. `:ReviewReactions` shows people grouped
 by reaction below the existing choices, including explicit unavailable-account
 counts. Viewing names never mutates; identity-unknown readers can still inspect
 names. This uses the existing lazy read and introduces no new default key.
@@ -146,7 +146,7 @@ GitHub loading defect.
 
 - **Status:** core implemented. Explicit commands/menu actions now send in
   place; a bodyless composer and second confirmation are absent from the normal
-  path. Unknown state exposes `:RevueCheckThreadState` and a message-menu
+  path. Unknown state exposes `:ReviewCheckThreadState` and a message-menu
   action; opposite commands cannot replace uncertain intent. Activity retains
   read-only details. Existing resolution semantics and expanded cards remain.
   This supersedes UX-09's historical confirmation requirement.
@@ -156,8 +156,8 @@ GitHub loading defect.
   documents an explicit Resolve conversation action followed by resolved state
   and collapse. [Official workflow](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/commenting-on-a-pull-request).
   We adopt the direct action; our expanded-thread decision remains in force.
-- **Entry:** selected thread's action guide or explicit `:RevueResolve` /
-  `:RevueReopen`. Multiple threads at the source anchor require selecting the
+- **Entry:** selected thread's action guide or explicit `:ReviewResolve` /
+  `:ReviewReopen`. Multiple threads at the source anchor require selecting the
   exact thread first. Opening the guide, navigating or inspecting state never
   mutates anything.
 - **Desired flow:** show the available verb and target; deliberate activation
@@ -228,7 +228,7 @@ GitHub loading defect.
   a deterministic executable exercises the supervisor and real MCP over restart.
   [Runtime contract and evidence](participant-runtime.md). Real Codex execution,
   and a longer human-reply/result-capture cycle remain; do not claim the whole
-  UX-25c story complete. `:RevueAbandonRun` now supplies the missing recovery
+  UX-25c story complete. `:ReviewAbandonRun` now supplies the missing recovery
   action for outdated preparations, with exact-run receipts and active-process
   protection. Abandonment evidence (local evidence: `../output/abandon-run/validation.json`).
 - **Entry:** a saved assignment → explicit start/resume action for one adapter.
@@ -318,7 +318,7 @@ Unfamiliar-user observation below remains open.
 #### UX-18d — Put discussion ahead of technical metadata
 
 **Implemented core:** outcome reading now abbreviates IDs, keeps dates compact
-and moves run identifiers into `:RevueAssignmentDetails`. The read-only details
+and moves run identifiers into `:ReviewAssignmentDetails`. The read-only details
 view retains full metadata as yankable text; delayed outcome refresh does not
 replace it or steal focus. Close restores the selected outcome and position.
 In the paired 80×24 fixture, the first original body moves row 15 → 14 and the
@@ -746,7 +746,7 @@ nested discussions and tail-latency measurement remain.
 UX-13/15/16 cut B now keeps pending comments inside complete paged threads,
 including private replies to published roots. Pending shows loaded/total counts
 and the exact private actor/review identity. Full-record verification through
-`:RevueVerifyPending` is required before publication, discard or summary editing;
+`:ReviewVerifyPending` is required before publication, discard or summary editing;
 individual loaded comments keep their own native permissions and versions.
 No read or verification sends feedback. A private connection that cannot account
 for its full comment count falls back to complete opening instead of claiming
@@ -779,8 +779,8 @@ latency budgets and remaining narrow-layout refinement are still open.
 
 ### Explicit draft-move follow-up
 
-UX-12c now provides `:RevueReanchorDraft`, source/file selection through
-`:RevueReanchorHere`, an old/new preview, explicit acceptance and cancellation.
+UX-12c now provides `:ReviewReanchorDraft`, source/file selection through
+`:ReviewReanchorHere`, an old/new preview, explicit acceptance and cancellation.
 Line/file drafts and suggestions retain their exact body. Acceptance creates a
 fresh local submission ID and records `reanchored_from`; saving failure restores
 the original. Tentative selections do not survive restart or change the outbox.
@@ -802,7 +802,7 @@ broader historical-source recovery and participant/MCP work remain separate.
 
 ### Exact saved-message deletion follow-up
 
-UX-21a now provides `:RevueDeleteMessage`, a compact read-only preview, explicit
+UX-21a now provides `:ReviewDeleteMessage`, a compact read-only preview, explicit
 Send confirmation, per-message actor/scope/version checks, receipt validation,
 and neighboring-message return. Existing operations for the same message are
 reopened rather than duplicated. Unknown acceptance remains frozen across
@@ -842,7 +842,7 @@ remain; published deletion is still UX-21a.
 
 ### Message-history audit correction and presentation follow-up
 
-UX-21b already has `:RevueMessageHistory`, reload/older/cancel, explicit scope
+UX-21b already has `:ReviewMessageHistory`, reload/older/cancel, explicit scope
 and exact-message return. Local history derives before/after diffs from retained
 edit events. Supported public GitHub comments and published review summaries
 use native edit content, which may include creation and is not promised to be
@@ -866,8 +866,8 @@ private-message deletion and revision redaction.
 ### Reviewed-comparison navigation follow-up
 
 UX-20b now accepts an event's `reviewed_comparison` and `comparison_provenance`,
-displays its endpoints and opens it through `:RevueEventComparison`.
-`:RevueReturnContext` restores the same event and offset. Conflicting references,
+displays its endpoints and opens it through `:ReviewEventComparison`.
+`:ReviewReturnContext` restores the same event and offset. Conflicting references,
 missing provenance, head mismatch and one-file excerpts cannot masquerade as a
 full reviewed comparison. Changed history/selection prevents late navigation.
 
@@ -890,7 +890,7 @@ UX-06d exposes the existing Conversation view as “Read review purpose and
 general conversation” in the action guide, using the configured key. It is
 omitted inside that view. Source position survives visiting it and refreshing.
 
-UX-20c now offers `:RevueLoadEventDiscussion` for unloaded history targets.
+UX-20c now offers `:ReviewLoadEventDiscussion` for unloaded history targets.
 Each action loads one complete feedback page and opens the exact message if
 found; another page requires another action. Cancellation, errors, exhaustion,
 changed selection, reloaded history and draft typing preserve context. Closing
@@ -937,13 +937,13 @@ Raw discussion text, native copying and existing reply drafts are preserved.
 Preview cards omit formatting markers; source virtual rows retain them because
 Vim cannot assign separate highlights within one virtual row. GitHub link reads
 use the exact message's rendered HTML, including resolved relative hrefs;
-non-GitHub backends can supply explicit destination mappings. :RevueBodyURLs
+non-GitHub backends can supply explicit destination mappings. :ReviewBodyURLs
 retains the previous address finder for code examples and reference definitions.
 
 Real Vim coverage includes a root plus three replies, second-reply attribution,
 Unicode wrapping, raw copy, nested quoted suggestions and stale/late link reads.
 Six provider tests cover rendered HTML, membership, versions and destination
-filtering. :RevueQuoteAttributed has no default key; plain Q is unchanged unless
+filtering. :ReviewQuoteAttributed has no default key; plain Q is unchanged unless
 g:revue_quote_attribution is enabled. Captures are in output/rich-replies/.
 The full Revue suite, 72 provider tests and companion integration/restart pass.
 Authenticated read-only GitHub checks verified a public conversation message's
@@ -954,7 +954,7 @@ context, with private root-deletion scope verification still outstanding.
 
 ### Individual private-comment deletion follow-up
 
-UX-08b/21 now has `:RevueDeletePendingComment`: select a private message in the
+UX-08b/21 now has `:ReviewDeletePendingComment`: select a private message in the
 pending inventory or discussion, inspect its full body and exact target, then
 confirm from a read-only operation. Stale bodies, ownership, publication and
 permission changes prevent submission. Unknown receipts freeze the same target
@@ -971,7 +971,7 @@ Earlier statements that individual deletion is entirely missing are historical.
 
 ### Private staging follow-up
 
-UX-08a now has :RevueStageBatch: select/edit/preview local feedback, then confirm
+UX-08a now has :ReviewStageBatch: select/edit/preview local feedback, then confirm
 private delivery to a new or existing review. File comments, replies, inline
 comments and suggestions use individual private-save steps. Review decisions
 remain in the outbox. Each receipt is saved before continuing; failures retain
@@ -990,7 +990,7 @@ No live GitHub staging was performed. Individual private-comment deletion is nex
 
 ### Contextual action discovery follow-up
 
-UX-06a/07 now has `:RevueReviewActions` / `<LocalLeader>a`, with grouped Read,
+UX-06a/07 now has `:ReviewReviewActions` / `<LocalLeader>a`, with grouped Read,
 Write and Review outcomes, configured keys, target identity and permission
 reasons. Existing per-message actions remain separate. Composer choices make
 local saving, private-save preparation and publication distinct; pending target
@@ -1099,7 +1099,7 @@ focused discussion at 80); they are not OS screenshots or live GitHub writes.
 ### Native private-reply follow-up
 
 UX-08 now supports private replies to existing review threads. Reply/Quote on a
-private root or selected private message stays private. `:RevueReplyPending`
+private root or selected private message stays private. `:ReviewReplyPending`
 explicitly targets private delivery on a published discussion, and SavePending
 can convert an editable ordinary reply while preserving its body. Existing text
 and delivery mode are retained; frozen/incompatible replies reopen without quote
@@ -1126,8 +1126,8 @@ is a real isolated Vim ANSI render showing the quote, suggestion and private rep
 
 ### Native pending creation and addition follow-up
 
-UX-08 now supports `:RevueStartPending` with an optional summary and
-`:RevueSavePending` from inline, suggestion and whole-file drafts. An inline
+UX-08 now supports `:ReviewStartPending` with an optional summary and
+`:ReviewSavePending` from inline, suggestion and whole-file drafts. An inline
 first comment can create a native review; later comments become new threads in
 the selected review. Whole-file feedback requires an existing native review.
 Preview states create versus add and the exact target. Send explicitly confirms
@@ -1160,8 +1160,8 @@ They render actual Vim output and are not OS screenshots.
 ### Native private-editing follow-up
 
 UX-08 now edits private summaries and existing inline comments/replies through
-the shared message editor. `:RevueEditPending` targets the selected inventory
-summary/comment; `:RevueEditMessage` works in the focused private discussion.
+the shared message editor. `:ReviewEditPending` targets the selected inventory
+summary/comment; `:ReviewEditMessage` works in the focused private discussion.
 The editor retains original/current/proposed text, permits clearing the private
 summary, and explicitly confirms Save privately. Private creation/addition was implemented in the later follow-up above.
 
@@ -1190,7 +1190,7 @@ suite, all 51 provider tests and companion integration/restart pass.
 
 ### Native pending-review discard follow-up
 
-UX-08 now includes `:RevueDiscardPending`. It opens a full preview of the selected
+UX-08 now includes `:ReviewDiscardPending`. It opens a full preview of the selected
 review's private summary and comments, then a separate read-only operation with
 an explicit Delete confirmation. Local outbox feedback remains intact. Published
 reviews are ineligible. A prepared publication or discard for the same review is
@@ -1217,15 +1217,15 @@ integration/restart pass. Creation/addition and private editing follow-ups are r
 
 UX-08 now supports discovering and resuming an existing GitHub pending review.
 The backend verifies the actor, loads private comments through the review-specific
-endpoint and merges IDs once into the discussion. `:RevuePending` exposes summary,
+endpoint and merges IDs once into the discussion. `:ReviewPending` exposes summary,
 source and private comments; Enter opens the exact loaded message. Unknown actor
 or failed/incomplete reads are unavailable, not zero pending reviews. Private root
 threads do not offer published reply/resolve operations before publication.
 
-`:RevuePublishPending [event]` prepares a durable publication draft for that
+`:ReviewPublishPending [event]` prepares a durable publication draft for that
 native review. Its preview includes the frozen private comment set and editable
 summary, excluding local outbox drafts. Changed server contents preserve the
-preparation and appear separately in preview. `:RevuePendingBase` explicitly
+preparation and appear separately in preview. `:ReviewPendingBase` explicitly
 accepts refreshed contents/comparison without replacing the user's summary.
 The backend checks actor, native ID, summary/comment version, exact previewed
 comment set, source refs and decision before submission. An older reviewed source
@@ -1251,9 +1251,9 @@ ANSI captures, not macOS screenshots.
 
 ### Reaction interaction follow-up
 
-UX-22 now has count footers and a lazy per-message chooser. `:RevueReactions`
+UX-22 now has count footers and a lazy per-message chooser. `:ReviewReactions`
 loads complete choices, counts and the current actor's state; `[you]` is distinct
-from total count. Enter / `:RevueReact` prepares an explicit add/remove operation
+from total count. Enter / `:ReviewReact` prepares an explicit add/remove operation
 for the exact message, followed by normal preview/confirmation. Missing actor
 state is unavailable, not a claim that the actor has no reactions. Counts remain
 outside copy/quote bodies. Read errors, navigation during loading, Help, return,
@@ -1281,11 +1281,11 @@ columns. PNGs render captured terminal ANSI cells, not macOS screenshots.
 
 ### Published-message editing follow-up
 
-UX-21 now has an editing interaction for exact messages. `:RevueEditMessage`
+UX-21 now has an editing interaction for exact messages. `:ReviewEditMessage`
 requires explicit backend/message permission and an opaque version. Original
 and proposed bodies persist in an outbox operation. Reopening retains edits;
 preview shows original/current/proposed text. Refresh or provider rejection
-preserves replacement text. `:RevueEditBase` explicitly accepts a loaded newer
+preserves replacement text. `:ReviewEditBase` explicitly accepts a loaded newer
 base with confirmation; no automatic merge or retry overwrites external edits.
 Malformed acceptance freezes the operation; restart reconciliation only reads
 receipts. Activity identifies the exact message, and accepted edits keep its ID.
@@ -1319,7 +1319,7 @@ editing is recorded above.
 
 ### Body URL interaction follow-up
 
-UX-17 now provides `:RevueBodyLinks` and a message-action entry. A numbered
+UX-17 now provides `:ReviewBodyLinks` and a message-action entry. A numbered
 chooser exposes explicit HTTP(S) destinations and raw-body line numbers, then
 offers open/copy. It deduplicates addresses, preserves balanced path delimiters,
 and retains message/source position. Cancellation has no effect; selection or
@@ -1345,7 +1345,7 @@ identity guards. Isolated real Vim captures at 80/120 columns are in
 
 ### Suggestion creation follow-up
 
-UX-19 now has an implemented core: `:RevueSuggest`, explicit Ex ranges and a
+UX-19 now has an implemented core: `:ReviewSuggest`, explicit Ex ranges and a
 configurable visual Plug action seed a proposal from immutable head-side source.
 There is no default mapping. Same-anchor invocation reopens existing edits.
 The fenced replacement preserves indentation, Unicode and literal backticks;
@@ -1367,7 +1367,7 @@ capture also drove explicit wrapping of virtual composer context (UX-06).
 
 ### File discussion follow-up
 
-UX-11 now has an implemented core. `:RevueFileComment` and `:RevueFileThreads`
+UX-11 now has an implemented core. `:ReviewFileComment` and `:ReviewFileThreads`
 work on a selected file-list row or managed source pane, with no default key.
 The new draft kind retains path/old path/comparison and has no line or side.
 Creation does not load source, enabling binary/deleted/unavailable files.
@@ -1419,7 +1419,7 @@ at 80/120 columns are in `output/unchanged-lines/`; these are not OS screenshots
 
 ### Local revision continuity follow-up
 
-The capture/history foundation of UX-12/25 is now implemented. `:RevueCapture`
+The capture/history foundation of UX-12/25 is now implemented. `:ReviewCapture`
 prepares a bodyless operation with explicit saved-file/untracked settings;
 Send confirms it. Capture uses the review's bound workspace and fixed original
 base. It retains source history and one shared conversation, offers the next
@@ -1431,7 +1431,7 @@ missing untracked-file settings to excluded.
 Historical local views refresh conversation on navigation. Verified unchanged
 source-side hashes and stable original file paths retain placement; other line
 anchors show original context as outdated. This does not implement heuristic
-line-shift remapping. `:RevueThreadComparison` follows the original reference to
+line-shift remapping. `:ReviewThreadComparison` follows the original reference to
 the exact file/side/line with native fold opening and existing async focus guards.
 Missing target files leave the current view intact. Replies/resolution remain
 available against retained comparison IDs, while new feedback requires latest.
@@ -1536,7 +1536,7 @@ Implementation in one layer does not establish an end-to-end workflow.
 | Story | Current evidence / remaining work |
 | --- | --- |
 | UX-01 | Implemented: explicit panel modes, mode-specific maps/commands, cleared row targets, Help-safe refresh. Regression tests reproduce the old failure and verify it is gone. |
-| UX-02 | Implemented: buffer commands/Plug actions, configurable and disabled defaults, native diff motions and backward search, native composer macro key. Verified in `test/interactions.vim`; legacy `:Revue` unchanged. |
+| UX-02 | Implemented: buffer commands/Plug actions, configurable and disabled defaults, native diff motions and backward search, native composer macro key. Verified in `test/interactions.vim`; legacy `:Review` unchanged. |
 | UX-03 | Managed return implemented: origin comparison/file/side/message identity and view restoration, including recreated source/discussion windows after manual closure. Arbitrary split topology is not reconstructed. Backend reference retrieval now supports original-comparison recovery after restarting Vim; unavailable objects remain explicit. |
 | UX-04 | Implemented core: focused thread, overlap chooser, range-aware reply, real-text message selection, message motions and context menu. Further styling follows UX-17. |
 | UX-05 | Implemented core: whole/selected and optional attributed quotes, append to existing editable reply, body/register copy, permalink actions and semantic rendered links. Raw text and exact-message versions are retained. Private/enterprise rendered links remain fixture-covered. |
@@ -1656,8 +1656,8 @@ card styling. It should feel like entering the discussion, not abandoning it.
   message is accepted conversation, even though it has not gone to a website.
 - New UI must work with the local backend and a fixture without GitHub installed.
   Unsupported backend actions are omitted or explained, never simulated.
-- Keep the legacy `:Revue` callback/clipboard flow working. It currently differs
-  from the rich `:RevueLocal`/provider session; do not silently redefine its keys
+- Keep the legacy `:Review` callback/clipboard flow working. It currently differs
+  from the rich `:ReviewLocal`/provider session; do not silently redefine its keys
   or promise that its batch export is already a remote review transaction.
 
 **Held decisions:** unified versus side-by-side; global comments visibility;
@@ -1727,7 +1727,7 @@ edit source files, or alter the user's active Vim session.
 | Source Enter | Unmapped | Individual inline toggle remains removed |
 | Threads → Help → targets/reply command | Empty targets; reply command absent | Earlier targeting defect fixed |
 | Help → Refresh | Still Help | View mode preserved |
-| Invoke `RevueResolve` | E117: unknown `revue#session#ChangeThreadState` | Exposed action unfinished, UX-09 |
+| Invoke `ReviewResolve` | E117: unknown `revue#session#ChangeThreadState` | Exposed action unfinished, UX-09 |
 | Unknown single → receipt-read failure with `unknown: 0` | Becomes `failed`; composer editable | Prior uncertainty lost, UX-26 |
 | Unknown batch → same read failure → Unpack | Becomes `failed`; contained draft restored | Frozen uncertain payload can change, UX-26 |
 
@@ -1833,7 +1833,7 @@ invalid-context action. Existing thread jump/reply still works. Reference S06.
 **Original gap, now fixed in rich sessions:** native diff motions, reverse
 search, and composer macro recording were overridden. Commands/Plug mappings,
 configurable defaults and context help now exist. Short actions in immutable
-review panes are deliberate; users can disable them. Legacy `:Revue` is unchanged.
+review panes are deliberate; users can disable them. Legacy `:Review` is unchanged.
 
 **Implement:** commands and `<Plug>` actions, configurable default mappings, and
 a no-default-maps option. Keep distinct hunk and discussion navigation. Context
@@ -1927,7 +1927,7 @@ failure leaves text visibly unsaved; closing/reopening restores text and target.
 Successful local acceptance says Saved rather than Sent. W01–W02.
 
 **UX-06d — Implemented overview route:** Conversation is a Read outcome in
-the contextual guide. `C` / `:RevueConversation` opens the description and
+the contextual guide. `C` / `:ReviewConversation` opens the description and
 requested reviewers. The guide uses the actual binding and omits the redundant
 action inside that view. Custom/disabled keys and source return after refresh
 are verified. No new overview panel was added. S02/S06.
@@ -2052,16 +2052,16 @@ general-conversation alternative. W01, G14.
 **Status:** Backend history and restart recovery implemented; full story partial.
 
 **Behavior:** refresh retains displayed code and reports newer comparisons.
-`:RevueComparisons` loads backend history when supported and shows saved refs,
+`:ReviewComparisons` loads backend history when supported and shows saved refs,
 with viewing/latest/historical labels. Enter retrieves/opens a comparison;
-`:RevueLatest` and `:RevuePreviousComparison` navigate; `:RevueLoadHistory` retries
+`:ReviewLatest` and `:ReviewPreviousComparison` navigate; `:ReviewLoadHistory` retries
 the inventory. Human-readable commit titles and abbreviated source IDs lead;
-`:RevueCopyComparison` copies full reference JSON to a Vim register.
+`:ReviewCopyComparison` copies full reference JSON to a Vim register.
 
 The locked atomic outbox persists comparison references, ordering, selected
 file/side and view positions, with no source or published conversation mirror.
-Startup shows backend current code. `:RevueResumeComparison` explicitly retrieves
-the last saved selection; `:RevueDraftComparison` retrieves an open draft's
+Startup shows backend current code. `:ReviewResumeComparison` explicitly retrieves
+the last saved selection; `:ReviewDraftComparison` retrieves an open draft's
 original comparison. IDs and ranges never move automatically. Missing or
 mismatched historical data retains source and draft text and reports an error.
 Late results cannot replace a later selection, steal an edited draft's focus,
@@ -2113,7 +2113,7 @@ References R01–R04 remain applicable.
 
 **Status:** Core implemented and regression-tested; large-review tuning remains.
 
-**Current code:** `:RevueFileFilter` accepts path/status/threads/viewed fields
+**Current code:** `:ReviewFileFilter` accepts path/status/threads/viewed fields
 with literal values and completion. Active summary, visible count, empty result,
 clear and labeled reveals exist. Next/previous use the visible inventory.
 
@@ -2134,7 +2134,7 @@ results are explicit; revealing a referenced hidden file is deliberate; source
 
 **Status:** Local core implemented and regression-tested. Remote sync is optional.
 
-**Current code:** `:RevueViewed`, `:RevueUnviewed`, `:RevueVerifyViewed` and local
+**Current code:** `:ReviewViewed`, `:ReviewUnviewed`, `:ReviewVerifyViewed` and local
 content-fingerprint storage exist. Both compared sides contribute; unavailable
 content cannot establish a new acknowledgement. Basic mark/unmark and session
 close/reopen work in the audit probe.
@@ -2157,8 +2157,8 @@ hide inline discussions or force navigation in the first implementation. F03.
 
 **Status:** Core implemented and regression-tested; rich excerpts and scale tuning remain.
 
-**Current code:** `:RevueDiscussions [text]`, `:RevueDiscussionFilter` and
-`:RevueOpenDiscussion` expose a real-text index across loaded threads, general
+**Current code:** `:ReviewDiscussions [text]`, `:ReviewDiscussionFilter` and
+`:ReviewOpenDiscussion` expose a real-text index across loaded threads, general
 conversation and local drafts. Full bodies participate in case-insensitive
 literal search; display uses excerpts. Path/author/kind/state/anchor filters,
 thread/message counts and stable targets exist. Normal `/` searches displayed
@@ -2184,18 +2184,18 @@ messages explicitly. Filtering never resolves or deletes anything. S06, G11.
 **Status:** Core implemented as a Vim adaptation. Live provider-write validation
 and notification synchronization are not claimed.
 
-**Behavior:** `:RevueActivity` lists durable terminal outcomes, operation IDs,
+**Behavior:** `:ReviewActivity` lists durable terminal outcomes, operation IDs,
 comparison/target references, receipts (including batch items), and refresh
-status/errors. `:RevueOpenOperation` reopens retained pending work; it never
-reposts historical outcomes. `:RevueCopyReceipt` copies the selected receipt.
+status/errors. `:ReviewOpenOperation` reopens retained pending work; it never
+reposts historical outcomes. `:ReviewCopyReceipt` copies the selected receipt.
 Accepted writes and successful refreshes are separate facts: refreshing does
 not establish that an accepted message is visible. Known failures remain
 editable; uncertain operations remain frozen and recover through receipts.
 
 Manual refresh adds `[new]` markers in cards and real-text discussion and
-per-file counts. `:RevueNextUnread` moves to a stable message ID, including
-threads outside the current file inventory. `:RevueMarkRead` acknowledges one
-message; `:RevueMarkThreadRead` acknowledges a selected thread. Overlapping
+per-file counts. `:ReviewNextUnread` moves to a stable message ID, including
+threads outside the current file inventory. `:ReviewMarkRead` acknowledges one
+message; `:ReviewMarkThreadRead` acknowledges a selected thread. Overlapping
 source targets require selection. Refresh itself never marks messages read or
 steals the selected message/composer focus. Missing IDs cannot support markers.
 The first snapshot is the baseline; later additions, including the user's own
@@ -2266,9 +2266,9 @@ See the current gap audit for evidence and priority.
 **Original gap:** source panes, sidebar and bottom panels competed for space;
 tall virtual rows clipped, and card text had no reading-width preference.
 
-**Current behavior:** `RevueFocus` / `RevueRestoreLayout` maximize/restore the
+**Current behavior:** `ReviewFocus` / `ReviewRestoreLayout` maximize/restore the
 current pane without destroying window IDs. Narrow terminals focus new views
-automatically; users may opt out. `RevueFiles` hides/reopens the sidebar. Source
+automatically; users may opt out. `ReviewFiles` hides/reopens the sidebar. Source
 and discussion origins carry through reply/preview and closing restores sizes.
 Cards wrap at a configurable reading limit while backgrounds span the pane.
 Full-width focused discussion scrolls/searches as real text. Other windows keep
@@ -2295,7 +2295,7 @@ no source coordinates or reply targets change. A02, F02.
 
 **Status:** Core implemented and verified with isolated Vim and backend fixtures.
 
-**Implemented:** `:RevueSuggest` accepts a line/range or configured visual action,
+**Implemented:** `:ReviewSuggest` accepts a line/range or configured visual action,
 seeds exact immutable head-side text, and reopens existing drafts at the same
 anchor without replacing edits. The draft remains an ordinary comment carrying
 `suggestion: true`; explanation can surround its single closed suggestion fence.

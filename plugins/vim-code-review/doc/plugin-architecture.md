@@ -26,7 +26,7 @@ GitHub objects. Planned Codex and Claude integrations will combine their runtime
 with shared local review storage and captured source. A review conversation is
 not the agent runtime's transcript; it must survive Vim and agent restarts.
 
-The existing internal local backend remains usable through `:RevueLocal` while
+The existing internal local backend remains usable through `:ReviewLocal` while
 agent integrations are built. It is an implementation building block, not a
 fourth counterparty or an additional package users must install. It continues
 to support standalone review and fixtures without requiring an agent.
@@ -138,7 +138,7 @@ in ordinary buffers. Its independent package name remains undecided. The live
 editor plugin/server `vim9-mcp` is separate from the code-review family. The
 assignment-scoped review MCP currently remains with the shared local machinery.
 
-Git/jj sources and file/clipboard export stay bundled. The existing `:Revue`
+Git/jj sources and file/clipboard export stay bundled. The existing `:Review`
 entry points remain available; packaging does not require a storage migration.
 The GitHub package keeps the working ReviewHub bridge and its native review
 semantics. Agent plugin extraction should reuse these contracts and the local
@@ -186,7 +186,7 @@ reply to every thread, and an agent claiming a fix is not reviewer resolution.
 For a local source, offer explicit comparisons such as HEAD versus the working
 tree, staged changes, or a chosen branch baseline. Capture the exact content
 used to build the diff. Include untracked files deliberately and identify
-whether unsaved buffers were included. Existing `:Revue` defaults should remain
+whether unsaved buffers were included. Existing `:Review` defaults should remain
 compatible during migration.
 
 A running agent must not make the review target drift invisibly. The displayed

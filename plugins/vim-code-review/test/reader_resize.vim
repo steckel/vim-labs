@@ -27,11 +27,11 @@ try
   let source_props = CardProperties(source)
   let generation = source.generation
   call assert_true(len(source_props)>10)
-  RevueThread
+  ReviewThread
   let reader = win_getid()
   call assert_equal(source_props,CardProperties(source),'Entering a tab must not repaint hidden source cards')
   call assert_match('local-reply-2',string(revue#session#Inspect(id).messagemap))
-  RevueClose
+  ReviewClose
   call assert_equal(source.headwin,win_getid())
   call assert_equal(source_width,winwidth(0))
   call assert_equal(source_view.lnum,line('.'))
@@ -41,7 +41,7 @@ try
   call assert_equal(0,revue#session#Inspect(id).defer_card_resize)
 
   " Native tab/window return must reflow the now-visible, unfocused panes.
-  RevueThread
+  ReviewThread
   let reader = win_getid()
   call win_gotoid(source.headwin)
   call assert_notequal(source_width,winwidth(0))
@@ -52,13 +52,13 @@ try
   call win_gotoid(reader)
   " Refreshing actual message data still updates hidden source annotations.
   let g:fixture.snapshot.threads[0].comments[2].body = 'Changed while the source tab is hidden: λ界'
-  RevueRefresh
+  ReviewRefresh
   call assert_equal(reader,win_getid())
   call assert_match('Changed while the source tab is hidden',join(getline(1,'$'),"\n"))
   let current = revue#session#Inspect(id)
   let cache = current.card_body_caches[g:fixture.snapshot.files[0].id . ':' . g:fixture.snapshot.threads[0].id]
   call assert_true(has_key(cache.items,sha256(g:fixture.snapshot.threads[0].comments[2].body)))
-  RevueClose
+  ReviewClose
   call assert_equal(source.headwin,win_getid())
   call assert_equal(g:fixture.content.head.lines,getline(1,'$'))
   call assert_equal(0,revue#session#Inspect(id).defer_card_resize)

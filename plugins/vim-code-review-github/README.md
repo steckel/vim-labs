@@ -41,8 +41,8 @@ Run `:Reviews`. The origin remote identifies the repository. You can also use
 `:ReviewOpen https://github.com/owner/repo/pull/123` from any directory.
 
 Signed-in reviews initially load up to 20 complete discussions and 50 general
-comments, plus all review summaries. `:RevueLoadMoreFeedback` loads the next
-page; `:RevueCancelFeedback` keeps existing feedback and ignores the pending
+comments, plus all review summaries. `:ReviewLoadMoreFeedback` loads the next
+page; `:ReviewCancelFeedback` keeps existing feedback and ignores the pending
 read. Every loaded thread includes all readable replies. Counts and filters
 describe loaded feedback, with separate totals/completeness. Private pending
 reviews and unavailable GraphQL paging retain the full reader. `R` in Revue
@@ -69,11 +69,11 @@ do not publish or resolve anything.
 | Conversation panel | `c` | Add a conversation message |
 | Revue | `s` | Compose a comment, approval, or request-changes review |
 | Composer | `:w` | Save draft locally |
-| Composer | Ctrl-S / `:RevueSend` | Confirm destination and publish the draft |
-| Composer | `:RevueDiscard` | Discard a local draft |
+| Composer | Ctrl-S / `:ReviewSend` | Confirm destination and publish the draft |
+| Composer | `:ReviewDiscard` | Discard a local draft |
 | Revue | `R` | Refresh discussions |
 | Read-only views | `q` | Close panel or review; drafts remain saved |
-| Composer | `:RevueClose` | Return while retaining text; native `q` is unchanged |
+| Composer | `:ReviewClose` | Return while retaining text; native `q` is unchanged |
 
 Write messages in the normal Vim editor. Draft text is saved as you edit and
 when leaving its buffer. Reopen a draft from Revue's file sidebar. A failed
@@ -82,7 +82,7 @@ again looks for a server receipt without reposting. Small invisible receipt
 markers are included in posted messages to support this recovery.
 
 If the PR changes, refresh reports that a new revision is available. Use
-`:RevueLatest` to inspect it, or `:RevueComparisons` to choose a retained version. Drafts retain the revision they were written against;
+`:ReviewLatest` to inspect it, or `:ReviewComparisons` to choose a retained version. Drafts retain the revision they were written against;
 new inline comments cannot be posted against a stale comparison.
 
 ## Configuration

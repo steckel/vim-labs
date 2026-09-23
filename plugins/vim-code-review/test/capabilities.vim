@@ -41,7 +41,7 @@ try
   call assert_equal([], g:requests)
   call assert_equal(composer, win_getid())
   call assert_match('Keep this text', revue#session#Inspect(id).drafts[-1].body)
-  RevueClose
+  ReviewClose
   " Object-specific rules may narrow, never widen the review's permission.
   let g:fixture.snapshot.threads[0].capabilities = {'reply': {'enabled': 0, 'reason': 'Thread is locked'}}
   call revue#session#Refresh()
@@ -84,7 +84,7 @@ try
     call assert_equal(frozen.id, g:requests[-1].draft.id)
     call assert_equal(frozen.body, g:requests[-1].draft.body)
     call assert_match('delivery still unknown', revue#session#Inspect(id).message)
-    RevueDiscard
+    ReviewDiscard
     call assert_equal(frozen.id, revue#session#Inspect(id).drafts[-1].id)
   endfor
   let g:receipt_error = ''

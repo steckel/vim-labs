@@ -94,7 +94,7 @@ endfunction
 function! revue#activity#View(session) abort
   let refresh = a:session.refresh_state
   let lines = ['# Review activity · ' . get(a:session.snapshot, 'display_id', a:session.snapshot.key),
-        \ ':RevueOpenOperation · :RevueCopyReceipt · :RevueNextUnread · :RevueClose',
+        \ ':ReviewOpenOperation · :ReviewCopyReceipt · :ReviewNextUnread · :ReviewClose',
         \ printf('%d retained outcomes · %d pending operations · %d new messages', len(a:session.activity), len(a:session.drafts), len(revue#activity#Unread(a:session))),
         \ 'Local delivery history; conversation content belongs to the review backend.',
         \ 'Last refresh: ' . get(refresh, 'status', 'not requested') . ' · ' . get(refresh, 'at', ''),
@@ -106,7 +106,7 @@ function! revue#activity#View(session) abort
     call add(view.lines, '')
     call add(view.lines, '## Pending · ' . draft.kind . ' · ' . draft.state)
     call add(view.lines, revue#activity#Target(draft))
-    call add(view.lines, 'Operation ' . draft.id . ' · :RevueOpenOperation to inspect')
+    call add(view.lines, 'Operation ' . draft.id . ' · :ReviewOpenOperation to inspect')
     let first = len(view.lines) - 2
     for row in range(first, len(view.lines)) | let view.operations[string(row)] = {'operation': draft.id, 'receipt': {}} | endfor
   endfor

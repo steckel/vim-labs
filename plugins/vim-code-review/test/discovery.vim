@@ -94,9 +94,9 @@ try
     call assert_equal('viewed', Progress(2))
     call assert_equal({}, State().filefilters, 'filters are session-local')
     call assert_equal({}, State().discussionfilters)
-    RevueViewed
+    ReviewViewed
     call assert_equal('viewed', Progress(0))
-    RevueUnviewed
+    ReviewUnviewed
     call assert_equal('unviewed', Progress(0))
     let disk = join(readfile(State().draftpath), "\n")
     call assert_notmatch('Earlier prose', disk)
@@ -105,152 +105,152 @@ try
   else
     call assert_equal(['', '', ''], [maparg('/', 'n'), maparg('?', 'n'), maparg('<CR>', 'n')])
     let source = win_getid()
-    RevueFileFilter path other file
+    ReviewFileFilter path other file
     call assert_equal([1], revue#discovery#Files(State()))
     call assert_equal([source, 0], [win_getid(), State().index])
-    RevueNextFile
+    ReviewNextFile
     call assert_equal(1, State().index)
-    RevueFileFilter status added
-    RevueFileFilter status invalid
+    ReviewFileFilter status added
+    ReviewFileFilter status invalid
     call assert_equal('added', State().filefilters.status)
-    RevueFileFilter clear
-    RevueFileFilter path old name
+    ReviewFileFilter clear
+    ReviewFileFilter path old name
     call assert_equal([2], revue#discovery#Files(State()), 'old rename path is searchable')
-    RevueFileFilter path [1]
+    ReviewFileFilter path [1]
     call assert_equal([2], revue#discovery#Files(State()), 'path text is literal, not a regex')
-    RevueFileFilter clear
-    RevueFileFilter threads resolved
+    ReviewFileFilter clear
+    ReviewFileFilter threads resolved
     call assert_equal([1], revue#discovery#Files(State()))
-    RevueFileFilter threads none
+    ReviewFileFilter threads none
     call assert_equal([2], revue#discovery#Files(State()))
-    RevueFileFilter threads unresolved
+    ReviewFileFilter threads unresolved
     call assert_equal([0], revue#discovery#Files(State()))
-    RevueFileFilter path no matches
+    ReviewFileFilter path no matches
     let before = State().index
-    RevueNextFile
+    ReviewNextFile
     call assert_equal(before, State().index)
     call assert_match('No files match', join(getbufline(State().tree, 1, '$'), "\n"))
-    RevueFileFilter clear
+    ReviewFileFilter clear
     call SelectFile(1)
-    RevueFileFilter status modified
+    ReviewFileFilter status modified
     call assert_equal(6, line('.'), 'disappearing tree target returns to inert header')
-    RevueOpen
+    ReviewOpenFile
     call assert_equal(before, State().index)
-    RevueDiscussions DEEP_NEEDLE
+    ReviewDiscussions DEEP_NEEDLE
     call assert_notmatch('\n', join(getline(1, '$'), ''), 'excerpts contain no embedded newlines/NUL cells')
     call SelectResult({'message': 'deep-reply'})
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal('deep-reply', State().messagemap[string(line('.'))].comment)
     call assert_equal('src/other file.vim', State().snapshot.files[State().index].path)
     call assert_true(has_key(State().revealed_files, 'other'))
-    RevueClose
+    ReviewClose
     call assert_equal('discussions', b:revue_view)
     call assert_equal('deep-reply', State().discoveryrows[string(line('.'))].message)
     " Insert another matching message above the selected reply, then remove it.
     call insert(g:latest.threads[1].comments, {'id': 'inserted', 'kind': 'comment', 'author': 'lee', 'created': '', 'body': 'DEEP_NEEDLE first'}, 0)
-    RevueRefresh
+    ReviewRefresh
     call assert_equal('deep-reply', State().discoveryrows[string(line('.'))].message)
     let g:latest.threads[1].comments[-1].body = 'No longer matches'
-    RevueRefresh
+    ReviewRefresh
     call assert_equal(1, line('.'), 'vanished selection must not retarget to a different message')
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal('discussions', b:revue_view)
-    RevueDiscussionFilter clear
+    ReviewDiscussionFilter clear
     call assert_notmatch('\n', join(getline(1, '$'), ''), 'multiline root excerpts are flattened without control cells')
     call SelectResult({'message': 'deep-reply'})
     let selected_author = g:latest.threads[1].comments[-1].author
-    execute 'RevueDiscussionFilter author ' . selected_author
+    execute 'ReviewDiscussionFilter author ' . selected_author
     call assert_equal('deep-reply', State().discoveryrows[string(line('.'))].message, 'filter retains matching message identity')
-    RevueDiscussionFilter author nobody
+    ReviewDiscussionFilter author nobody
     call assert_equal(1, line('.'))
     call assert_match('No discussions match', join(getline(1, '$'), "\n"))
-    RevueDiscussionFilter clear
-    RevueDiscussionFilter anchor outdated
+    ReviewDiscussionFilter clear
+    ReviewDiscussionFilter anchor outdated
     call SelectResult({'message': 'missing-root'})
     let before = State().index
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal(before, State().index, 'absent file discussion does not guess a source')
     call assert_equal('missing-thread', State().panelthread)
-    RevueClose
-    RevueDiscussionFilter clear
-    RevueDiscussionFilter anchor none
+    ReviewClose
+    ReviewDiscussionFilter clear
+    ReviewDiscussionFilter anchor none
     call SelectResult({'message': 'same', 'message_kind': 'review'})
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal('review', State().messagemap[string(line('.'))].kind, 'message namespace matters')
-    RevueClose
-    RevueHelp
-    call assert_equal(0, exists(':RevueOpenDiscussion'))
-    RevueRefresh
+    ReviewClose
+    ReviewHelp
+    call assert_equal(0, exists(':ReviewOpenDiscussion'))
+    ReviewRefresh
     call assert_equal('help', b:revue_view)
-    RevueClose
-    RevueDiscussionFilter clear
-    RevueFileFilter clear
+    ReviewClose
+    ReviewDiscussionFilter clear
+    ReviewFileFilter clear
     call assert_equal({}, State().revealed_files)
-    RevueDiscussions Frozen feedback
+    ReviewDiscussions Frozen feedback
     call SelectResult({'kind': 'draft', 'item': 'frozen-child'})
     call assert_equal('outdated', State().discoveryrows[string(line('.'))].anchor)
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal('batch', b:revue_view)
     call assert_equal('frozen-batch', State().batchid)
     call assert_equal('frozen-child', State().batchrows[string(line('.'))])
     call assert_false(&modifiable)
-    RevueClose
+    ReviewClose
     call assert_equal('frozen-child', State().discoveryrows[string(line('.'))].item)
-    RevueDiscussionFilter clear
+    ReviewDiscussionFilter clear
     " Save a reply and find its existing editable draft in the index.
     call revue#session#Threads('local-thread')
-    RevueReply
+    ReviewReply
     call setline(1, 'Retained draft body')
-    RevueClose
-    RevueDiscussions Retained draft
+    ReviewClose
+    ReviewDiscussions Retained draft
     call SelectResult({'kind': 'draft'})
     let draft_id = State().discoveryrows[string(line('.'))].draft
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal(['Retained draft body'], getline(1, '$'))
-    RevueClose
+    ReviewClose
     call assert_equal('discussions', b:revue_view)
     call assert_equal(draft_id, State().discoveryrows[string(line('.'))].draft)
     " Refresh with an open editor cannot move focus or discard unsaved typing.
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     let editor = win_getid()
     call setline(1, 'Changed unsaved draft')
     call revue#session#Refresh()
     call assert_equal(editor, win_getid())
     call assert_equal(['Changed unsaved draft'], getline(1, '$'))
-    RevueClose
-    RevueDiscussionFilter clear
+    ReviewClose
+    ReviewDiscussionFilter clear
     " Marking the selected tree file leaves source/focus alone.
     call SelectFile(0)
     let before = State().index
     let treewin = win_getid()
-    RevueViewed
+    ReviewViewed
     call assert_equal('viewed', Progress(0))
     call assert_equal([before, treewin], [State().index, win_getid()])
-    RevueFileFilter viewed unviewed
+    ReviewFileFilter viewed unviewed
     call assert_equal(6, line('.'), 'Viewed removes a filtered item without selecting a neighbor')
-    RevueFileFilter clear
+    ReviewFileFilter clear
     call SelectFile(1)
-    RevueViewed
+    ReviewViewed
     call assert_equal('viewed', Progress(1))
     " A deferred background request coalesces mark/unmark intent and never opens code.
     call SelectFile(2)
     let g:defer = 'renamed'
-    RevueViewed
+    ReviewViewed
     sleep 30m
     call assert_equal(1, len(g:pending))
     call assert_equal('checking', Progress(2))
-    RevueUnviewed
+    ReviewUnviewed
     let job = remove(g:pending, 0)
     call job.Done({'ok': 0, 'error': 'Offline'})
     call assert_equal('unavailable', Progress(2))
     call assert_equal(treewin, win_getid())
-    RevueViewed
+    ReviewViewed
     sleep 30m
     let job = remove(g:pending, 0)
-    RevueUnviewed
+    ReviewUnviewed
     call job.Done({'ok': 1, 'data': Content(job.request.snapshot, job.request.file)})
     call assert_equal('unviewed', Progress(2), 'late mark cannot override newer unmark')
-    RevueViewed
+    ReviewViewed
     call assert_equal('viewed', Progress(2))
     let g:defer = ''
     " Compare both sides and binary/newline metadata in the content model.
@@ -279,14 +279,14 @@ try
     call assert_equal('unviewed', revue#progress#State(model, cmp, f))
     " Switch while unchanged-file verification is delayed, then deliver the old read.
     let g:latest = deepcopy(g:b)
-    RevueRefresh
+    ReviewRefresh
     let g:defer = 'other'
-    RevueLatest
+    ReviewLatest
     sleep 30m
     call assert_equal('unviewed', Progress(0))
     call assert_equal('checking', Progress(1))
     call assert_equal(1, len(g:pending))
-    RevuePreviousComparison
+    ReviewPreviousComparison
     let oldwin = win_getid()
     let oldtext = getline(1, '$')
     let job = remove(g:pending, 0)
@@ -294,7 +294,7 @@ try
     call assert_equal([g:a.snapshot, oldwin, oldtext], [State().snapshot.snapshot, win_getid(), getline(1, '$')])
     let g:defer = ''
     sleep 30m
-    RevueLatest
+    ReviewLatest
     sleep 30m
     call assert_equal('viewed', Progress(1))
     call assert_equal('viewed', Progress(2))
@@ -308,7 +308,7 @@ try
   let g:id = revue#session#Open(fresh, function('DiscoveryHost'), 0)
   let g:defer = 'renamed'
   call SelectFile(2)
-  RevueViewed
+  ReviewViewed
   sleep 30m
   let job = remove(g:pending, 0)
   call revue#session#Close()

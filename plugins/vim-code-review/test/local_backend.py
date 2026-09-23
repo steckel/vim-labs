@@ -201,19 +201,19 @@ try
         \\ 'snapshot': g:config.snapshot, 'Request': function('revue#backends#local#Request', [g:config.review])}, 0)
   call WaitFor({-> !empty(revue#session#Inspect(g:id).loaded)})
   call assert_equal(50, len(revue#session#Inspect(g:id).snapshot.conversation))
-  RevueDiscussions Loaded feedback 50
+  ReviewDiscussions Loaded feedback 50
   call assert_match('No discussions match in loaded feedback', join(getline(1, '$'), "\\n"))
-  RevueLoadMoreFeedback
+  ReviewLoadMoreFeedback
   call WaitFor({-> !revue#session#Inspect(g:id).feedback_read.loading})
   call assert_equal('', revue#session#Inspect(g:id).feedback_read.error)
   call assert_equal(51, len(revue#session#Inspect(g:id).snapshot.conversation))
   call assert_match('Loaded feedback 50', join(getline(1, '$'), "\\n"))
   call assert_equal([], revue#activity#Unread(revue#session#Inspect(g:id)))
-  RevueRefresh
+  ReviewRefresh
   call WaitFor({-> !revue#session#Inspect(g:id).busy})
   call assert_equal('partial refresh', revue#session#Inspect(g:id).refresh_state.status)
   call assert_equal(51, len(revue#session#Inspect(g:id).snapshot.conversation))
-  RevueContinueRefresh
+  ReviewContinueRefresh
   call WaitFor({-> !revue#session#Inspect(g:id).busy})
   call assert_equal('succeeded', revue#session#Inspect(g:id).refresh_state.status)
   call assert_equal(51, len(revue#session#Inspect(g:id).snapshot.conversation))
@@ -1058,60 +1058,61 @@ try
   call assert_true(len(prop_list(2)) > 1)
   let g:original = session.snapshot.snapshot
   call writefile(['one', 'next version', 'three'], g:config.repo . '/code.py')
-  RevueCapture tracked
+  ReviewCapture tracked
   call assert_false(&modifiable)
   call assert_match('Exclude untracked', join(getline(1, '$'), "\n"))
-  RevueSend
+  ReviewSend
   call WaitFor({-> empty(revue#session#Inspect(g:id).drafts) && !revue#session#Inspect(g:id).busy})
   call assert_equal(g:original, revue#session#Inspect(g:id).snapshot.snapshot)
   let g:next = revue#session#Inspect(g:id).latest_comparison
   call assert_notequal(g:original, g:next)
-  RevueLatest
+  ReviewLatest
   call WaitFor({-> revue#session#Inspect(g:id).snapshot.snapshot ==# g:next && !empty(revue#session#Inspect(g:id).loaded)})
   call assert_equal(['one', 'next version', 'three'], getbufline(session.head, 1, '$'))
   call assert_true(revue#session#Inspect(g:id).snapshot.threads[0].outdated)
-  RevueThreads
+  ReviewThreads
   call assert_match('Original source:', join(getline(1, '$'), "\n"))
-  RevueThreadComparison
+  ReviewThreadComparison
   call WaitFor({-> revue#session#Inspect(g:id).snapshot.snapshot ==# g:original && !empty(revue#session#Inspect(g:id).loaded)})
   call assert_equal(['one', 'new', 'three'], getbufline(session.head, 1, '$'))
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(2, 1)
-  RevueReply
+  ReviewReply
   call setline(1, 'Reply after recapture from original source')
-  RevueSend
+  " Exercise accepted-reply storage explicitly; ReviewSend now saves pending.
+  call revue#session#Send()
   call WaitFor({-> empty(revue#session#Inspect(g:id).drafts) && !revue#session#Inspect(g:id).busy})
   call revue#session#OpenComparison(g:original)
   call WaitFor({-> len(revue#session#Inspect(g:id).snapshot.threads[0].comments) == 3})
   call revue#session#Threads()
   call cursor(1, 1)
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   let g:edit_target = deepcopy(revue#discussion#Selected(revue#session#Inspect(g:id), line('.')))
-  RevueEditMessage
+  ReviewEditMessage
   call assert_equal(g:edit_target.comment, revue#session#Inspect(g:id).drafts[-1].message)
   call setline(1, ['Updated existing reply through the local backend'])
   if line('$') > 1 | 2,$delete _ | endif
-  RevueSend
+  ReviewSend
   call WaitFor({-> empty(revue#session#Inspect(g:id).drafts) && !revue#session#Inspect(g:id).busy})
   call revue#session#OpenComparison(g:original)
   call WaitFor({-> revue#session#Inspect(g:id).snapshot.threads[0].comments[1].body ==# 'Updated existing reply through the local backend'})
   call assert_equal(g:edit_target.comment, revue#session#Inspect(g:id).snapshot.threads[0].comments[1].id)
   call revue#session#Threads()
   call cursor(1, 1)
-  RevueNextMessage
-  RevueReactions
+  ReviewNextMessage
+  ReviewReactions
   call WaitFor({-> !empty(get(revue#session#Inspect(g:id), 'reactionrows', {}))})
   for [row, item] in items(revue#session#Inspect(g:id).reactionrows)
     if item.id ==# 'heart' | call cursor(str2nr(row), 1) | break | endif
   endfor
-  RevueReact
+  ReviewReact
   call WaitFor({-> empty(revue#session#Inspect(g:id).drafts) && !revue#session#Inspect(g:id).busy && !empty(get(revue#session#Inspect(g:id), 'reactionrows', {}))})
   call assert_true(filter(copy(revue#session#Inspect(g:id).reaction_data.items), {_, r -> r.id ==# 'heart'})[0].mine)
   call assert_false(isdirectory(g:revue_local_dir))
   call revue#session#Close()
   let g:revue_local_dir = g:config.store
-  RevueLocalReviews
+  ReviewLocalReviews
   call WaitFor({-> exists('b:revue_local_reviews')})
   call assert_equal(g:config.review, b:revue_local_reviews[0].id)
   call cursor(3, 1)
@@ -1120,7 +1121,7 @@ try
   call assert_equal(g:config.review, revue#session#Inspect(t:revue_session).snapshot.backend.review)
   call revue#session#Close()
   execute 'cd ' . fnameescape(g:config.repo)
-  RevueLocal! HEAD
+  ReviewLocal! HEAD
   call WaitFor({-> exists('t:revue_session')})
   call assert_equal(4, len(revue#session#Inspect(t:revue_session).snapshot.files))
   call revue#session#Close()

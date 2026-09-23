@@ -29,12 +29,12 @@ try
     let id = revue#session#Open(g:fixture.snapshot, function('ChromeHost'), 0)
     let source = revue#session#Inspect(id).headwin
     call cursor(3, 1)
-    RevueThread
+    ReviewThread
     call cursor(1, 1)
-    RevueNextMessage
-    RevueNextMessage
+    ReviewNextMessage
+    ReviewNextMessage
     let message = revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment
-    RevueReplyPending
+    ReviewReplyPending
     call setline(1, ['A concise reply for the selected discussion.', '', 'Keep this exact text.'])
     let editor = win_getid()
     call revue#session#SaveDraft()
@@ -48,7 +48,7 @@ try
     endif
     call assert_true(len(filter(prop_list(1), {_, p -> p.type ==# 'RevueDraftContext'})) <= 6, 'compact context leaves room for the reply')
     let body = getline(1, '$')
-    RevuePreview
+    ReviewPreview
     call assert_equal('# Reply preview', getline(1))
     let header = search('Draft preview', 'nW')
     call assert_true(header > 0 && header <= 9, 'body starts near the top')
@@ -56,13 +56,13 @@ try
     call assert_true(details > search('Keep this exact text.', 'nW'))
     call assert_match('Actor: fixture:alex', join(getline(details, '$'), "\n"))
     call assert_match('only this draft', join(getline(1, header), "\n"))
-    RevueClose
+    ReviewClose
     call assert_equal(editor, win_getid())
     call assert_equal(body, getline(1, '$'))
-    RevueClose
+    ReviewClose
     call assert_equal(message, revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment)
-    RevueClose
-    RevueRestoreLayout
+    ReviewClose
+    ReviewRestoreLayout
     call assert_match('head', RenderBar(source))
     call assert_equal(g:fixture.content.head.lines, getbufline(winbufnr(source), 1, '$'))
     call revue#session#Close()
@@ -75,18 +75,18 @@ try
   let id = revue#session#Open(g:fixture.snapshot, function('ChromeHost'), 0)
   let source = revue#session#Inspect(id).headwin
   call cursor(3, 1)
-  RevueReplyPending
+  ReviewReplyPending
   call setline(1, 'Long-path reply remains editable.')
   let g:fixture.snapshot.capabilities.save_pending = {'enabled': 0, 'reason': 'Private permission changed'}
-  RevueRefresh
-  RevuePreview
+  ReviewRefresh
+  ReviewPreview
   let header = search('Draft preview', 'nW')
   call assert_match(escape(path, '\.*$^~[]'), join(getline(1, header), "\n"))
   call assert_true(search('Unavailable: Private permission changed', 'nW') < header)
-  RevueClose
+  ReviewClose
   call assert_equal('Long-path reply remains editable.', getline(1))
-  RevueClose
-  RevueRestoreLayout
+  ReviewClose
+  ReviewRestoreLayout
   call assert_match("quoted''%%{1+1}", getwinvar(source, '&statusline'))
   call assert_match('%%{1+1}', RenderBar(source))
   call revue#session#Close()

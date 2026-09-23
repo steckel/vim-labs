@@ -34,7 +34,7 @@ function! revue#edit#Error(snapshot, draft) abort
   if !get(rule, 'enabled', 0) | return get(rule, 'reason', 'Editing this message is unavailable.') | endif
   if empty(get(message, 'version', '')) | return 'This backend has not supplied a message version.' | endif
   if get(a:draft, 'expected_version', '') !=# message.version || get(a:draft, 'original_body', '') !=# message.body
-    return 'The message changed. Refresh and inspect :RevuePreview; :RevueEditBase accepts the current version without replacing your text.'
+    return 'The message changed. Refresh and inspect :ReviewPreview; :ReviewEditBase accepts the current version without replacing your text.'
   endif
   return ''
 endfunction

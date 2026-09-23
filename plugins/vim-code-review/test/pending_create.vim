@@ -41,100 +41,100 @@ try
   let g:id = revue#session#Open(g:fixture.snapshot, function('CreateHost'), 0)
   if filereadable($REVUE_CAP_STORE . '/file-add')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/file-add')[0])
-    RevuePending
+    ReviewPending
     call cursor(5, 1)
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal(frozen.id, b:revue_draft)
-    RevueSavePending
-    RevueDiscard
+    ReviewSavePending
+    ReviewDiscard
     call assert_equal(frozen, revue#session#Inspect(g:id).drafts[-1])
     let g:fixture.snapshot.capabilities.save_pending.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(g:calls))
     call assert_equal(1, g:calls[0].reconcile)
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call assert_equal('Keep local', revue#session#Inspect(g:id).drafts[0].body)
   elseif filereadable($REVUE_CAP_STORE . '/first-comment')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/first-comment')[0])
-    RevueStartPending
+    ReviewStartPending
     call assert_equal(frozen.id, b:revue_draft, 'start reuses uncertain first-comment creation')
-    RevueSavePending
+    ReviewSavePending
     call assert_equal(frozen, revue#session#Inspect(g:id).drafts[-1])
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call Source()
-    RevueStartPending
+    ReviewStartPending
     call assert_equal('pending', b:revue_view, 'existing native review resumes instead of creating another')
     call Source()
-    RevueComment
+    ReviewComment
     call setline(1, 'Additional private line feedback')
-    RevueSavePending
+    ReviewSavePending
     let draft = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('add', draft.pending_mode)
     call assert_equal('7', draft.pending_review)
     call assert_match('Add private feedback to pending review #7', join(getline(1, '$'), "\n"))
     call assert_match('cannot be published through a batch', revue#batch#Error(g:fixture.snapshot, [draft]))
-    RevueClose
+    ReviewClose
     let g:native.head = 'old-source'
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal(2, len(g:calls), 'different pending revision rejects addition')
     let g:native.head = g:fixture.snapshot.head
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal('add', g:calls[-1].draft.pending_mode)
     call Source()
-    RevueFileComment
+    ReviewFileComment
     call setline(1, 'Private whole-file concern')
-    RevueSavePending
+    ReviewSavePending
     call assert_match('Private whole-file concern', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state)
     call assert_false(has_key(frozen, 'start'))
     call writefile([json_encode(frozen)], $REVUE_CAP_STORE . '/file-add')
   else
     call Source()
-    RevueComment
+    ReviewComment
     call setline(1, 'Keep local')
-    RevueClose
-    RevueStartPending
+    ReviewClose
+    ReviewStartPending
     call assert_equal('start_pending', revue#session#Inspect(g:id).drafts[-1].kind)
     call assert_equal('', revue#capabilities#Error(g:fixture.snapshot, revue#session#Inspect(g:id).drafts[-1], 1))
-    RevueDiscard
+    ReviewDiscard
     call Source()
-    RevueComment
+    ReviewComment
     call setline(1, 'First private line feedback')
-    RevueSavePending
+    ReviewSavePending
     call assert_equal('preview', b:revue_view)
     call assert_match('Create a private pending review', join(getline(1, '$'), "\n"))
     call assert_notmatch('Keep local', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     let g:fixture.snapshot.pending_reviews.items = [g:native]
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal([], g:calls, 'browser-started review blocks creating another')
     let g:fixture.snapshot.pending_reviews.items = []
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state)
     call assert_equal('create', frozen.pending_mode)
     call writefile([json_encode(frozen)], $REVUE_CAP_STORE . '/first-comment')
-    RevueClose
+    ReviewClose
     let g:fixture.snapshot.pending_reviews.items = [g:native]
-    RevueRefresh
-    RevuePending
+    ReviewRefresh
+    ReviewPending
     call cursor(5, 1)
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal(frozen.id, b:revue_draft, 'unknown creation blocks publishing a newly visible review')
   endif
   call revue#session#Close()

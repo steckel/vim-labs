@@ -58,7 +58,7 @@ function! revue#capabilities#Rule(snapshot, draft) abort
     return {'enabled': 0, 'body_required': 0, 'reason': 'This backend does not support capturing a new local revision.'}
   endif
   if kind ==# 'file_comment' && !has_key(rules, kind)
-    return {'enabled': 0, 'body_required': 1, 'reason': 'This backend does not support file comments. Use :RevueConversation then :RevueNewConversation for review-wide feedback.'}
+    return {'enabled': 0, 'body_required': 1, 'reason': 'This backend does not support file comments. Use :ReviewConversation then :ReviewNewConversation for review-wide feedback.'}
   endif
   if has_key(a:snapshot, 'capabilities')
     let rule = extend(rule, get(rules, kind, {'enabled': 0, 'reason': 'This backend does not support ' . kind . '.'}))

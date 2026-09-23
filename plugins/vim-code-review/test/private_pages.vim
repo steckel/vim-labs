@@ -19,54 +19,54 @@ function! PickPrivate(message) abort
 endfunction
 try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'private-pages', 'review': '42', 'snapshot': g:fixture.first, 'Request': function('PrivatePageHost')}, 0)
-  RevuePending
+  ReviewPending
   call assert_match('2/4 comments loaded', join(getline(1, '$'), "\n"))
   call PickPrivate('102')
   let selected = deepcopy(revue#session#Inspect(g:id).pendingrows[string(line('.'))])
   call assert_match('VerifyPending', filter(revue#session#ActionGuide(), {_, a -> a.id ==# 'publish-pending'})[0].reason)
-  RevuePublishPending
+  ReviewPublishPending
   call assert_equal([], revue#session#Inspect(g:id).drafts, 'partial publication cannot create a draft')
-  RevueDiscardPending
+  ReviewDiscardPending
   call assert_equal([], revue#session#Inspect(g:id).drafts, 'partial discard cannot create a draft')
-  RevueLoadMoreFeedback
+  ReviewLoadMoreFeedback
   call g:requests[-1].Done({'ok': 1, 'data': g:fixture.page})
   call assert_equal('', revue#session#Inspect(g:id).feedback_read.error)
   call assert_equal(selected, revue#session#Inspect(g:id).pendingrows[string(line('.'))])
   call assert_match('4/4 comments loaded', join(getline(1, '$'), "\n"))
   call assert_false(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
   call PickPrivate('202')
-  RevueOpenPending
+  ReviewOpenPending
   call assert_equal('202', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-  RevueClose
+  ReviewClose
   call PickPrivate('202')
-  RevueVerifyPending
+  ReviewVerifyPending
   let cancelled = g:requests[-1]
-  RevueCancelVerifyPending
+  ReviewCancelVerifyPending
   call cancelled.Done({'ok': 1, 'data': g:fixture.verified})
   call assert_false(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
-  RevueVerifyPending
+  ReviewVerifyPending
   call g:requests[-1].Done({'ok': 0, 'error': 'No connection'})
   call assert_match('No connection', join(getline(1, '$'), "\n"))
-  RevueVerifyPending
+  ReviewVerifyPending
   let bad = deepcopy(g:fixture.verified)
   call remove(bad.review.comments, 0)
   call g:requests[-1].Done({'ok': 1, 'data': bad})
   call assert_false(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
-  RevueVerifyPending
+  ReviewVerifyPending
   let stale = g:requests[-1]
-  RevueRefresh
+  ReviewRefresh
   call g:requests[-1].Done({'ok': 1, 'data': g:fixture.first})
   call stale.Done({'ok': 1, 'data': g:fixture.verified})
   call assert_match('refresh changed', revue#session#Inspect(g:id).pending_verification.error)
   call assert_false(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
-  RevueCancelRefresh
-  RevueVerifyPending
-  RevueHelp
+  ReviewCancelRefresh
+  ReviewVerifyPending
+  ReviewHelp
   let helpwin = win_getid()
   call g:requests[-1].Done({'ok': 1, 'data': g:fixture.verified})
   call assert_equal(helpwin, win_getid())
   call assert_equal('help', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_true(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
   call assert_equal('202', get(get(revue#session#Inspect(g:id).pendingrows[string(line('.'))], 'target', {}), 'message', ''))
   " Full publication can now be prepared, without sending anything.

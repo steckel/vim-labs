@@ -45,71 +45,71 @@ try
   let g:id = revue#session#Open(g:fixture.snapshot, function('PendingHost'), 0)
   if filereadable($REVUE_CAP_STORE . '/pending-publication')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/pending-publication')[0])
-    RevuePending
+    ReviewPending
     call SelectPending(0)
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal(frozen.id, b:revue_draft)
     call assert_false(&modifiable)
     let g:fixture.snapshot.capabilities.submit_pending.enabled = 0
-    RevueRefresh
-    RevuePendingBase
-    RevueDiscard
+    ReviewRefresh
+    ReviewPendingBase
+    ReviewDiscard
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(frozen, revue#session#Inspect(g:id).drafts[-1])
     call assert_equal(1, g:calls[-1].reconcile)
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts), 'local outbox draft was not published')
     call assert_equal('Still only local', revue#session#Inspect(g:id).drafts[0].body)
     call assert_match('No pending reviews', join(getline(1, '$'), "\n"))
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Still only local')
-    RevueClose
-    RevuePending
+    ReviewClose
+    ReviewPending
     call assert_match('Private reviews · saved on backend', join(getline(1, '$'), "\n"))
     call assert_match('Not published', join(getline(1, '$'), "\n"))
     call assert_match('Browser summary', join(getline(1, '$'), "\n"))
     call SelectPending(1)
-    RevueOpenPending
+    ReviewOpenPending
     call assert_equal(g:comment.message, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
     call assert_match('Pending review', getline('.'))
-    RevueClose
+    ReviewClose
     call assert_equal('pending', b:revue_view)
     call SelectPending(0)
-    RevuePublishPending APPROVE
+    ReviewPublishPending APPROVE
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal('Browser summary', getline(1))
     call setline(1, 'My revised summary')
-    RevuePreview
+    ReviewPreview
     let preview = join(getline(1, '$'), "\n")
     call assert_match('Private browser-started feedback', preview)
     call assert_match('My revised summary', preview)
     call assert_notmatch('Still only local', preview)
-    RevueClose
+    ReviewClose
     let g:fixture.snapshot.pending_reviews.items[0].version = 'changed'
     let g:fixture.snapshot.pending_reviews.items[0].body = 'Concurrent browser summary'
     let g:fixture.snapshot.pending_reviews.items[0].comments[0].body = 'Concurrent private feedback'
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal([], g:calls)
-    RevuePreview
+    ReviewPreview
     call assert_match('Current pending review changed', join(getline(1, '$'), "\n"))
     call assert_match('Concurrent private feedback', join(getline(1, '$'), "\n"))
     call assert_match('Concurrent browser summary', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevuePendingBase
+    ReviewClose
+    ReviewPendingBase
     call assert_equal('My revised summary', getline(1))
     call assert_equal('changed', revue#session#Inspect(g:id).drafts[-1].expected_version)
     let g:mode = 'reject'
-    RevueSend
+    ReviewSend
     call assert_true(&modifiable)
     call assert_equal('failed', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     call assert_false(&modifiable)
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state)

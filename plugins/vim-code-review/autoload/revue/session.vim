@@ -217,7 +217,7 @@ function! s:RenderTree(session) abort
   " Aggregate once per redraw; scanning every message for every file makes
   " large reviews quadratic. These are transient counts, never stale caches.
   let thread_counts = {}
-  for thread in snapshot.threads
+  for thread in snapshot.threads + revue#local_feedback#Cards(a:session)
     let thread_counts[thread.path] = get(thread_counts, thread.path, 0) + 1
   endfor
   let unread_entries = revue#activity#Unread(a:session)
@@ -239,24 +239,26 @@ function! s:RenderTree(session) abort
     if has_key(a:session.revealed_files, file.id) | let lines[-1] .= ' [revealed]' | endif
     let a:session.rows[string(len(lines))] = {'kind': 'file', 'index': index, 'id': file.id}
   endfor
-  if empty(visible) | call add(lines, 'No files match. :RevueFileFilter clear') | endif
+  if empty(visible) | call add(lines, 'No files match. :ReviewFileFilter clear') | endif
   if a:session.index >= 0 && index(visible, a:session.index) < 0 | call add(lines, 'Current file is hidden by filters.') | endif
   call add(lines, 'File filters: ' . revue#discovery#Summary(a:session.filefilters))
   call extend(lines, revue#inventory#Lines(a:session, ['files']))
   if !empty(get(get(snapshot, 'feedback', {}), 'cursor', ''))
-    call add(lines, 'More feedback available · :RevueLoadMoreFeedback')
+    call add(lines, 'More feedback available · :ReviewLoadMoreFeedback')
     call add(lines, 'Thread counts and filters cover loaded feedback.')
   endif
   if checking | call add(lines, checking . ' files awaiting content verification.') | endif
-  call add(lines, 'All discussions · :RevueDiscussions')
+  call add(lines, 'All discussions · :ReviewDiscussions')
   let a:session.rows[string(len(lines))] = {'kind': 'discussions'}
   if has_key(snapshot, 'pending_reviews')
     call add(lines, 'Backend pending reviews · ' . (get(snapshot.pending_reviews, 'available', 0) ? len(get(snapshot.pending_reviews, 'items', [])) : 'unavailable'))
     let a:session.rows[string(len(lines))] = {'kind': 'pending'}
   endif
-  call extend(lines, ['', 'Drafts (' . len(a:session.drafts) . ')'])
+  let local = revue#local_feedback#Enabled(a:session)
+  call extend(lines, ['', (local ? 'Pending feedback / operations' : 'Drafts') . ' (' . len(a:session.drafts) . ')'])
+  if local | call add(lines, 'Collect feedback · :ReviewBatch · Markdown buffer') | endif
   for draft in a:session.drafts
-    call add(lines, '  ' . draft.state . ' · ' . revue#suggestion#Label(draft) . ' ' . (draft.kind ==# 'batch' ? '(' . len(draft.items) . ' drafts)' : get(draft, 'path', '')))
+    call add(lines, '  ' . (local && revue#local_feedback#IsFeedback(draft) && draft.state ==# 'draft' ? 'Pending' : draft.state) . ' · ' . revue#suggestion#Label(draft) . ' ' . (draft.kind ==# 'batch' ? '(' . len(draft.items) . ' drafts)' : get(draft, 'path', '')))
     let a:session.rows[string(len(lines))] = {'kind': 'draft', 'id': draft.id}
   endfor
   let buf = a:session.tree
@@ -264,7 +266,7 @@ function! s:RenderTree(session) abort
   call add(lines, 'Activity · ' . len(a:session.activity) . ' outcomes · ' . len(unread_entries) . ' new messages')
   let a:session.rows[string(len(lines))] = {'kind': 'activity'}
   if has_key(get(snapshot, 'capabilities', {}), 'timeline')
-    call add(lines, 'Review history · :RevueTimeline')
+    call add(lines, 'Review history · :ReviewTimeline')
     let a:session.rows[string(len(lines))] = {'kind': 'timeline'}
   endif
   call extend(lines, ['', s:Hint(buf, 'open') . ' open · ' . s:Hint(buf, 'next-file') . '/' . s:Hint(buf, 'previous-file') . ' file',
@@ -273,14 +275,14 @@ function! s:RenderTree(session) abort
   if !empty(get(a:session, 'last_outcome', '')) | call add(lines, a:session.last_outcome) | endif
   if !empty(get(a:session, 'persistence_error', '')) | call add(lines, 'NOT SAVED: ' . a:session.persistence_error) | endif
   if a:session.snapshot.snapshot !=# a:session.latest_comparison
-    call add(lines, 'Historical comparison · :RevueLatest opens latest')
+    call add(lines, 'Historical comparison · :ReviewLatest opens latest')
   endif
   if has_key(snapshot, 'context')
     call extend(lines, ['Original code context', revue#message#OneLine(get(snapshot.context, 'label', '')),
           \ revue#message#OneLine(get(snapshot.context, 'basis', '')),
-          \ empty(get(a:session, 'context_return', {})) ? ':RevueLatest opens latest' : ':RevueReturnContext returns'])
+          \ empty(get(a:session, 'context_return', {})) ? ':ReviewLatest opens latest' : ':ReviewReturnContext returns'])
   endif
-  call add(lines, ':RevueComparisons · ' . len(a:session.comparisons) . ' observed comparisons')
+  call add(lines, ':ReviewComparisons · ' . len(a:session.comparisons) . ' observed comparisons')
   for side in ['base', 'head']
     if revue#layout#Exists(get(a:session, side . 'win', 0))
       let path = a:session.index < 0 ? '(no changed files)' : snapshot.files[a:session.index].path
@@ -492,7 +494,7 @@ function! s:Annotations(session) abort
   let a:session.cardpanewidths = [s:PaneWidth(a:session, 'base'), s:PaneWidth(a:session, 'head')]
   for side in ['base', 'head']
     call sign_unplace(group, {'buffer': a:session[side]})
-    for name in ['RevueThread'] + revue#comments#Types()
+    for name in ['ReviewThread'] + revue#comments#Types()
       if !empty(prop_type_get(name))
         call prop_remove({'bufnr': a:session[side], 'type': name, 'all': 1}, 1, len(getbufline(a:session[side], 1, '$')))
       endif
@@ -506,7 +508,7 @@ function! s:Annotations(session) abort
   let sources = {'base': getbufline(a:session.base, 1, '$'), 'head': getbufline(a:session.head, 1, '$')}
   let previous_caches = get(a:session, 'card_body_caches', {})
   let a:session.card_body_caches = {}
-  for thread in a:session.snapshot.threads
+  for thread in a:session.snapshot.threads + revue#local_feedback#Cards(a:session)
     let file_thread = revue#anchor#IsFile(thread)
     if thread.path !=# file.path || thread.outdated || (!file_thread && thread.line <= 0) | continue | endif
     let side = file_thread ? get(get(a:session.loaded, 'head', {}), 'kind', '') ==# 'absent' ? 'base' : 'head' : thread.side
@@ -521,7 +523,7 @@ function! s:Annotations(session) abort
     let pending_state = revue#thread_state#Pending(a:session, thread.id)
     if !empty(pending_state) | let state_hint = revue#thread_state#Status(pending_state) | endif
     let context = {'lines': file_thread ? [] : sources[side], 'author': a:session.snapshot.author,
-          \ 'reply_hint': file_thread ? ':RevueFileThreads then :RevueReply' : s:Hint(buf, 'reply'),
+          \ 'reply_hint': file_thread ? ':ReviewFileThreads then :ReviewReply' : s:Hint(buf, 'reply'),
           \ 'thread_hint': s:Hint(buf, file_thread ? 'file-threads' : 'thread'), 'state_hint': state_hint,
           \ 'outer_width': s:PaneWidth(a:session, side), 'unread': a:session.read_state.unread}
     " At most eight displayed threads retain body rows; other threads still
@@ -625,6 +627,8 @@ function! s:Return(session, origin) abort
     if empty(origin.path) || get(b:, 'revue_file', '') ==# origin.path
       if get(origin, 'kind', '') ==# 'batch'
         call revue#session#Batch(get(origin, 'batch', ''))
+      elseif get(origin, 'kind', '') ==# 'feedback'
+        call revue#session#Feedback()
       endif
       if get(origin, 'kind', '') ==# 'threads' || get(origin, 'kind', '') !=# get(b:, 'revue_view', '')
         if get(origin, 'kind', '') ==# 'threads'
@@ -799,7 +803,7 @@ function! revue#session#Focus() abort
   if empty(session) | return | endif
   call revue#layout#Focus(session)
   call revue#session#ResizeCards()
-  call s:Notice(get(session, 'focus_win', 0) ? 'Focused reading. :RevueRestoreLayout restores split sizes; :RevueClose returns.' : 'Split sizes restored.')
+  call s:Notice(get(session, 'focus_win', 0) ? 'Focused reading. :ReviewRestoreLayout restores split sizes; :ReviewClose returns.' : 'Split sizes restored.')
 endfunction
 
 function! revue#session#RestoreLayout() abort
@@ -881,7 +885,7 @@ function! s:Panel(session, kind) abort
     if origin.buf != a:session.preview && (revue#layout#Narrow() || origin.focused) && get(a:session, 'focus_win', 0) != win_getid()
       call revue#layout#Focus(a:session)
     endif
-    call revue#layout#SetBar(win_getid(), ' Revue preview | :RevueClose returns to editing ')
+    call revue#layout#SetBar(win_getid(), ' Revue preview | :ReviewClose returns to editing ')
     call revue#maps#Apply('preview')
     return a:session.preview
   endif
@@ -911,7 +915,7 @@ function! s:Panel(session, kind) abort
   if get(b:, 'revue_view', '') !=# a:kind | let b:revue_markdown_cache = {} | endif
   let b:revue_view = a:kind
   call s:BufferName(a:kind)
-  call revue#layout#SetBar(win_getid(), ' Revue ' . a:kind . ' | ' . strpart(a:session.snapshot.base, 0, 8) . ' → ' . strpart(a:session.snapshot.head, 0, 8) . (has_key(a:session.snapshot, 'context') ? ' [original code context]' : a:session.snapshot.snapshot ==# a:session.latest_comparison ? ' [latest]' : ' [historical]') . ' | :RevueClose ')
+  call revue#layout#SetBar(win_getid(), ' Revue ' . a:kind . ' | ' . strpart(a:session.snapshot.base, 0, 8) . ' → ' . strpart(a:session.snapshot.head, 0, 8) . (has_key(a:session.snapshot, 'context') ? ' [original code context]' : a:session.snapshot.snapshot ==# a:session.latest_comparison ? ' [latest]' : ' [historical]') . ' | :ReviewClose ')
   call revue#maps#Apply(a:kind)
   augroup RevueMessageFocus
     autocmd! * <buffer>
@@ -952,7 +956,7 @@ function! revue#session#Conversation() abort
     call revue#discussion#Append(view, comment, '', index, session.read_state.unread, snapshot.author)
     let index += 1
   endfor
-  call extend(view.lines, ['', ':RevueNewConversation · :RevueReview · :RevueClose'])
+  call extend(view.lines, ['', ':ReviewNewConversation · :ReviewReview · :ReviewClose'])
   call s:Fill(s:Panel(session, 'conversation'), view.lines)
   let session.messagemap = view.messages
   call revue#markdown#View(session.panel, view)
@@ -1134,7 +1138,7 @@ function! s:FeedbackLoaded(id, serial, comparison, epoch, cursor, navigation, re
       else
         call s:Notice(empty(get(get(session.snapshot, 'feedback', {}), 'cursor', '')) ?
               \ 'Feedback loaded; this message is unavailable in this comparison. Use its event link or refresh.' :
-              \ 'This message is not on the loaded pages yet. :RevueLoadEventDiscussion loads the next page.')
+              \ 'This message is not on the loaded pages yet. :ReviewLoadEventDiscussion loads the next page.')
       endif
     endif
   endif
@@ -1242,10 +1246,10 @@ function! revue#session#Readiness() abort
   call revue#readiness#Init(session)
   let view = revue#readiness#View(session)
   let panel = s:Panel(session, 'readiness')
-  let view.lines[2] = s:Hint(panel, 'readiness-link') . ' opens details · ' . s:Hint(panel, 'copy-readiness-link') . ' copies link · :RevueCancelReadiness'
+  let view.lines[2] = s:Hint(panel, 'readiness-link') . ' opens details · ' . s:Hint(panel, 'copy-readiness-link') . ' copies link · :ReviewCancelReadiness'
   call s:Fill(panel, view.lines)
   let session.readinessrows = view.rows
-  call revue#layout#SetBar(win_getid(), ' Revue readiness | read-only observations | :RevueClose ')
+  call revue#layout#SetBar(win_getid(), ' Revue readiness | read-only observations | :ReviewClose ')
   if !session.readiness.requested | call revue#session#LoadReadiness(1) | endif
 endfunction
 
@@ -1320,7 +1324,7 @@ function! revue#session#Timeline() abort
   let view = revue#timeline#View(session)
   call s:Fill(s:Panel(session, 'timeline'), view.lines)
   let session.timelinerows = view.rows
-  call revue#layout#SetBar(win_getid(), ' Revue history | backend events | :RevueClose ')
+  call revue#layout#SetBar(win_getid(), ' Revue history | backend events | :ReviewClose ')
   if !empty(origin) | call s:RestoreOriginView(session, origin) | endif
   if !session.timeline.requested | call revue#session#LoadTimeline(1) | endif
 endfunction
@@ -1381,7 +1385,7 @@ function! s:EventDiscussionError(session, event) abort
     let messages = get(thread, 'comments', [])
   endif
   return empty(filter(copy(messages), {_, m -> m.id ==# target.message && get(m, 'kind', 'comment') ==# target.message_kind})) ?
-        \ (revue#feedback#LookupSupported(a:session.snapshot, target) ? 'This message is not loaded. :RevueLoadEventDiscussion fetches its complete discussion.' : empty(revue#feedback#Availability(a:session)) ? 'This message is not loaded. :RevueLoadEventDiscussion loads one feedback page and opens it if found.' :
+        \ (revue#feedback#LookupSupported(a:session.snapshot, target) ? 'This message is not loaded. :ReviewLoadEventDiscussion fetches its complete discussion.' : empty(revue#feedback#Availability(a:session)) ? 'This message is not loaded. :ReviewLoadEventDiscussion loads one feedback page and opens it if found.' :
         \ 'This message is unavailable in the loaded discussion; refresh the review or open its event link.') : ''
 endfunction
 
@@ -1666,7 +1670,7 @@ function! revue#session#RangeEndpoint(name, side) abort
   if has_key(reference, 'range') || has_key(reference, 'context') | call s:Notice('Select an original comparison as an endpoint, not a derived range or code context.') | return | endif
   let session.range_selection[a:name] = {'reference': deepcopy(reference), 'side': side}
   let session.comparison_request = get(session, 'comparison_request', 0) + 1
-  let session.range_status = 'Endpoints selected; inspect them above, then :RevueOpenRange.'
+  let session.range_status = 'Endpoints selected; inspect them above, then :ReviewOpenRange.'
   call s:Save(session)
   call s:RepaintPanel(session)
 endfunction
@@ -1766,11 +1770,11 @@ function! s:SwitchComparison(session, id, ...) abort
   call s:CheckViewed(a:session)
   if has_key(options, 'assignment_origin')
     let a:session.context_return = options.assignment_origin
-    call s:Notice('Assignment comparison opened. :RevueReturnContext returns to the selected outcome.')
+    call s:Notice('Assignment comparison opened. :ReviewReturnContext returns to the selected outcome.')
   endif
   if has_key(options, 'event_origin')
     let a:session.context_return = options.event_origin
-    call s:Notice('Event comparison opened. :RevueReturnContext returns to the history event.')
+    call s:Notice('Event comparison opened. :ReviewReturnContext returns to the history event.')
   endif
 endfunction
 
@@ -2018,7 +2022,7 @@ function! s:ThreadContextLoaded(id, target, token, origin, generation, result) a
   endif
   call s:ComparisonLoaded(a:id, snapshot.snapshot, a:token, a:origin, focused ? a:generation : -1,
         \ {'path': location.path, 'side': location.side, 'jump': {'side': location.side, 'line': location.line}}, {'ok': 1, 'data': snapshot})
-  if session.snapshot.snapshot ==# snapshot.snapshot | call s:Notice(context.note . ' :RevueReturnContext returns.') | endif
+  if session.snapshot.snapshot ==# snapshot.snapshot | call s:Notice(context.note . ' :ReviewReturnContext returns.') | endif
 endfunction
 
 function! revue#session#ReturnContext() abort
@@ -2035,7 +2039,7 @@ function! revue#session#Capture(untracked, ...) abort
   let session = s:Get()
   if empty(session) | return | endif
   let choice = a:0 ? a:1 : ''
-  if index(['', 'tracked', 'all'], choice) < 0 | call s:Notice('Use :RevueCapture [tracked|all]; ! also includes untracked files.') | return | endif
+  if index(['', 'tracked', 'all'], choice) < 0 | call s:Notice('Use :ReviewCapture [tracked|all]; ! also includes untracked files.') | return | endif
   for draft in session.drafts
     if draft.kind ==# 'capture'
       call s:Composer(session, draft.id)
@@ -2046,7 +2050,7 @@ function! revue#session#Capture(untracked, ...) abort
   let context = get(session.snapshot, 'capture_context', {})
   let include = choice ==# 'tracked' ? 0 : choice ==# 'all' || a:untracked || get(context, 'untracked', 0)
   let fields = {'kind': 'capture', 'untracked': include ? v:true : v:false}
-  if !empty(s:NewDraft(session, fields)) | call s:Notice('Inspect the capture settings; :RevueSend captures saved files into this review.') | endif
+  if !empty(s:NewDraft(session, fields)) | call s:Notice('Inspect the capture settings; :ReviewSend captures saved files into this review.') | endif
 endfunction
 
 function! revue#session#Latest() abort
@@ -2078,7 +2082,7 @@ function! s:SubmissionError(session, draft) abort
   endif
   if index(['comment', 'file_comment', 'review', 'batch', 'capture', 'submit_pending', 'start_pending'], a:draft.kind) >= 0 &&
         \ (get(a:draft, 'snapshot', latest.snapshot) !=# latest.snapshot || get(a:draft, 'base_tip', get(latest, 'base_tip', latest.base)) !=# get(latest, 'base_tip', latest.base))
-    return 'This draft belongs to an older comparison. Inspect :RevueLatest; the original anchor is retained.'
+    return 'This draft belongs to an older comparison. Inspect :ReviewLatest; the original anchor is retained.'
   endif
   let error = revue#anchor#Error(latest, a:draft)
   if !empty(error) | return error | endif
@@ -2154,7 +2158,7 @@ function! revue#session#MarkThreadRead() abort
     let matches = s:ThreadsAtCursor(session)
     if len(matches) > 1
       call revue#session#Threads()
-      call s:Notice('Choose a thread, then use :RevueMarkThreadRead.')
+      call s:Notice('Choose a thread, then use :ReviewMarkThreadRead.')
       return
     endif
     let id = empty(matches) ? '' : matches[0].id
@@ -2200,6 +2204,13 @@ function! s:RepaintPanel(session) abort
   let kind = get(a:session, 'panelkind', '')
   if kind ==# 'threads'
     call revue#session#Threads(get(a:session, 'panelthread', ''))
+  elseif kind ==# 'feedback'
+    let key = get(a:session.feedbackrows, string(line('.')), '')
+    let oldrows = sort(keys(filter(copy(a:session.feedbackrows), {_, value -> value ==# key})), 'n')
+    let offset = empty(oldrows) ? 0 : line('.') - str2nr(oldrows[0])
+    call revue#session#Feedback()
+    let newrows = sort(keys(filter(copy(a:session.feedbackrows), {_, value -> value ==# key})), 'n')
+    if !empty(newrows) | let view.lnum = str2nr(newrows[0]) + min([offset, len(newrows) - 1]) | endif
   elseif kind ==# 'conversation'
     call revue#session#Conversation()
   elseif index(['assignments', 'assignment'], kind) >= 0
@@ -2427,7 +2438,7 @@ function! revue#session#MessageHistory(...) abort
   call revue#surface#Paint(session.panel, view.decorations, 0)
   if origin.kind !=# 'message-history' | let b:revue_origin = origin | endif
   let session.historyrows = view.rows
-  call revue#layout#SetBar(win_getid(), ' Edit history | :RevueReviewActions · :RevueClose ')
+  call revue#layout#SetBar(win_getid(), ' Edit history | :ReviewReviewActions · :ReviewClose ')
   if !state.requested | call revue#session#LoadMessageHistory(1) | endif
 endfunction
 
@@ -2631,7 +2642,7 @@ function! revue#session#EditBase() abort
   let error = revue#capabilities#Error(latest, proposed, 0)
   if !empty(error) | call s:Notice(error) | return | endif
   if proposed.expected_version ==# draft.expected_version | call s:Notice('This edit already uses the current message version.') | return | endif
-  if confirm('Accept the current message version as the edit base? Inspect :RevuePreview first. Your replacement text is retained.', "&Accept\n&Keep original base", 2) != 1 | return | endif
+  if confirm('Accept the current message version as the edit base? Inspect :ReviewPreview first. Your replacement text is retained.', "&Accept\n&Keep original base", 2) != 1 | return | endif
   if bufnr() != editor || get(b:, 'revue_draft', '') !=# draft.id || index(['draft', 'failed'], draft.state) < 0
     call s:Notice('Edit selection or delivery state changed; inspect the draft again.')
     return
@@ -2681,7 +2692,7 @@ function! s:LinksLoaded(id, token, window, selected, result) abort
   if empty(session) || a:token != get(session, 'link_request', 0) || !s:SameMessage(session, a:selected, a:window) | return | endif
   let data = get(a:result, 'data', {})
   if !a:result.ok
-    call s:Notice(get(a:result, 'error', 'Backend links unavailable.') . ' :RevueBodyURLs reads explicit addresses locally.')
+    call s:Notice(get(a:result, 'error', 'Backend links unavailable.') . ' :ReviewBodyURLs reads explicit addresses locally.')
     return
   endif
   if type(data) != v:t_dict || get(data, 'message', '') !=# a:selected.comment || get(data, 'message_kind', '') !=# a:selected.kind || get(data, 'thread', '') !=# a:selected.thread || get(data, 'version', '') !=# get(a:selected.message, 'version', '') || type(get(data, 'links', 0)) != v:t_list
@@ -2700,7 +2711,7 @@ function! s:LinksLoaded(id, token, window, selected, result) abort
 endfunction
 
 function! s:ChooseLinks(session, selected, window, links, explicit) abort
-  if empty(a:links) | call s:Notice(a:explicit ? 'No explicit HTTP(S) URLs in this message body.' : 'No supported prose links in this message. :RevueBodyURLs includes addresses in code examples.') | return | endif
+  if empty(a:links) | call s:Notice(a:explicit ? 'No explicit HTTP(S) URLs in this message body.' : 'No supported prose links in this message. :ReviewBodyURLs includes addresses in code examples.') | return | endif
   let menu = [revue#message#Header(a:selected.message, a:session.snapshot.author),
         \ a:explicit ? 'Body URLs (includes code examples) · 0 cancels' : 'Message links · 0 cancels']
   for index in range(len(a:links))
@@ -2867,12 +2878,12 @@ function! revue#session#ReanchorDraft() abort
         \ 'old_source': draft.kind ==# 'comment' ? deepcopy(s:DraftSource(session, draft)) : {}}
   call win_gotoid(session.headwin)
   call revue#session#Latest()
-  call s:Notice('Choose a new file or source range, then :RevueReanchorHere. :RevueCancelReanchor returns to the original draft.')
+  call s:Notice('Choose a new file or source range, then :ReviewReanchorHere. :ReviewCancelReanchor returns to the original draft.')
 endfunction
 
 function! s:ReanchorError(session, ...) abort
   let state = get(a:session, 'reanchor', {})
-  if empty(state) | return 'Open a local draft and use :RevueReanchorDraft first.' | endif
+  if empty(state) | return 'Open a local draft and use :ReviewReanchorDraft first.' | endif
   let original = s:Draft(a:session, state.original.id)
   let error = revue#reanchor#Error(a:session.comparisons[a:session.latest_comparison].snapshot, original)
   if !empty(error) | return error | endif
@@ -2894,7 +2905,7 @@ function! revue#session#ReanchorHere(visual, ...) abort
   let session = s:Get()
   if empty(session) || !s:SyncDraftBuffers(session) | return | endif
   let state = get(session, 'reanchor', {})
-  if empty(state) | call s:Notice('Open a local draft and use :RevueReanchorDraft first.') | return | endif
+  if empty(state) | call s:Notice('Open a local draft and use :ReviewReanchorDraft first.') | return | endif
   " A newly chosen location replaces only the ephemeral candidate.
   let error = s:ReanchorError(session, 1)
   if !empty(error) | call s:Notice(error) | return | endif
@@ -2935,7 +2946,7 @@ function! revue#session#ReanchorPreview() abort
   let rows = revue#reanchor#View(session.reanchor, s:ReanchorError(session))
   call s:Fill(s:Panel(session, 'reanchor'), map(copy(rows), {_, row -> row.text}))
   call revue#surface#Paint(session.panel, rows, 0)
-  call revue#layout#SetBar(win_getid(), ' Move draft | :RevueAcceptReanchor · :RevueCancelReanchor ')
+  call revue#layout#SetBar(win_getid(), ' Move draft | :ReviewAcceptReanchor · :ReviewCancelReanchor ')
 endfunction
 
 function! revue#session#CancelReanchor() abort
@@ -2987,7 +2998,7 @@ function! revue#session#Comment(visual, ...) abort
   let side = get(b:, 'revue_side', '')
   if empty(side) | call s:Notice('Select a source pane first.') | return | endif
   if get(get(session.loaded, side, {}), 'kind', '') !=# 'text'
-    call s:Notice('Source text is unavailable on this side. Use :RevueFileComment for whole-file feedback.')
+    call s:Notice('Source text is unavailable on this side. Use :ReviewFileComment for whole-file feedback.')
     return
   endif
   let start = a:0 ? a:1 : a:visual ? min([line("'<"), line("'>")]) : line('.')
@@ -3190,7 +3201,7 @@ function! revue#session#SavePending() abort
   if get(b:, 'revue_save_error', 0) | return | endif
   let inventory = get(session.comparisons[session.latest_comparison].snapshot, 'pending_reviews', {})
   let items = get(inventory, 'items', [])
-  if len(items) > 1 | call s:Notice('More than one native pending review is available. Inspect :RevuePending before saving.') | return | endif
+  if len(items) > 1 | call s:Notice('More than one native pending review is available. Inspect :ReviewPending before saving.') | return | endif
   let review = empty(items) ? {} : items[0]
   if s:PendingBusy(session, draft.id, get(review, 'id', '')) | return | endif
   let proposed = extend(deepcopy(draft), {'pending_mode': empty(review) ? 'create' : 'add',
@@ -3211,7 +3222,7 @@ function! revue#session#Pending() abort
   let origin = s:Origin()
   let view = revue#pending#View(session.snapshot)
   let verification = get(session, 'pending_verification', {})
-  if get(verification, 'loading', 0) | call add(view.lines, 'Verifying complete review… :RevueCancelVerifyPending') | endif
+  if get(verification, 'loading', 0) | call add(view.lines, 'Verifying complete review… :ReviewCancelVerifyPending') | endif
   if !empty(get(verification, 'error', '')) | call add(view.lines, 'Verification unavailable: ' . revue#message#OneLine(verification.error)) | endif
   call s:Fill(s:Panel(session, 'pending'), view.lines)
   let rows = map(copy(view.lines), {index, text -> {'text': text, 'type': get(view.styles, string(index + 1), empty(text) ? 'RevueCardBorder' : 'RevueCardBody')}})
@@ -3299,7 +3310,7 @@ function! revue#session#OpenPending() abort
   if empty(session) || get(b:, 'revue_view', '') !=# 'pending' | return | endif
   let row = get(session.pendingrows, string(line('.')), {})
   let target = get(row, 'target', {})
-  if empty(target) | call s:Notice('Select a pending comment to open it; :RevuePublishPending prepares the review.') | return | endif
+  if empty(target) | call s:Notice('Select a pending comment to open it; :ReviewPublishPending prepares the review.') | return | endif
   if empty(revue#edit#Message(session.snapshot, target)) | call s:Notice('This comment is not available in the current discussion view. Its pending-review text is retained here.') | return | endif
   let origin = s:Origin()
   call revue#session#Threads(target.thread)
@@ -3357,7 +3368,7 @@ function! revue#session#AssignmentView() abort
   call s:Fill(panel, view.lines)
   let session.assignment_view_rows = view.rows
   call revue#surface#Paint(panel, view.decorations, 0)
-  call revue#layout#SetBar(win_getid(), ' Assignment outcomes | :RevueReviewActions · :RevueClose ')
+  call revue#layout#SetBar(win_getid(), ' Assignment outcomes | :ReviewReviewActions · :ReviewClose ')
 endfunction
 
 function! revue#session#ReloadAssignments() abort
@@ -3425,7 +3436,7 @@ function! revue#session#AssignmentDetails() abort
   let panel = s:Panel(session, 'preview')
   call s:Fill(panel, lines)
   call revue#surface#Paint(panel, map(copy(lines), {_, text -> {'text': text, 'type': text =~# '^#' ? 'RevueCardHeader' : 'RevueCardBody'}}), 0)
-  call revue#layout#SetBar(win_getid(), ' Assignment details | :RevueClose returns to outcomes ')
+  call revue#layout#SetBar(win_getid(), ' Assignment details | :ReviewClose returns to outcomes ')
   call cursor(1, 1)
 endfunction
 
@@ -3541,7 +3552,7 @@ function! revue#session#AssignmentSelection() abort
   let lines = ['# Assign feedback', printf('%d selected / %d loaded messages · maximum 50', len(selection.selected), len(selection.items)),
         \ 'Saved line/file discussions only. Selection is local until saved.',
         \ 'Uses feedback loaded when opened; re-open to choose newer messages.',
-        \ 'Choose messages, then :RevuePrepareAssignment to choose a participant.', '']
+        \ 'Choose messages, then :ReviewPrepareAssignment to choose a participant.', '']
   for item in selection.items
     let first = len(lines) + 1
     call extend(lines, [(has_key(selection.selected, revue#assignment#Key(item.target)) ? '[x] ' : '[ ] ') . item.path . ' · ' . item.anchor,
@@ -3554,7 +3565,7 @@ function! revue#session#AssignmentSelection() abort
     call add(surfaces, {'text': lines[index], 'type': lines[index] =~# '^\%(#\|\[[ x]\]\)' ? 'RevueCardHeader' : 'RevueCardBody'})
   endfor
   call revue#surface#Paint(panel, surfaces, 0)
-  call revue#layout#SetBar(win_getid(), ' Assign feedback | :RevueReviewActions · :RevueClose ')
+  call revue#layout#SetBar(win_getid(), ' Assign feedback | :ReviewReviewActions · :ReviewClose ')
 endfunction
 
 function! revue#session#ToggleAssignment() abort
@@ -3706,7 +3717,7 @@ function! revue#session#PendingBase() abort
   let error = revue#capabilities#Error(latest, proposed, 0)
   if !empty(error) | call s:Notice(error) | return | endif
   let editor = bufnr()
-  if confirm('Accept refreshed pending-review contents and comparison? Inspect :RevuePreview first. Your summary is retained.', "&Accept\n&Keep original base", 2) != 1 | return | endif
+  if confirm('Accept refreshed pending-review contents and comparison? Inspect :ReviewPreview first. Your summary is retained.', "&Accept\n&Keep original base", 2) != 1 | return | endif
   if bufnr() != editor || get(b:, 'revue_draft', '') !=# draft.id || index(['draft', 'failed'], draft.state) < 0 | return | endif
   let latest = session.comparisons[session.latest_comparison].snapshot
   if !empty(revue#capabilities#Error(latest, proposed, 0)) | call s:Notice('The pending review changed again; inspect the preview.') | return | endif
@@ -3757,7 +3768,7 @@ function! s:StateThread(session) abort
     let matches = s:ThreadsAtCursor(a:session)
     if len(matches) > 1
       call revue#session#Threads()
-      call s:Notice('Choose a thread, then use :RevueResolve or :RevueReopen.')
+      call s:Notice('Choose a thread, then use :ReviewResolve or :ReviewReopen.')
       return ''
     endif
     let id = empty(matches) ? '' : matches[0].id
@@ -3769,7 +3780,7 @@ function! revue#session#CheckThreadState() abort
   let session = s:Get()
   if empty(session) | return | endif
   let draft = revue#thread_state#Pending(session, s:StateThread(session))
-  if empty(draft) || draft.state !=# 'unknown' | call s:Notice('No uncertain resolution here; :RevueActivity retains other operations.') | return | endif
+  if empty(draft) || draft.state !=# 'unknown' | call s:Notice('No uncertain resolution here; :ReviewActivity retains other operations.') | return | endif
   call s:SendThreadState(session, draft)
 endfunction
 
@@ -3785,7 +3796,7 @@ function! revue#session#ChangeThreadState(resolved) abort
   for draft in session.drafts
     if draft.kind ==# 'thread_state' && draft.thread ==# id
       if draft.state ==# 'unknown'
-        call s:Notice('Outcome unknown; :RevueCheckThreadState checks the original operation before another change.')
+        call s:Notice('Outcome unknown; :ReviewCheckThreadState checks the original operation before another change.')
         return
       endif
       if draft.resolved != desired
@@ -3914,9 +3925,13 @@ function! s:Composer(session, id) abort
     autocmd TextChanged,TextChangedI,BufLeave,BufWriteCmd <buffer> call revue#session#SaveDraft()
     autocmd BufWinEnter,WinEnter,VimResized <buffer> call revue#session#ResizeDraftContext()
   augroup END
-  if draft.kind ==# 'apply_suggestion' | call s:Notice('Read-only application preview · :RevueSend confirms saving the replacement to disk') | return | endif
-  if draft.kind ==# 'participant_run' | call s:Notice('Participant operation saved · inspect :RevuePreview · :RevueSend confirms execution') | return | endif
-  call s:Notice(draft.kind ==# 'assignment' ? 'Assignment ready · inspect :RevuePreview · :RevueSend saves locally' : 'Draft ready · :w saves locally · :RevueReviewActions')
+  if draft.kind ==# 'apply_suggestion' | call s:Notice('Read-only application preview · :ReviewSend confirms saving the replacement to disk') | return | endif
+  if draft.kind ==# 'participant_run' | call s:Notice('Participant operation saved · inspect :ReviewPreview · :ReviewSend confirms execution') | return | endif
+  if revue#local_feedback#Enabled(a:session) && revue#local_feedback#IsFeedback(draft)
+    call s:Notice('Pending feedback · autosaved as you edit · :ReviewClose returns to the card · :ReviewBatch collects feedback')
+    return
+  endif
+  call s:Notice(draft.kind ==# 'assignment' ? 'Assignment ready · inspect :ReviewPreview · :ReviewSend saves locally' : 'Draft ready · :w saves locally · :ReviewReviewActions')
 endfunction
 
 function! revue#session#ResizeDraftContext() abort
@@ -3951,29 +3966,29 @@ function! s:ContextLines(session, draft) abort
   if !empty(get(draft, 'pending_mode', ''))
     call extend(lines, [draft.pending_mode ==# 'create' ? 'Create a private pending review' : 'Add private feedback to pending review #' . draft.pending_review,
           \ 'Actor: ' . draft.actor . ' · will save privately on the backend.',
-          \ 'Only this draft is included. :w still saves locally; :RevueSend saves privately.'])
+          \ 'Only this draft is included. :w still saves locally; :ReviewSend saves privately.'])
   endif
   if draft.kind ==# 'delete_message'
     call extend(lines, ['Delete ' . (get(draft, 'message_publication', '') ==# 'local' ? 'local review ' : 'published ') . draft.message_kind . ' #' . draft.message . ' · by ' . draft.message_author,
           \ 'Actor: ' . draft.actor . ' · ' . (empty(draft.thread) ? 'General conversation' : 'Thread ' . draft.thread),
           \ 'Deletes exactly this message. Other messages remain; an empty thread may disappear.',
-          \ ':RevueDiscard cancels this local operation. :RevuePreview shows the original text.'])
+          \ ':ReviewDiscard cancels this local operation. :ReviewPreview shows the original text.'])
   elseif draft.kind ==# 'delete_pending_comment'
     call extend(lines, ['Delete private comment #' . draft.message . ' · thread ' . draft.thread,
           \ get(draft, 'path', '') . ' · ' . get(draft, 'anchor_label', '') . ' · by ' . get(draft, 'message_author', ''),
           \ 'Pending review #' . draft.pending_review . ' · actor ' . draft.actor,
           \ 'Deletes exactly this message. An empty thread may disappear.',
-          \ 'Other comments and the review summary remain. :RevueDiscard cancels this local operation.'])
+          \ 'Other comments and the review summary remain. :ReviewDiscard cancels this local operation.'])
   elseif draft.kind ==# 'discard_pending'
     call extend(lines, ['Discard pending review #' . draft.pending_review,
           \ 'Permanently deletes its private summary and all ' . len(draft.pending_comments) . ' comments from the backend.',
-          \ 'Local outbox drafts are retained. :RevueDiscard cancels only this local operation.',
-          \ ':RevuePreview shows every private comment to be removed.'])
+          \ 'Local outbox drafts are retained. :ReviewDiscard cancels only this local operation.',
+          \ ':ReviewPreview shows every private comment to be removed.'])
   elseif draft.kind ==# 'submit_pending'
     call extend(lines, ['Publish pending review #' . draft.pending_review . ' · ' . draft.event,
           \ len(draft.pending_comments) . ' comments saved privately on the backend will become published.',
           \ 'Reviewed source ' . strpart(draft.pending_head, 0, 12) . ' · current source ' . strpart(a:session.snapshot.head, 0, 12),
-          \ 'Local outbox drafts are excluded. :RevuePreview shows the full publication contents.'])
+          \ 'Local outbox drafts are excluded. :ReviewPreview shows the full publication contents.'])
     if draft.pending_head !=# a:session.snapshot.head | call add(lines, 'This pending review concerns an older source revision.') | endif
   elseif draft.kind ==# 'service_viewed'
     call extend(lines, [(draft.viewed ? 'Mark viewed on service: ' : 'Mark unviewed on service: ') . revue#message#OneLine(draft.path), 'Actor: ' . revue#message#OneLine(draft.actor_label), 'Personal service progress only; local marks and comments remain independent.'])
@@ -3985,15 +4000,15 @@ function! s:ContextLines(session, draft) abort
     if !empty(get(draft, 'pending_review', '')) | call add(lines, 'Save privately in pending review #' . draft.pending_review . ' · actor ' . draft.actor . '. Publication is a separate action.') | endif
     call extend(lines, ['Edit message · ' . draft.message_kind . ' #' . draft.message,
           \ empty(draft.thread) ? (empty(get(draft, 'pending_review', '')) ? 'Review conversation' : 'Private review summary') : 'Thread ' . draft.thread,
-          \ 'Replaces this message body only. :RevuePreview shows original, current and proposed text.'])
+          \ 'Replaces this message body only. :ReviewPreview shows original, current and proposed text.'])
   elseif draft.kind ==# 'capture'
     let context = get(original, 'capture_context', {})
     call extend(lines, ['Capture saved workspace files', get(context, 'workspace', 'Backend-managed workspace'),
           \ 'Against fixed base ' . get(context, 'base', original.base),
           \ draft.untracked ? 'Include untracked files.' : 'Exclude untracked files.',
           \ 'Unsaved buffers are excluded. Discussion and old captures are retained.',
-          \ 'The new comparison is offered with :RevueLatest. Capturing does not resolve threads or commit.'])
-    if !get(context, 'options_known', 1) | call add(lines, 'Legacy review: untracked files default to excluded; :RevueCapture! opts in for a new capture.') | endif
+          \ 'The new comparison is offered with :ReviewLatest. Capturing does not resolve threads or commit.'])
+    if !get(context, 'options_known', 1) | call add(lines, 'Legacy review: untracked files default to excluded; :ReviewCapture! opts in for a new capture.') | endif
   elseif draft.kind ==# 'reply' || draft.kind ==# 'thread_state'
     let threads = filter(copy(original.threads), {_, t -> t.id ==# draft.thread})
     if !empty(threads)
@@ -4024,7 +4039,7 @@ function! s:ContextLines(session, draft) abort
     endif
     if get(draft, 'suggestion', 0) | call add(lines, 'Edit the fenced replacement; keep explanation outside. This proposes a change only.') | endif
     let content = s:DraftSource(a:session, draft)
-    if empty(content) | call add(lines, 'Original source is not loaded; this draft retains its original anchor. :RevueDraftComparison') | endif
+    if empty(content) | call add(lines, 'Original source is not loaded; this draft retains its original anchor. :ReviewDraftComparison') | endif
     if get(content, 'kind', '') ==# 'text'
       for row in range(draft.start, min([draft.end, draft.start + 2]))
         if row <= len(content.lines) | call add(lines, printf('%d │ %s', row, content.lines[row - 1])) | endif
@@ -4034,9 +4049,9 @@ function! s:ContextLines(session, draft) abort
   else
     call add(lines, revue#suggestion#Label(draft) . (has_key(draft, 'event') ? ' · ' . draft.event : ''))
   endif
-  call add(lines, 'Comparison ' . strpart(draft.head, 0, 12) . ' · :RevuePreview · :RevueClose')
+  call add(lines, 'Comparison ' . strpart(draft.head, 0, 12) . ' · :ReviewPreview · :ReviewClose')
   if draft.snapshot !=# a:session.latest_comparison
-    call add(lines, 'Older comparison. Draft and thread identity are retained; :RevueLatest inspects current code.')
+    call add(lines, 'Older comparison. Draft and thread identity are retained; :ReviewLatest inspects current code.')
   endif
   let permissions = index(['edit', 'submit_pending', 'discard_pending', 'delete_pending_comment', 'delete_message', 'assignment', 'cancel_assignment', 'participant_run', 'apply_suggestion', 'service_viewed'], draft.kind) >= 0 ? a:session.comparisons[a:session.latest_comparison].snapshot : a:session.snapshot
   let rule = revue#capabilities#Rule(permissions, draft)
@@ -4109,14 +4124,17 @@ endfunction
 
 function! s:DraftBar(session, draft) abort
   let state = get(b:, 'revue_save_error', 0) ? 'SAVE FAILED · text retained' : a:draft.state ==# 'unknown' ? 'UNKNOWN · check receipt' : a:draft.state ==# 'failed' ? 'SUBMISSION FAILED · draft saved' : 'Draft saved locally'
+  if revue#local_feedback#Enabled(a:session) && revue#local_feedback#IsFeedback(a:draft) && !get(b:, 'revue_save_error', 0) && a:draft.state ==# 'draft'
+    let state = 'Pending · saved locally'
+  endif
   let action = substitute(revue#actions#Delivery(a:draft, a:session.snapshot), ' (confirmation)$', '', '')
-  call revue#layout#SetBar(win_getid(), ' Revue · ' . state . ' | ' . substitute(action, '%', '%%', 'g') . ' %<| :RevueReviewActions ')
+  call revue#layout#SetBar(win_getid(), ' Revue · ' . state . ' | ' . substitute(action, '%', '%%', 'g') . ' %<| :ReviewReviewActions ')
 endfunction
 
 function! s:DraftContext(session, draft, buf) abort
   if a:draft.kind ==# 'apply_suggestion'
     let lines = revue#apply_suggestion#Preview(a:draft) + ['', 'Operation: ' . a:draft.state,
-          \ a:draft.state ==# 'unknown' ? ':RevueCheckReceipt checks the original application.' : ':RevueSend confirms applying this exact replacement.', ':RevueClose returns to the message.']
+          \ a:draft.state ==# 'unknown' ? ':ReviewCheckReceipt checks the original application.' : ':ReviewSend confirms applying this exact replacement.', ':ReviewClose returns to the message.']
     let rows = map(copy(lines), {_, text -> {'text': text, 'type': text =~# '^#' ? 'RevueCardHeader' : text =~# '^- ' ? 'RevueCardDelete' : text =~# '^+ ' ? 'RevueCardAdd' : 'RevueCardBody'}})
     call s:Fill(a:buf, lines)
     call revue#surface#Paint(a:buf, rows, 0)
@@ -4124,7 +4142,7 @@ function! s:DraftContext(session, draft, buf) abort
   endif
   if index(['thread_state', 'capture', 'reaction', 'discard_pending', 'delete_pending_comment', 'delete_message', 'assignment', 'cancel_assignment', 'participant_run', 'apply_suggestion', 'service_viewed'], a:draft.kind) >= 0
     call s:Fill(a:buf, s:ContextLines(a:session, a:draft) + ['', 'Operation: ' . a:draft.state,
-          \ a:draft.state ==# 'unknown' ? ':RevueCheckReceipt · delivery still unknown' : a:draft.kind ==# 'thread_state' ? ':RevueSend · retry explicit state change' : ':RevueSend · confirm ' . (a:draft.kind ==# 'capture' ? 'capture settings' : a:draft.kind ==# 'participant_run' ? 'participant execution' : 'state change'), ':RevueClose · return to discussion'])
+          \ a:draft.state ==# 'unknown' ? ':ReviewCheckReceipt · delivery still unknown' : a:draft.kind ==# 'thread_state' ? ':ReviewSend · retry explicit state change' : ':ReviewSend · confirm ' . (a:draft.kind ==# 'capture' ? 'capture settings' : a:draft.kind ==# 'participant_run' ? 'participant execution' : 'state change'), ':ReviewClose · return to discussion'])
     return
   endif
   highlight default link RevueDraftContext Comment
@@ -4156,7 +4174,7 @@ function! revue#session#Preview() abort
     let rows = map(s:ContextLines(session, draft), {_, text -> {'text': text, 'type': text =~# '^#' ? 'RevueCardHeader' : 'RevueCardBody'}})
     call s:Fill(panel, map(copy(rows), {_, row -> row.text}))
     call revue#surface#Paint(panel, rows, 0)
-    call revue#layout#SetBar(win_getid(), (draft.kind ==# 'service_viewed' ? ' Service Viewed state' : draft.kind ==# 'apply_suggestion' ? ' Suggestion application' : draft.kind ==# 'participant_run' ? ' Participant' : ' Assignment') . ' preview | :RevueClose returns to the saved operation ')
+    call revue#layout#SetBar(win_getid(), (draft.kind ==# 'service_viewed' ? ' Service Viewed state' : draft.kind ==# 'apply_suggestion' ? ' Suggestion application' : draft.kind ==# 'participant_run' ? ' Participant' : ' Assignment') . ' preview | :ReviewClose returns to the saved operation ')
     call cursor(1, 1)
     return
   endif
@@ -4179,7 +4197,7 @@ function! revue#session#Preview() abort
   endif
   let panel = s:Panel(session, 'preview')
   if draft.kind ==# 'delete_message'
-    call revue#layout#SetBar(win_getid(), ' Deletion preview | :RevueClose returns to the operation ')
+    call revue#layout#SetBar(win_getid(), ' Deletion preview | :ReviewClose returns to the operation ')
     let lines = ['# Message deletion preview'] + s:CompactContext(session, draft, 1) + ['']
     let offset = len(lines)
     let rows = map(revue#delete_message#Preview(session.comparisons[session.latest_comparison].snapshot, draft),
@@ -4189,8 +4207,8 @@ function! revue#session#Preview() abort
     call cursor(1, 1)
     return
   endif
-  if draft.kind ==# 'delete_pending_comment' | call revue#layout#SetBar(win_getid(), ' Revue preview | :RevueClose returns to deletion operation ') | endif
-  if draft.kind ==# 'discard_pending' | call revue#layout#SetBar(win_getid(), ' Revue preview | :RevueClose returns to discard operation ') | endif
+  if draft.kind ==# 'delete_pending_comment' | call revue#layout#SetBar(win_getid(), ' Revue preview | :ReviewClose returns to deletion operation ') | endif
+  if draft.kind ==# 'discard_pending' | call revue#layout#SetBar(win_getid(), ' Revue preview | :ReviewClose returns to discard operation ') | endif
   let outer = max([12, winwidth(0) - 2])
   let limit = get(g:, 'revue_comment_width', 100)
   let context.outer_width = outer
@@ -4242,6 +4260,21 @@ function! revue#session#SaveDraft() abort
   endif
   call s:DraftContext(session, draft, bufnr())
   call s:DraftBar(session, draft)
+  if revue#local_feedback#Enabled(session) && revue#local_feedback#IsFeedback(draft)
+    call s:Annotations(session)
+    call s:RenderTree(session)
+  endif
+endfunction
+
+function! revue#session#SaveFeedback() abort
+  let session = s:Get()
+  if empty(session) | return | endif
+  let draft = s:Draft(session, get(b:, 'revue_draft', ''))
+  if revue#local_feedback#Enabled(session) && revue#local_feedback#IsFeedback(draft) && index(['draft', 'failed'], get(draft, 'state', '')) >= 0
+    call revue#session#CloseView()
+    return
+  endif
+  call revue#session#Send()
 endfunction
 
 function! revue#session#Send() abort
@@ -4413,11 +4446,11 @@ function! s:Sent(id, draftid, reconcile, result) abort
     let session.message = (get(session.snapshot, 'submit_label', 'Send') ==# 'Save' ? 'Saved. ' : 'Sent. ') . get(a:result.data, 'url', '')
     let session.last_outcome = draft.kind ==# 'thread_state' ? (get(a:result.data, 'observed', 0) ? 'Requested thread state observed.' : draft.resolved ? 'Thread resolved.' : 'Thread reopened.') : session.message
     if draft.kind ==# 'apply_suggestion'
-      let session.last_outcome = !a:result.data.applied ? 'Suggestion was not applied. No write was repeated; select the message for a fresh preview.' : (a:result.data.observed ? 'Suggested result observed; no write repeated.' : 'Suggestion saved to workspace.') . (empty(a:result.data.result_snapshot) ? ' Capture unavailable: ' . a:result.data.capture_error : ' :RevueLatest opens the resulting capture.')
+      let session.last_outcome = !a:result.data.applied ? 'Suggestion was not applied. No write was repeated; select the message for a fresh preview.' : (a:result.data.observed ? 'Suggested result observed; no write repeated.' : 'Suggestion saved to workspace.') . (empty(a:result.data.result_snapshot) ? ' Capture unavailable: ' . a:result.data.capture_error : ' :ReviewLatest opens the resulting capture.')
       let session.message = session.last_outcome
     endif
-    if draft.kind ==# 'capture' | let session.last_outcome = a:result.data.changed ? 'New capture saved. :RevueLatest opens it; original drafts are retained.' : 'Saved files match the current capture. No new comparison was needed.' | endif
-    if draft.kind ==# 'assignment' | let session.last_outcome = 'Assignment ' . a:result.data.assignment . ' saved locally. No agent was started; :RevueActivity retains its receipt.' | endif
+    if draft.kind ==# 'capture' | let session.last_outcome = a:result.data.changed ? 'New capture saved. :ReviewLatest opens it; original drafts are retained.' : 'Saved files match the current capture. No new comparison was needed.' | endif
+    if draft.kind ==# 'assignment' | let session.last_outcome = 'Assignment ' . a:result.data.assignment . ' saved locally. No agent was started; :ReviewActivity retains its receipt.' | endif
     if draft.kind ==# 'cancel_assignment'
       let session.last_outcome = 'Assignment cancelled; MCP access revoked. Replies retained; process status is unknown.'
       let item = revue#assignment#Find(session, draft.assignment)
@@ -4428,11 +4461,11 @@ function! s:Sent(id, draftid, reconcile, result) abort
     endif
     if index(['assignment', 'participant_run'], draft.kind) >= 0 && has_key(session, 'assignments') | let session.assignments.requested = 0 | endif
     let session.last_receipt = deepcopy(a:result.data)
-    if !empty(get(draft, 'pending_mode', '')) | let session.last_outcome = 'Saved to review #' . a:result.data.pending_review . '. :RevuePending shows current private state; browser publication may have changed it.' | endif
+    if !empty(get(draft, 'pending_mode', '')) | let session.last_outcome = 'Saved to review #' . a:result.data.pending_review . '. :ReviewPending shows current private state; browser publication may have changed it.' | endif
     if draft.kind ==# 'edit' | let session.last_outcome = 'Message ' . draft.message . (empty(get(draft, 'pending_review', '')) ? ' updated.' : ' saved to pending review #' . draft.pending_review . '. Refresh shows its current publication state.') | endif
     if draft.kind ==# 'service_viewed'
       let session.last_outcome = 'Requested service Viewed state observed; local marks unchanged.'
-      if has_key(session, 'service_progress') && session.service_progress.path ==# draft.path && session.service_progress.reference ==# draft.reference | let session.service_progress.data = {} | let session.service_progress.error = 'Service state updated; :RevueServiceProgress reloads.' | endif
+      if has_key(session, 'service_progress') && session.service_progress.path ==# draft.path && session.service_progress.reference ==# draft.reference | let session.service_progress.data = {} | let session.service_progress.error = 'Service state updated; :ReviewServiceProgress reloads.' | endif
     endif
     if draft.kind ==# 'reaction' | let session.last_outcome = get(a:result.data, 'observed', 0) ? 'Requested reaction state observed.' : 'Reaction update accepted. Refresh shows current state.' | endif
     if draft.kind ==# 'delete_message' | let session.last_outcome = 'Message #' . draft.message . (get(a:result.data, 'observed', 0) ? ' is absent from the verified review; the deleting request is not known.' : ' deleted.') | endif
@@ -4475,10 +4508,10 @@ function! s:Sent(id, draftid, reconcile, result) abort
       let session.message = a:result.error . (draft.state ==# 'unknown' ? ' Outcome unknown; check the receipt in Reactions or Activity.' : ' Reaction not accepted; retry from Reactions or inspect Activity.')
     endif
     if draft.kind ==# 'thread_state'
-      let session.message = a:result.error . (draft.state ==# 'unknown' ? ' Outcome unknown; :RevueCheckThreadState checks the original operation. Activity retains details.' : ' Resolution not accepted; retry its explicit command or inspect Activity.')
+      let session.message = a:result.error . (draft.state ==# 'unknown' ? ' Outcome unknown; :ReviewCheckThreadState checks the original operation. Activity retains details.' : ' Resolution not accepted; retry its explicit command or inspect Activity.')
     endif
     if draft.kind ==# 'apply_suggestion'
-      let session.message = a:result.error . (draft.state ==# 'unknown' ? ' Application outcome unknown; :RevueCheckReceipt checks the original intent without writing again.' : ' Application not accepted; the preview is retained.')
+      let session.message = a:result.error . (draft.state ==# 'unknown' ? ' Application outcome unknown; :ReviewCheckReceipt checks the original intent without writing again.' : ' Application not accepted; the preview is retained.')
     endif
     call revue#activity#Record(session, draft, a:reconcile ? 'receipt-check-failed' : draft.state, session.message, {})
     call s:Save(session)
@@ -4514,6 +4547,7 @@ function! revue#session#Discard() abort
     call revue#layout#Restore(layout)
     call s:Return(session, origin)
     call s:RenderTree(session)
+    if revue#local_feedback#Enabled(session) | call s:Annotations(session) | endif
   else
     let session.drafts = before
   endif
@@ -4524,9 +4558,124 @@ function! revue#session#Refresh() abort
   if !empty(session) | call s:Refresh(session) | endif
 endfunction
 
+function! revue#session#Feedback() abort
+  let session = s:Get()
+  if empty(session) | return | endif
+  if !revue#local_feedback#Enabled(session) | call s:Notice('This feedback collection is for local reviews.') | return | endif
+  if !s:SyncDraftBuffers(session) | return | endif
+  let items = revue#local_feedback#Items(session)
+  if !has_key(session, 'feedbackselected') | let session.feedbackselected = {} | endif
+  let lines = ['# Collect review feedback',
+        \ 'Pending cards are saved locally. Export keeps their status and text intact.',
+        \ 'Space select · a select all loaded · u clear · Enter edit / read',
+        \ 'm / :ReviewExportMarkdown → Markdown buffer · :ReviewClose → return',
+        \ printf('Selected %d of %d loaded items', len(filter(copy(items), {_, i -> get(session.feedbackselected, i.key, 0)})), len(items))]
+  if !empty(get(get(session.snapshot, 'feedback', {}), 'cursor', ''))
+    call add(lines, 'More saved feedback available · :ReviewLoadMoreFeedback, then select the new items.')
+  endif
+  call add(lines, '')
+  let rows = {}
+  for item in items
+    let first = len(lines) + 1
+    call add(lines, (get(session.feedbackselected, item.key, 0) ? '[x] ' : '[ ] ') . item.status . ' · ' . revue#local_feedback#Location(item))
+    call extend(lines, split(item.body, "\n", 1) + [''])
+    for row in range(first, len(lines)) | let rows[string(row)] = item.key | endfor
+  endfor
+  if empty(items) | call add(lines, 'No feedback yet. Use c on a code line, write your comment, then :ReviewClose.') | endif
+  let panel = s:Panel(session, 'feedback')
+  let session.feedbackrows = rows
+  let session.feedback_preview = deepcopy(items)
+  call s:Fill(panel, lines)
+endfunction
+
+function! revue#session#ToggleFeedback() abort
+  let session = s:Get()
+  if empty(session) || get(b:, 'revue_view', '') !=# 'feedback' | return | endif
+  let key = get(session.feedbackrows, string(line('.')), '')
+  if empty(key) | return | endif
+  let view = winsaveview()
+  let session.feedbackselected[key] = !get(session.feedbackselected, key, 0)
+  call revue#session#Feedback()
+  call winrestview(view)
+endfunction
+
+function! revue#session#SelectFeedback(selected) abort
+  let session = s:Get()
+  if empty(session) || get(b:, 'revue_view', '') !=# 'feedback' | return | endif
+  let session.feedbackselected = {}
+  if a:selected
+    for item in session.feedback_preview | let session.feedbackselected[item.key] = 1 | endfor
+  endif
+  call revue#session#Feedback()
+endfunction
+
+function! revue#session#EditFeedback() abort
+  let session = s:Get()
+  if empty(session) || !revue#local_feedback#Enabled(session) | return | endif
+  let items = revue#local_feedback#Items(session)
+  if get(b:, 'revue_view', '') ==# 'feedback'
+    let key = get(session.feedbackrows, string(line('.')), '')
+    let matches = filter(items, {_, i -> i.key ==# key})
+  elseif index(['base', 'head'], get(b:, 'revue_role', '')) >= 0 && session.index >= 0
+    let path = session.snapshot.files[session.index].path
+    let side = get(b:, 'revue_side', '')
+    let row = line('.')
+    let matches = filter(items, {_, i -> i.pending && i.snapshot ==# session.snapshot.snapshot && get(i, 'path', '') ==# path &&
+          \ (i.kind ==# 'file_comment' || (get(i, 'side', '') ==# side && row >= get(i, 'start', 0) && row <= get(i, 'end', 0)))})
+  else
+    call revue#session#Feedback()
+    return
+  endif
+  if empty(matches) | call s:Notice('No pending feedback here. :ReviewBatch lists all feedback.') | return | endif
+  let choice = 0
+  if len(matches) > 1
+    let origin = [win_getid(), bufnr(), line('.'), session.snapshot.snapshot]
+    let choices = ['Choose pending feedback to edit:']
+    for item in matches | call add(choices, len(choices) . '. ' . revue#message#OneLine(item.body)) | endfor
+    let choice = inputlist(choices) - 1
+    if choice < 0 || choice >= len(matches) | return | endif
+    if origin !=# [win_getid(), bufnr(), line('.'), session.snapshot.snapshot] | call s:Notice('Source changed; choose again.') | return | endif
+  endif
+  let item = matches[choice]
+  if item.pending
+    call s:Composer(session, item.id)
+  elseif has_key(item, 'thread')
+    call revue#session#Threads(item.thread)
+  else
+    call revue#session#Conversation()
+  endif
+endfunction
+
+function! revue#session#ExportMarkdown() abort
+  let session = s:Get()
+  if empty(session) || get(b:, 'revue_view', '') !=# 'feedback' | return | endif
+  if !s:SyncDraftBuffers(session) | return | endif
+  let selected = filter(revue#local_feedback#Items(session), {_, i -> get(session.feedbackselected, i.key, 0)})
+  let shown = filter(deepcopy(session.feedback_preview), {_, i -> get(session.feedbackselected, i.key, 0)})
+  if selected !=# shown
+    call revue#session#Feedback()
+    call s:Notice('Feedback changed; check the updated selection before exporting.')
+    return
+  endif
+  if empty(selected) | call s:Notice('Select feedback with Space, or a for all loaded items.') | return | endif
+  let lines = revue#local_feedback#Markdown(session, selected)
+  " An independent buffer survives review closure and is never refreshed over.
+  tabnew
+  setlocal buftype=nofile bufhidden=hide noswapfile nobuflisted nomodeline
+  execute 'file ' . fnameescape('review-export://' . s:Id() . '/feedback.md')
+  setlocal filetype=markdown wrap modifiable
+  call setline(1, lines)
+  setlocal nomodified
+  call s:Notice('Markdown buffer ready · ggVG"+y copies all · :w /path/feedback.md saves a file. Feedback remains unchanged.')
+endfunction
+
 function! revue#session#Batch(...) abort
   let session = s:Get()
   if empty(session) | return | endif
+  if !a:0 && revue#local_feedback#Enabled(session)
+    call revue#session#Feedback()
+    return
+  endif
   let id = a:0 ? a:1 : ''
   let frozen = empty(id) ? {} : s:Draft(session, id)
   if !empty(id) && (empty(frozen) || frozen.kind !=# 'batch') | return | endif
@@ -4549,20 +4698,20 @@ function! revue#session#Batch(...) abort
         \ 'Submit together · supports: ' . join(supported, ', '),
         \ printf('Selected %d of %d · %s', len(selected), len(items), decision),
         \ 'Comparison ' . strpart(empty(frozen) ? session.snapshot.head : frozen.head, 0, 12),
-        \ ':RevueToggleDraft · :RevueEditDraft · :RevueSendBatch · :RevueClose',
+        \ ':ReviewToggleDraft · :ReviewEditDraft · :ReviewSendBatch · :ReviewClose',
         \ empty(frozen) ? 'Only checked drafts will be submitted. Other drafts remain in the outbox.' : 'Frozen batch: ' . frozen.state . ' · ' . get(frozen, 'error', ''), '']
-  if !empty(frozen) | call add(header, 'Failed batch: :RevueUnpackBatch restores editable drafts. Unknown: Send checks receipts only.') | endif
+  if !empty(frozen) | call add(header, 'Failed batch: :ReviewUnpackBatch restores editable drafts. Unknown: Send checks receipts only.') | endif
   if delivery ==# 'private'
     let binding = empty(frozen) ? revue#stage#Binding(session.snapshot) : frozen
     let target = empty(frozen) && has_key(binding, 'error') ? binding.error : empty(binding.pending_review) ? 'create a new private review' : 'private review #' . binding.pending_review
     let header = ['# Save selected feedback privately', target . ' · actor ' . get(binding, 'actor', 'unavailable'),
           \ printf('Selected %d of %d · source %s', len(selected), len(items), strpart(empty(frozen) ? session.snapshot.head : frozen.head, 0, 12)),
           \ 'Saved one at a time; partial results are retained. Publication is separate.',
-          \ empty(frozen) ? ':RevueToggleDraft · :RevueEditDraft · :RevueSendBatch · :RevueClose' : 'Selected feedback is read-only while this queue is retained. :RevueClose returns.',
+          \ empty(frozen) ? ':ReviewToggleDraft · :ReviewEditDraft · :ReviewSendBatch · :ReviewClose' : 'Selected feedback is read-only while this queue is retained. :ReviewClose returns.',
           \ 'Only checked comments, file feedback and replies are included. Review decisions remain in the outbox.', '']
     if !empty(frozen)
-      call extend(header, [frozen.state ==# 'unknown' ? 'Outcome unknown · :RevueCheckReceipt reads only' : frozen.state ==# 'submitting' ? 'Saving privately…' : 'Paused · :RevueSendBatch confirms remaining saves',
-            \ ':RevueUnpackBatch returns only unsaved items when outcomes are known.'] + revue#stage#View(frozen) + [''])
+      call extend(header, [frozen.state ==# 'unknown' ? 'Outcome unknown · :ReviewCheckReceipt reads only' : frozen.state ==# 'submitting' ? 'Saving privately…' : 'Paused · :ReviewSendBatch confirms remaining saves',
+            \ ':ReviewUnpackBatch returns only unsaved items when outcomes are known.'] + revue#stage#View(frozen) + [''])
       if !empty(get(frozen, 'error', '')) && empty(filter(copy(frozen.steps), {_, step -> get(step, 'error', '') ==# frozen.error}))
         call add(header, frozen.error)
       endif
@@ -4646,7 +4795,7 @@ function! revue#session#SendBatch() abort
     let error = revue#batch#Error(latest, items)
     if !empty(error) | call s:Notice(error) | return | endif
     if session.snapshot.snapshot !=# latest.snapshot
-      call s:Notice('Open :RevueLatest before submitting a review batch. Draft anchors are retained.')
+      call s:Notice('Open :ReviewLatest before submitting a review batch. Draft anchors are retained.')
       return
     endif
     let action = get(session.snapshot, 'submit_label', 'Send')
@@ -4962,7 +5111,7 @@ function! s:Refresh(session) abort
   let a:session.latest_request = get(a:session, 'latest_request', 0) + 1
   let a:session.refresh_read = {'comparison': a:session.snapshot.snapshot, 'generation': a:session.generation,
         \ 'required': revue#refresh#Keys(a:session.snapshot), 'seen': [], 'started': reltime()}
-  let a:session.message = 'Refreshing discussions… :RevueCancelRefresh keeps the current view.'
+  let a:session.message = 'Refreshing discussions… :ReviewCancelRefresh keeps the current view.'
   let a:session.refresh_state.status = 'refreshing'
   let a:session.refresh_state.error = ''
   call s:RefreshChrome(a:session)
@@ -4975,12 +5124,12 @@ endfunction
 
 function! revue#session#RefreshLabel(id) abort
   let session = get(s:sessions, a:id, {})
-  if get(get(session, 'pending_verification', {}), 'loading', 0) | return 'Verifying private review · :RevueCancelVerifyPending | ' | endif
+  if get(get(session, 'pending_verification', {}), 'loading', 0) | return 'Verifying private review · :ReviewCancelVerifyPending | ' | endif
   let status = get(get(session, 'refresh_state', {}), 'status', '')
-  if status ==# 'refreshing' | return 'Refreshing · :RevueCancelRefresh | ' | endif
-  if status ==# 'partial refresh' | return 'Refresh paused · :RevueContinueRefresh | ' | endif
-  if status ==# 'failed' | return 'Refresh failed · :RevueReviewActions | ' | endif
-  if status ==# 'interrupted' | return 'Refresh interrupted · :RevueRefresh | ' | endif
+  if status ==# 'refreshing' | return 'Refreshing · :ReviewCancelRefresh | ' | endif
+  if status ==# 'partial refresh' | return 'Refresh paused · :ReviewContinueRefresh | ' | endif
+  if status ==# 'failed' | return 'Refresh failed · :ReviewReviewActions | ' | endif
+  if status ==# 'interrupted' | return 'Refresh interrupted · :ReviewRefresh | ' | endif
   return ''
 endfunction
 
@@ -5001,7 +5150,7 @@ function! revue#session#ContinueRefresh() abort
   let state.started = reltime()
   let session.refresh_state.status = 'refreshing'
   let session.refresh_state.error = ''
-  let session.message = 'Refreshing next feedback page… :RevueCancelRefresh keeps the current view.'
+  let session.message = 'Refreshing next feedback page… :ReviewCancelRefresh keeps the current view.'
   call s:RefreshChrome(session)
   call s:RenderTree(session)
   call session.Host({'op': 'feedback_page', 'cursor': cursor, 'reference': revue#comparisons#Reference(state.candidate)},
@@ -5016,7 +5165,7 @@ function! revue#session#CancelRefresh() abort
   let session.refresh_read = {}
   let session.refresh_state.status = 'cancelled'
   let session.refresh_state.error = ''
-  let session.message = 'Refresh cancelled; previously loaded feedback retained. :RevueRefresh starts again.'
+  let session.message = 'Refresh cancelled; previously loaded feedback retained. :ReviewRefresh starts again.'
   call s:RefreshChrome(session)
   call s:RenderTree(session)
 endfunction
@@ -5063,7 +5212,7 @@ function! s:RefreshReceived(id, epoch, cursor, result) abort
     endif
     let session.refresh_state.status = 'partial refresh'
     let session.refresh_state.error = ''
-    let session.message = printf('Fresh page retained separately; %d previously loaded message(s) not reached. :RevueContinueRefresh reads one more page; :RevueCancelRefresh keeps the current view.', revue#refresh#Missing(state))
+    let session.message = printf('Fresh page retained separately; %d previously loaded message(s) not reached. :ReviewContinueRefresh reads one more page; :ReviewCancelRefresh keeps the current view.', revue#refresh#Missing(state))
   catch
     let session.refresh_state.status = 'failed'
     let session.refresh_state.error = v:exception
@@ -5090,7 +5239,7 @@ function! s:Refreshed(id, epoch, result) abort
   elseif session.snapshot.snapshot !=# a:result.data.snapshot
     call revue#comparisons#Observe(session, a:result.data)
     call revue#activity#Observe(session, a:result.data)
-    let session.message = 'Latest comparison available. :RevueLatest opens it; :RevueComparisons shows observed history. Draft anchors are retained.'
+    let session.message = 'Latest comparison available. :ReviewLatest opens it; :ReviewComparisons shows observed history. Draft anchors are retained.'
     let session.refresh_state.status = 'new revision available'
     let session.refresh_state.latest_comparison = a:result.data.snapshot
     let session.refresh_state.success_at = session.refresh_state.at
@@ -5403,6 +5552,12 @@ function! revue#session#ActionGuide() abort
       let reasons['batch-send'] = empty(draft) ? revue#stage#Error(snapshot, items, revue#stage#Binding(snapshot)) : draft.state ==# 'unknown' ? '' : draft.state ==# 'submitting' ? 'Private saves are already running.' : s:StagePermission(session, draft)
     endif
   endif
+  if revue#local_feedback#Enabled(session)
+    let reasons.batch = ''
+    if revue#local_feedback#IsFeedback(draft) && index(['draft', 'failed'], get(draft, 'state', '')) >= 0 | let reasons.send = '' | endif
+  else
+    call extend(hidden, ['export', 'edit-feedback', 'toggle-feedback', 'select-feedback', 'clear-feedback', 'export-markdown'])
+  endif
   let context = {'role': role, 'snapshot': snapshot, 'draft': draft, 'bindings': get(b:, 'revue_bindings', []), 'reasons': reasons, 'hidden': hidden}
   let items = revue#actions#Items(context)
   for item in items
@@ -5416,6 +5571,7 @@ function! revue#session#ActionGuide() abort
         endif
       endfor
     endif
+    if item.id ==# 'batch' && revue#local_feedback#Enabled(session) | let item.label = 'Collect feedback for export' | endif
     if item.id ==# 'load-event-discussion' && role ==# 'timeline' && revue#feedback#LookupSupported(snapshot, get(event, 'target', {})) | let item.label = 'Fetch this event’s complete discussion and open it' | endif
     if item.id ==# 'react' && role ==# 'reactions' && !empty(reaction_row) | let item.label = reaction_row.action_label | endif
     if item.id ==# 'unviewed' && pending_viewed | let item.label = 'Cancel this file’s pending Viewed mark' | endif
@@ -5499,10 +5655,10 @@ function! revue#session#Help() abort
   let bindings = revue#maps#Help()
   let guide = revue#actions#Lines(revue#session#ActionGuide(), 0)
   let role = get(b:, 'revue_view', get(b:, 'revue_role', 'review'))
-  call s:Fill(s:Panel(session, 'help'), ['# Revue help: ' . role, ':RevueReviewActions opens the action chooser from your working view.'] + guide + ['', 'All commands and configured bindings:'] + bindings + [
+  call s:Fill(s:Panel(session, 'help'), ['# Revue help: ' . role, ':ReviewReviewActions opens the action chooser from your working view.'] + guide + ['', 'All commands and configured bindings:'] + bindings + [
         \ '', 'Inline discussions remain expanded. ]c / [c retain native diff navigation.',
-        \ 'Use / and ? to search. In a draft, :w saves locally; :RevueSend submits.',
-        \ ':RevueClose returns to the originating view. Drafts survive reopening.',
+        \ 'Use / and ? to search. :w saves locally; :ReviewSend saves pending local feedback or confirms provider delivery.',
+        \ ':ReviewClose returns to the originating view. Drafts survive reopening.',
         \ 'Set g:revue_no_default_mappings = 1 to use only commands and Plug mappings.',
         \ 'Customize action keys with g:revue_mappings (see :help revue).',
         \ 'An unknown write outcome is retained; sending again checks receipts.'])

@@ -49,11 +49,11 @@ function! PickComparison(id) abort
   throw 'Missing comparison ' . a:id
 endfunction
 function! ChooseEndpoints() abort
-  RevueComparisons
+  ReviewComparisons
   call PickComparison(g:a.snapshot)
-  RevueRangeStart
+  ReviewRangeStart
   call PickComparison(g:b.snapshot)
-  RevueRangeEnd
+  ReviewRangeEnd
 endfunction
 try
   let restarting = filereadable($REVUE_CAP_STORE . '/restart')
@@ -61,78 +61,78 @@ try
   if restarting
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_equal('head', revue#session#Inspect(g:id).range_selection.from.side)
-    RevueResumeComparison
+    ReviewResumeComparison
     call assert_equal('range-fixture', b:revue_comparison)
     call assert_true(has_key(revue#session#Inspect(g:id).snapshot, 'range'))
     call assert_equal(g:a.snapshot, revue#session#Inspect(g:id).drafts[0].snapshot)
     call assert_equal('Keep original anchor', revue#session#Inspect(g:id).drafts[0].body)
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Keep original anchor')
-    RevueClose
-    RevueComparisons
+    ReviewClose
+    ReviewComparisons
     let before = len(g:calls)
     call cursor(1, 1)
-    RevueRangeStart
-    RevueOpenRange
+    ReviewRangeStart
+    ReviewOpenRange
     call assert_equal(before, len(g:calls))
     call PickComparison(g:a.snapshot)
-    RevueRangeStart
+    ReviewRangeStart
     call assert_equal(g:a.snapshot, get(revue#session#Inspect(g:id).comparisonrows, string(line('.')), ''), 'endpoint selection must retain comparison identity after header growth')
     call PickComparison(g:b.snapshot)
-    RevueRangeEnd base
+    ReviewRangeEnd base
     call assert_equal('base', revue#session#Inspect(g:id).range_selection.to.side)
-    RevueRangeEnd invalid
+    ReviewRangeEnd invalid
     call assert_equal('base', revue#session#Inspect(g:id).range_selection.to.side)
-    RevueRangeEnd
+    ReviewRangeEnd
     call assert_equal(g:b.snapshot, get(revue#session#Inspect(g:id).comparisonrows, string(line('.')), ''))
     call assert_match('Start: head headfixture', join(getline(1, '$'), "\n"))
     call assert_match('End: head later-head', join(getline(1, '$'), "\n"))
-    RevueOpenRange
+    ReviewOpenRange
     call assert_equal('range-fixture', b:revue_comparison)
     let state = revue#session#Inspect(g:id)
     call assert_equal(state.range_selection, state.snapshot.range)
     call assert_equal(g:b.snapshot, state.latest_comparison)
     call assert_equal(state.snapshot.backend, state.comparisons[g:b.snapshot].snapshot.backend)
     call assert_equal(g:a.snapshot, state.drafts[0].snapshot)
-    RevueComment
+    ReviewComment
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call cursor(3, 1)
-    RevueReply
+    ReviewReply
     call assert_equal('range-fixture', revue#session#Inspect(g:id).drafts[-1].snapshot)
     call assert_equal(g:requested, revue#session#Inspect(g:id).drafts[-1].range)
     call setline(1, 'Reply stays in the same discussion')
-    RevueClose
-    RevueLatest
+    ReviewClose
+    ReviewLatest
     call assert_equal(g:b.snapshot, b:revue_comparison)
     call ChooseEndpoints()
     let g:mode = 'wrong'
-    RevueOpenRange
+    ReviewOpenRange
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_match('different endpoints', revue#session#Inspect(g:id).range_status)
     let g:mode = 'delay'
-    RevueOpenRange
-    RevueHelp
+    ReviewOpenRange
+    ReviewHelp
     let helpwin = win_getid()
     call g:RangeDone({'ok': 1, 'data': RangeData(g:requested)})
     call assert_equal(helpwin, win_getid())
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
-    RevueClose
-    RevueOpenRange
-    RevueClearRange
+    ReviewClose
+    ReviewOpenRange
+    ReviewClearRange
     call g:RangeDone({'ok': 1, 'data': RangeData(g:requested)})
     call assert_equal({}, revue#session#Inspect(g:id).range_selection)
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call ChooseEndpoints()
     let g:mode = 'ok'
-    RevueOpenRange
-    RevueComparisons
+    ReviewOpenRange
+    ReviewComparisons
     call PickComparison('range-fixture')
     let selected = deepcopy(revue#session#Inspect(g:id).range_selection)
-    RevueRangeStart
+    ReviewRangeStart
     call assert_equal(selected, revue#session#Inspect(g:id).range_selection)
-    RevueOpenComparison
+    ReviewOpenComparison
     call writefile(['restart'], $REVUE_CAP_STORE . '/restart')
   endif
   call revue#session#Close()

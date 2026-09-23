@@ -125,7 +125,7 @@ system has Git branches, repositories, or GitHub-style review batches.
 | Handle updates | Explicit refresh; report a new revision; retain outdated anchors without silently moving them | Assisted re-anchoring and incremental review |
 | Multiple systems | GitHub adapter plus non-Git contract fixture | Real internal CL provider, same core UI |
 | Change lifecycle | Read current state; open provider web page | Reviewer/label edits, ready/close/reopen; merge/land only through supported explicit actions |
-| Local review | Keep `:Revue [revision]`, context callback, Markdown export | Optional deliberate checkout/edit integration |
+| Local review | Keep `:Review [revision]`, context callback, Markdown export | Optional deliberate checkout/edit integration |
 
 Binary, oversized, unavailable, and unsupported files must appear in the
 file list with an explanation and provider link in the first release. They
@@ -134,7 +134,7 @@ later work. An approval or summary-only review must work without inline comments
 
 Suggested entry points: `:Reviews [query]`, `:ReviewOpen <url-or-id>`,
 `:ReviewConnections`, `:ReviewRefresh`, and a contextual action menu.
-Retain `:Revue [revision]` for local review. An unqualified numeric change ID
+Retain `:Review [revision]` for local review. An unqualified numeric change ID
 requires a known connection/project context. No implicit checkout occurs.
 
 Opening an item keeps the inbox available, shows details, and enters Revue

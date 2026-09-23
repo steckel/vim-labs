@@ -43,7 +43,7 @@ function! revue#inventory#Lines(session, names) abort
     if !empty(entry.reason) | call add(lines, '  ' . entry.reason) | endif
     if index(['loading', 'partial', 'failed'], entry.state) >= 0 &&
           \ !(entry.state ==# 'partial' && !empty(get(get(a:session.snapshot, 'feedback', {}), 'cursor', '')))
-      call add(lines, '  :RevueRefresh retries the review; loaded feedback stays readable.')
+      call add(lines, '  :ReviewRefresh retries the review; loaded feedback stays readable.')
     endif
   endfor
   return lines
@@ -53,20 +53,20 @@ function! revue#inventory#RefreshLines(session) abort
   let refresh = get(a:session, 'refresh_state', {})
   let status = get(refresh, 'status', '')
   if status ==# 'refreshing'
-    return ['Refreshing review… searching previously loaded feedback. :RevueCancelRefresh cancels.']
+    return ['Refreshing review… searching previously loaded feedback. :ReviewCancelRefresh cancels.']
   elseif status ==# 'partial refresh'
     return ['Refresh needs another page; searching previously loaded feedback.',
-          \ '  :RevueContinueRefresh reads one page · :RevueCancelRefresh keeps this view.']
+          \ '  :ReviewContinueRefresh reads one page · :ReviewCancelRefresh keeps this view.']
   elseif status ==# 'interrupted'
-    return ['Previous refresh was interrupted. :RevueRefresh starts a new read.']
+    return ['Previous refresh was interrupted. :ReviewRefresh starts a new read.']
   elseif status ==# 'cancelled'
-    return ['Refresh cancelled; searching previously loaded feedback. :RevueRefresh starts again.']
+    return ['Refresh cancelled; searching previously loaded feedback. :ReviewRefresh starts again.']
   elseif status ==# 'failed'
-    return ['Refresh failed; previously loaded feedback retained. :RevueRefresh retries.',
+    return ['Refresh failed; previously loaded feedback retained. :ReviewRefresh retries.',
           \ '  ' . revue#message#OneLine(get(refresh, 'error', 'Review unavailable.'))] +
-          \ (has_key(get(a:session, 'refresh_read', {}), 'candidate') ? ['  :RevueContinueRefresh retries the page; :RevueCancelRefresh cancels.'] : [])
+          \ (has_key(get(a:session, 'refresh_read', {}), 'candidate') ? ['  :ReviewContinueRefresh retries the page; :ReviewCancelRefresh cancels.'] : [])
   elseif status ==# 'new revision available'
-    return ['Newer comparison available; this view searches the displayed comparison. :RevueLatest opens latest.']
+    return ['Newer comparison available; this view searches the displayed comparison. :ReviewLatest opens latest.']
   endif
   return []
 endfunction

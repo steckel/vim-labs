@@ -19,7 +19,7 @@ Enter/t opens code threads, r replies, C opens the conversation. In conversation
 c adds a message. s composes a review decision. ]f/[f navigate files.
 
 The message composer uses normal Vim editing. :w saves locally. Ctrl-S or
-:RevueSend asks to publish. :RevueDiscard discards a draft. q closes views.
+:ReviewSend asks to publish. :ReviewDiscard discards a draft. q closes views.
 Drafts survive closing/restarting Vim. Failed sends retain drafts; unknown
 outcomes are reconciled before retrying. A changed PR revision requires reopening.
 

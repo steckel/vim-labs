@@ -40,14 +40,14 @@ try
   if !g:recover
     call revue#session#Threads(g:config.thread)
     call cursor(1, 1)
-    RevueNextMessage
+    ReviewNextMessage
     let reader = win_getid()
     let selected = revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment
     let @z = 'native register retained'
     let g:revue_mappings = {'apply-suggestion': 'gS'}
     call revue#maps#Apply('threads')
     call assert_equal('<Plug>(revue-apply-suggestion)', maparg('gS', 'n'))
-    RevueApplySuggestion
+    ReviewApplySuggestion
     for _ in range(500)
       if g:plans | break | endif
       sleep 10m
@@ -70,14 +70,14 @@ try
     let malformed.message = 'another-message'
     call assert_false(revue#apply_suggestion#Receipt(operation, {'id': operation.id, 'intent': malformed, 'applied': v:true, 'observed': v:false, 'result_snapshot': '', 'capture_error': ''}))
     let draftwin = win_getid()
-    RevuePreview
+    ReviewPreview
     call assert_match('No commit', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     call assert_equal(draftwin, win_getid())
-    RevueClose
+    ReviewClose
     call assert_equal(reader, win_getid())
     call assert_equal(selected, revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment)
-    RevueApplySuggestion
+    ReviewApplySuggestion
     call assert_equal(1, g:plans, 'Existing application is reused')
     let draftwin = win_getid()
     tabnew
@@ -85,35 +85,35 @@ try
     call setline(1, 'unsaved Vim changes')
     let editing = bufnr()
     call win_gotoid(draftwin)
-    RevueSend
+    ReviewSend
     call assert_equal(0, g:mutations)
     call assert_equal(['one', 'new', 'three'], readfile(g:config.workspace . '/code.py'))
     call assert_equal('unsaved Vim changes', getbufline(editing, 1)[0])
     execute 'bwipeout! ' . editing
     call win_gotoid(draftwin)
-    RevueSend
+    ReviewSend
     call WaitApplication()
     call assert_equal('unknown', revue#session#Inspect(id).drafts[-1].state)
     call assert_false(&modifiable)
     call assert_equal(['one', 'better λ', 'three'], readfile(g:config.workspace . '/code.py'))
     call assert_equal('native register retained', @z)
-    RevueDiscard
+    ReviewDiscard
     call assert_equal(1, len(revue#session#Inspect(id).drafts))
   else
     let operation = json_decode(readfile($REVUE_CAP_STORE . '/operation')[0])
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'W')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(operation.id, b:revue_draft)
     call assert_false(&modifiable)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call WaitApplication()
     let session = revue#session#Inspect(id)
     call assert_equal([], session.drafts, session.message)
     call assert_true(session.last_receipt.applied)
     call assert_true(session.last_receipt.recovered)
     call assert_false(empty(session.last_receipt.result_snapshot))
-    RevueLatest
+    ReviewLatest
     for _ in range(500)
       if revue#session#Inspect(id).snapshot.snapshot ==# session.last_receipt.result_snapshot | break | endif
       sleep 10m

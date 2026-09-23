@@ -32,31 +32,31 @@ try
         \ 'snapshot': config.snapshot, 'Request': function('LocalAssignmentHost')}, 0)
   call WaitAssignment()
   if !g:recover
-    RevueThreads
-    RevueNextMessage
-    RevueAssign
+    ReviewThreads
+    ReviewNextMessage
+    ReviewAssign
     call cursor(10, 1)
-    RevueToggleAssignment
+    ReviewToggleAssignment
     call feedkeys("1\<CR>", 't')
-    RevuePrepareAssignment
+    ReviewPrepareAssignment
     call assert_equal('preview', b:revue_view)
     call assert_match('2 selected messages', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueSend
+    ReviewClose
+    ReviewSend
     call WaitAssignment()
     call assert_equal('unknown', revue#session#Inspect(t:revue_session).drafts[-1].state)
   else
     let operation = json_decode(readfile($REVUE_CAP_STORE . '/operation')[0])
-    RevueActivity
+    ReviewActivity
     for row in keys(revue#session#Inspect(t:revue_session).activityrows)
       if revue#session#Inspect(t:revue_session).activityrows[row].operation ==# operation.id | call cursor(str2nr(row), 1) | break | endif
     endfor
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(operation.id, b:revue_draft)
     call assert_false(&modifiable)
     " Recovery must work after configuration loss; no new assignment is sent.
     let g:revue_participants = []
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call WaitAssignment()
     let session = revue#session#Inspect(t:revue_session)
     call assert_equal([], session.drafts)

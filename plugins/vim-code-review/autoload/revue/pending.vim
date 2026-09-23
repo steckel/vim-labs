@@ -32,7 +32,7 @@ function! revue#pending#Publication(snapshot, draft) abort
   let lines = ['## Comments included in publication', ''] + revue#pending#Comments(a:draft.pending_comments)
   let current = revue#pending#Find(a:snapshot, a:draft.pending_review)
   if !empty(current) && current.version !=# a:draft.expected_version
-    call extend(lines, ['## Current pending review changed', 'Refresh retained your prepared publication. :RevuePendingBase accepts these current contents.',
+    call extend(lines, ['## Current pending review changed', 'Refresh retained your prepared publication. :ReviewPendingBase accepts these current contents.',
           \ '### Current server summary'] + split(current.body, "\n", 1) + [''] + revue#pending#Comments(current.comments))
   endif
   return lines + ['## Your review summary', '']
@@ -40,7 +40,7 @@ endfunction
 
 function! revue#pending#View(snapshot) abort
   let pending = get(a:snapshot, 'pending_reviews', {})
-  let view = {'lines': ['# Private reviews · saved on backend', ':RevueReviewActions · :RevueClose'], 'rows': {}, 'styles': {'1': 'RevueCardHeading', '2': 'RevueCardAction'}}
+  let view = {'lines': ['# Private reviews · saved on backend', ':ReviewReviewActions · :ReviewClose'], 'rows': {}, 'styles': {'1': 'RevueCardHeading', '2': 'RevueCardAction'}}
   if !get(pending, 'available', 0)
     call add(view.lines, 'Pending review state unavailable: ' . get(pending, 'error', 'This backend does not expose native pending reviews.'))
     return view
@@ -53,7 +53,7 @@ function! revue#pending#View(snapshot) abort
     let view.styles[string(start + 1)] = 'RevueCardMeta'
     if !empty(review.body) | call extend(view.lines, split(review.body, "\n", 1)) | endif
     if !get(review, 'complete', 1)
-      call add(view.lines, 'Incomplete · :RevueVerifyPending before publication/discard')
+      call add(view.lines, 'Incomplete · :ReviewVerifyPending before publication/discard')
       let view.styles[string(len(view.lines))] = 'RevueCardAction'
     endif
     for row in range(start, len(view.lines)) | let view.rows[string(row)] = {'review': review.id} | endfor
@@ -85,8 +85,8 @@ function! revue#pending#SaveError(snapshot, draft) abort
   if inventory.actor !=# get(a:draft, 'actor', '') | return 'Private review actor changed. Draft retained.' | endif
   let mode = get(a:draft, 'pending_mode', '')
   if mode ==# 'create'
-    if !empty(get(inventory, 'items', [])) | return 'A pending review already exists. Refresh and use :RevueSavePending to explicitly select it.' | endif
-    if index(['file_comment', 'reply'], a:draft.kind) >= 0 | return 'Use :RevueStartPending before saving whole-file feedback or replies privately.' | endif
+    if !empty(get(inventory, 'items', [])) | return 'A pending review already exists. Refresh and use :ReviewSavePending to explicitly select it.' | endif
+    if index(['file_comment', 'reply'], a:draft.kind) >= 0 | return 'Use :ReviewStartPending before saving whole-file feedback or replies privately.' | endif
   elseif mode ==# 'add'
     let review = revue#pending#Find(a:snapshot, get(a:draft, 'pending_review', ''))
     if empty(review) | return 'The selected pending review is unavailable or published. Draft retained.' | endif
@@ -103,7 +103,7 @@ function! revue#pending#ReplyFields(snapshot, thread) abort
   let inventory = get(a:snapshot, 'pending_reviews', {})
   let reviews = get(inventory, 'items', [])
   if !get(inventory, 'available', 0) || len(reviews) != 1
-    return {'error': 'A private reply needs one verified pending review. Use :RevueStartPending or inspect :RevuePending first.'}
+    return {'error': 'A private reply needs one verified pending review. Use :ReviewStartPending or inspect :ReviewPending first.'}
   endif
   let review = reviews[0]
   return {'kind': 'reply', 'thread': a:thread, 'pending_mode': 'add', 'pending_review': review.id,
@@ -172,7 +172,7 @@ function! revue#pending#Merge(snapshot, pending) abort
 endfunction
 
 function! revue#pending#CompleteError(review) abort
-  return get(a:review, 'complete', 1) ? '' : 'Load the complete private review with :RevueVerifyPending before publication or discard.'
+  return get(a:review, 'complete', 1) ? '' : 'Load the complete private review with :ReviewVerifyPending before publication or discard.'
 endfunction
 
 function! revue#pending#RowKey(row) abort

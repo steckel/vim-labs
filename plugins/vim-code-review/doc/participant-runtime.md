@@ -23,13 +23,13 @@ uses non-interactive execution, so operations requiring interactive approval
 cannot request approval in this process.
 
 1. Create an assignment with the existing selection/preview flow.
-2. Open `:RevueAssignments`, then its outcomes. Use `:RevueRunParticipant` or the
+2. Open `:ReviewAssignments`, then its outcomes. Use `:ReviewRunParticipant` or the
    contextual action guide. There is no new default key; `run-participant` is
    configurable through `g:revue_mappings`.
 3. Inspect participant, selected comparison, workspace, executable and access in
    the saved preview. Close the preview to its read-only operation and use
-   `:RevueSend` to confirm. Merely opening it starts nothing.
-4. Use `:RevueReloadAssignments` for current process and comment outcomes. A
+   `:ReviewSend` to confirm. Merely opening it starts nothing.
+4. Use `:ReviewReloadAssignments` for current process and comment outcomes. A
    saved run receipt confirms acceptance of the operation, not task completion.
 5. Once the prior execution ends, the action becomes Resume participant and
    previews the exact recorded session. Later human replies remain available
@@ -64,11 +64,11 @@ session with its original runtime settings.
 
 ## Abandon an unstarted preparation
 
-Use `:RevueAbandonRun` from assignment outcomes, or its contextual action. There
+Use `:ReviewAbandonRun` from assignment outcomes, or its contextual action. There
 is no default key; `abandon-run` is configurable. Its saved preview names the
 exact prepared run and states that assignment access, comments, outcomes and
 previous executed sessions remain. Close the preview and confirm with
-`:RevueSend`. Opening the preview alone does nothing.
+`:ReviewSend`. Opening the preview alone does nothing.
 
 This works for an outdated preparation and does not require its executable to
 remain installed. A cancelled assignment's unstarted preparation can also be

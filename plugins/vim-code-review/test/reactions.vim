@@ -68,21 +68,21 @@ try
   call assert_true(revue#reaction#Valid(g:data))
   let g:id = revue#session#Open(g:fixture.snapshot, function('ReactionHost'), 0)
   call cursor(3, 1)
-  RevueThread
+  ReviewThread
   call cursor(1, 1)
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   let selected = deepcopy(revue#discussion#Selected(revue#session#Inspect(g:id), line('.')))
   if !filereadable($REVUE_CAP_STORE . '/pending-reaction')
-    RevueReply
+    ReviewReply
     call setline(1, ['Unrelated human reply.', 'Keep these draft bytes.'])
     let reply_buffer = bufnr()
-    RevueClose
+    ReviewClose
   else
     let replies = filter(copy(revue#session#Inspect(g:id).drafts), {_, draft -> draft.kind ==# 'reply'})
     call assert_equal("Unrelated human reply.\nKeep these draft bytes.\nTyping during a reaction request.", replies[0].body)
   endif
-  RevueReactions
+  ReviewReactions
   call assert_equal('reactions', b:revue_view)
   if !filereadable($REVUE_CAP_STORE . '/pending-reaction')
     call assert_match('Add your Thumbs up · 2', join(getline(1, '$'), "\n"))
@@ -97,34 +97,34 @@ try
   call revue#maps#Apply('reactions')
   call assert_equal('', maparg('<CR>', 'n'))
   call assert_equal('<Plug>(revue-react)', maparg('gx', 'n'))
-  call assert_equal(2, exists(':RevueReact'))
+  call assert_equal(2, exists(':ReviewReact'))
   unlet g:revue_no_default_mappings g:revue_mappings
   call revue#maps#Apply('reactions')
   if filereadable($REVUE_CAP_STORE . '/pending-reaction')
     let pending = json_decode(readfile($REVUE_CAP_STORE . '/pending-reaction')[0])
     let g:mode = 'reject'
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal('reactions', b:revue_view)
     call assert_equal(pending.id, g:calls[-1].draft.id)
     let g:fixture.snapshot.capabilities.reaction.enabled = 0
     let g:fixture.snapshot.capabilities.reactions.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal(pending, revue#session#Inspect(g:id).drafts[-1])
     call assert_equal(1, g:calls[-1].reconcile)
     call assert_match('no longer available', join(getline(1, '$'), "\n"))
     let g:mode = 'ok'
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal([], PendingReactions())
   else
     call PickReaction('+1')
     let g:mode = 'hold'
     let chooser = win_getid()
     let @z = 'register retained'
-    RevueReact
+    ReviewReact
     let draft = deepcopy(revue#session#Inspect(g:id).drafts[-1])
     call assert_equal(selected.comment, draft.message)
     call assert_equal(v:true, draft.present)
@@ -134,7 +134,7 @@ try
     call assert_false(exists('b:revue_draft'))
     let call_count = len(g:calls)
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal(call_count, len(g:calls), 'Repeated activation cannot duplicate an in-flight mutation')
     let Callback = g:MutateDone
     let g:mode = 'ok'
@@ -147,8 +147,8 @@ try
     call assert_equal(editing_bytes, getline(1, '$'))
     let human = filter(copy(revue#session#Inspect(g:id).drafts), {_, draft -> draft.kind ==# 'reply'})[0]
     call assert_equal(join(editing_bytes, "\n"), human.body, 'Normal draft autosave retains every byte')
-    RevueClose
-    RevueReactions
+    ReviewClose
+    ReviewReactions
     call Callback({'ok': 0, 'unknown': 1, 'error': 'Duplicate late callback'})
     call assert_equal([], PendingReactions())
     call assert_equal(3, g:data.items[0].count)
@@ -157,94 +157,94 @@ try
     " A known rejection keeps the same intent; actor changes cannot retarget it.
     let g:mode = 'reject'
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     let rejected = deepcopy(revue#session#Inspect(g:id).drafts[-1])
     call assert_equal('failed', rejected.state)
     call assert_match('Retry · Remove Thumbs up as Me', join(getline(1, '$'), "\n"))
     let g:data.actor = 'fixture:someone-else'
-    RevueReactions
+    ReviewReactions
     let call_count = len(g:calls)
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal(call_count, len(g:calls))
     call assert_match('Actor changed', join(getline(1, '$'), "\n"))
     let g:data.actor = 'fixture:me'
     let g:mode = 'ok'
-    RevueReactions
+    ReviewReactions
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal(rejected.id, g:calls[-1].draft.id)
     call assert_equal(rejected.present, g:calls[-1].draft.present)
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_true(g:data.items[0].mine)
     call PickReaction('heart')
-    RevueReact
+    ReviewReact
     call assert_equal(v:false, g:calls[-1].draft.present)
     call assert_equal(0, g:data.items[1].count)
-    RevueClose
+    ReviewClose
     call assert_equal('threads', b:revue_view)
     call assert_equal(selected.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
     call assert_match('Reactions: Thumbs up 3 \[you\]', join(getline(1, '$'), "\n"))
-    RevueCopyMessage z
+    ReviewCopyMessage z
     call assert_equal(selected.message.body, @z)
     " A late detail read must not replace Help or the returned discussion.
     let g:delay = 1
-    RevueReactions
+    ReviewReactions
     let Callback = g:Delayed
-    RevueHelp
+    ReviewHelp
     let help = getline(1, '$')
     call Callback({'ok': 1, 'data': deepcopy(g:data)})
     call assert_equal(help, getline(1, '$'))
     let g:delay = 0
-    RevueClose
+    ReviewClose
     call assert_equal('reactions', b:revue_view)
     call assert_match('Thumbs up', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     let g:delay = 1
-    RevueReactions
+    ReviewReactions
     let Callback = g:Delayed
-    RevueClose
+    ReviewClose
     let text = getline(1, '$')
     call Callback({'ok': 1, 'data': deepcopy(g:data)})
     call assert_equal(text, getline(1, '$'))
     let g:delay = 0
-    RevueReactions
+    ReviewReactions
     " A missing actor has counts but no actionable row.
     let original = deepcopy(g:data)
     let g:data.actor = ''
     for item in g:data.items | call remove(item, 'mine') | endfor
-    RevueReactions
+    ReviewReactions
     call assert_equal({}, revue#session#Inspect(g:id).reactionrows)
     let g:data = original
-    RevueReactions
+    ReviewReactions
     let g:delay = 1
-    RevueReactions
+    ReviewReactions
     let Callback = g:Delayed
     let g:fixture.snapshot.threads[0].comments[1].capabilities.reactions.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     call Callback({'ok': 1, 'data': deepcopy(g:data)})
     call assert_equal({}, revue#session#Inspect(g:id).reactionrows)
     call assert_match('no longer available', join(getline(1, '$'), "\n"))
     let g:delay = 0
     let g:fixture.snapshot.threads[0].comments[1].capabilities.reactions.enabled = 1
-    RevueRefresh
+    ReviewRefresh
     " Local persistence failure must stop the mutation before it reaches the host.
     let lock = revue#session#Inspect(g:id).draftpath . '.lock'
     call mkdir(lock)
     let call_count = len(g:calls)
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal(call_count, len(g:calls))
     call assert_equal([], PendingReactions())
     call delete(lock, 'd')
     let g:mode = 'throw'
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'bad'
     call PickReaction('+1')
-    RevueReact
+    ReviewReact
     let pending = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', pending.state)
     call assert_match('Check outcome', join(getline(1, '$'), "\n"))

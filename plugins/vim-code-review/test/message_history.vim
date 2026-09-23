@@ -42,24 +42,24 @@ try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'edit-history', 'review': 'review', 'snapshot': g:fixture.snapshot, 'Request': function('EditHistoryHost')}, 0)
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, 'Keep unsent text while reading history')
-  RevueClose
-  RevueThreads
+  ReviewClose
+  ReviewThreads
   call cursor(1, 1)
-  RevueNextMessage
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   call assert_equal('local-reply-2', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   let choice = index(map(revue#session#ActionGuide(), {_, i -> i.id}), 'message-history') + 1
   call feedkeys(choice . "\<CR>", 't')
-  RevueReviewActions
+  ReviewReviewActions
   call assert_equal('message-history', b:revue_view)
   call assert_false(&modifiable)
   call assert_equal('local-reply-2', g:requests[-1].request.target.message)
   call g:requests[-1].Done({'ok': 0, 'error': 'Network unavailable'})
   call assert_match('Network unavailable', join(getline(1, '$'), "\n"))
-  RevueReloadMessageHistory
+  ReviewReloadMessageHistory
   call g:requests[-1].Done({'ok': 1, 'data': EditPage(g:requests[-1].request, ['b', 'c'], 'older')})
   " Surface styling does not rewrite recorded text or depend on screen width.
   let raw = "\t```suggestion\n+literal 界 é\n> quoted source\n```"
@@ -76,53 +76,53 @@ try
   call assert_true(len(sign_getplaced(bufnr(), {'group': 'RevueSurface'})[0].signs) > 0)
   call assert_equal('no', &l:signcolumn)
   call EditPick('c')
-  RevueOlderMessageEdits
+  ReviewOlderMessageEdits
   let pending = g:requests[-1]
-  RevueCancelMessageHistory
+  ReviewCancelMessageHistory
   call pending.Done({'ok': 1, 'data': EditPage(pending.request, ['a'], '')})
   call assert_equal(2, len(revue#session#Inspect(g:id).message_history.items))
-  RevueOlderMessageEdits
+  ReviewOlderMessageEdits
   let pending = g:requests[-1]
-  RevueHelp
+  ReviewHelp
   let page = EditPage(pending.request, ['a'], '')
   let page.items[0].content_state = 'redacted'
   let page.items[0].body = ''
   call pending.Done({'ok': 1, 'data': page})
   call assert_equal('help', b:revue_view)
   call assert_equal([], sign_getplaced(bufnr(), {'group': 'RevueSurface'})[0].signs, 'history backgrounds must not leak into Help')
-  RevueClose
+  ReviewClose
   call assert_equal('message-history', b:revue_view)
   call assert_equal('c', EditSelection())
   call assert_match('Revision content was redacted', join(getline(1, '$'), "\n"))
   let before = deepcopy(revue#session#Inspect(g:id).message_history.items)
-  RevueReloadMessageHistory
+  ReviewReloadMessageHistory
   let invalid = EditPage(g:requests[-1].request, ['secret'], '')
   let invalid.items[0].content_state = 'redacted'
   call g:requests[-1].Done({'ok': 1, 'data': invalid})
   call assert_equal(before, revue#session#Inspect(g:id).message_history.items)
   call assert_match('must not be displayed', join(getline(1, '$'), "\n"))
-  RevueReloadMessageHistory
+  ReviewReloadMessageHistory
   let pending = g:requests[-1]
-  RevueClose
+  ReviewClose
   call assert_equal('local-reply-2', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-  RevuePreviousMessage
-  RevueMessageHistory
+  ReviewPreviousMessage
+  ReviewMessageHistory
   call assert_equal('local-reply-1', g:requests[-1].request.target.message)
   call pending.Done({'ok': 1, 'data': EditPage(pending.request, ['wrong-message'], '')})
   call assert_equal([], revue#session#Inspect(g:id).message_history.items)
   let page = EditPage(g:requests[-1].request, ['reply-one-edit'], '')
   call g:requests[-1].Done({'ok': 1, 'data': page})
-  RevueReloadMessageHistory
+  ReviewReloadMessageHistory
   let pending = g:requests[-1]
   let g:fixture.snapshot.threads[0].comments[1].version = 'v2'
   let g:fixture.snapshot.threads[0].comments[1].body = 'Changed message'
-  RevueRefresh
+  ReviewRefresh
   call pending.Done({'ok': 1, 'data': EditPage(pending.request, ['stale'], '')})
   call assert_match('changed', revue#session#Inspect(g:id).message_history.error)
-  RevueReloadMessageHistory
+  ReviewReloadMessageHistory
   call assert_equal('v2', g:requests[-1].request.target.expected_version)
   call g:requests[-1].Done({'ok': 1, 'data': EditPage(g:requests[-1].request, ['new'], '')})
-  RevueClose
+  ReviewClose
   call assert_equal('local-reply-1', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   call assert_equal('Keep unsent text while reading history', revue#session#Inspect(g:id).drafts[0].body)
   let disk = join(readfile(revue#session#Inspect(g:id).draftpath), "\n")

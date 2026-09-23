@@ -69,11 +69,11 @@ try
     call assert_match('Sent', state.last_outcome)
     call assert_equal(1, len(revue#activity#Unread(state)))
     call assert_equal(1, len(filter(copy(state.activity), {_, e -> e.outcome ==# 'accepted'})))
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'w')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(0, &modifiable)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     let state = revue#session#Inspect(g:id)
     call assert_equal([], state.drafts)
     call assert_equal(1, len(g:calls))
@@ -81,15 +81,15 @@ try
     call assert_equal(2, len(json_decode(readfile(g:receiptfile)[0])))
     call assert_equal(2, len(filter(copy(state.activity), {_, e -> e.outcome ==# 'accepted'})))
     call assert_equal(1, state.activity[-1].receipt.recovered)
-    RevueNextUnread
+    ReviewNextUnread
     call assert_equal('new-reply-2', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-    RevueMarkRead
+    ReviewMarkRead
     call assert_equal([], revue#activity#Unread(revue#session#Inspect(g:id)))
     call revue#session#Close()
   else
     call assert_equal([], revue#activity#Unread(revue#session#Inspect(g:id)))
     call cursor(3, 1)
-    RevueThread
+    ReviewThread
     call SelectMessage('local-reply-1', 'comment')
     let oldrow = line('.')
     " IDs, not row offsets/body hashes/author names, define arrivals and selection.
@@ -101,14 +101,14 @@ try
     call assert_true(line('.') > oldrow)
     call assert_equal(3, len(revue#activity#Unread(revue#session#Inspect(g:id))))
     call assert_match('1 new', join(getline(1, '$'), "\n"))
-    RevueMarkThreadRead
+    ReviewMarkThreadRead
     call assert_equal(2, len(revue#activity#Unread(revue#session#Inspect(g:id))))
-    RevueNextUnread
+    ReviewNextUnread
     call assert_equal('comment', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).kind)
-    RevueMarkRead
-    RevueNextUnread
+    ReviewMarkRead
+    ReviewNextUnread
     call assert_equal('review', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).kind)
-    RevueMarkRead
+    ReviewMarkRead
     call assert_equal([], revue#activity#Unread(revue#session#Inspect(g:id)))
     " A thread outside the current file inventory remains readable; source jump is safe.
     let orphan = deepcopy(g:fixture.snapshot.threads[0])
@@ -117,15 +117,15 @@ try
     let orphan.comments = [{'id': 'orphan-message', 'author': 'same', 'body': 'Review on absent file'}]
     call add(g:fixture.snapshot.threads, orphan)
     call revue#session#Refresh()
-    RevueNextUnread
+    ReviewNextUnread
     call assert_match('removed.vim', getline(1))
     let panelwin = win_getid()
-    RevueJump
+    ReviewJump
     call assert_equal(panelwin, win_getid())
-    RevueMarkThreadRead
+    ReviewMarkThreadRead
     call revue#session#Threads('local-thread')
     call SelectMessage('local-root', 'comment')
-    RevueReply
+    ReviewReply
     call setline(1, 'My saved reply body')
     let composer = bufnr()
     let editorwin = win_getid()
@@ -135,19 +135,19 @@ try
     call assert_equal(composer, bufnr())
     call assert_equal(['My saved reply body'], getline(1, '$'))
     let g:refresh_failed = 1
-    RevueSend
+    ReviewSend
     let state = revue#session#Inspect(g:id)
     call assert_equal([], state.drafts)
     call assert_match('Sent', state.last_outcome)
     call assert_equal(['accepted', 'refresh-failed'], map(copy(state.activity), {_, e -> e.outcome}))
-    RevueActivity
+    ReviewActivity
     call assert_match('network unavailable', join(getline(1, '$'), "\n"))
     call SelectOutcome('accepted')
-    RevueCopyReceipt a
+    ReviewCopyReceipt a
     call assert_equal('receipt-0', json_decode(@a).id)
     let before = bufnr()
     call revue#session#Reply()
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(before, bufnr())
     call assert_equal(1, len(g:calls))
     let g:refresh_failed = 0
@@ -157,22 +157,22 @@ try
     call assert_match('REFRESH-FAILED', join(getline(1, '$'), "\n"))
     call cursor(1, 1)
     let @a = 'untouched'
-    RevueCopyReceipt a
+    ReviewCopyReceipt a
     call assert_equal('untouched', @a)
-    RevueNextUnread
-    RevueMarkRead
+    ReviewNextUnread
+    ReviewMarkRead
     call add(g:fixture.snapshot.threads[0].comments, {'id': 'new-reply-2', 'author': 'reviewer', 'body': 'Persist this unread message'})
     call revue#session#Refresh()
     " Crash after remote acceptance but before local acknowledgement persists.
-    RevueReply
+    ReviewReply
     call setline(1, 'Accepted immediately before storage failure')
     let g:mode = 'save-failed'
-    RevueSend
+    ReviewSend
     let state = revue#session#Inspect(g:id)
     call assert_equal([], state.drafts)
     call assert_equal(2, len(filter(copy(state.activity), {_, e -> e.outcome ==# 'accepted'})))
     call assert_match('Cannot lock', state.persistence_error)
-    RevueActivity
+    ReviewActivity
     call assert_match('NOT SAVED', join(getline(1, '$'), "\n"))
     let disk = json_decode(join(readfile(state.draftpath), "\n"))
     call assert_equal('submitting', disk.drafts[0].state)

@@ -16,6 +16,10 @@ endfunction
 try
   let id = revue#session#Open(g:rich.snapshot, function('InteractionHost'), 0)
   let s = revue#session#Inspect(id)
+  call win_gotoid(s.treewin)
+  call assert_equal([], getcompletion('Revue', 'command'))
+  call assert_equal(2, exists(':ReviewOpenFile'))
+  call assert_notequal(2, exists(':ReviewOpen'), 'File action must not shadow the GitHub URL command')
   call win_gotoid(s.basewin)
   call cursor(3, 4)
   let origin = winsaveview()
@@ -26,12 +30,13 @@ try
   call revue#session#Threads()
   let panel = bufnr()
   call assert_equal('threads', b:revue_view)
-  call assert_true(exists(':RevueReply') == 2)
+  call assert_true(exists(':ReviewReply') == 2)
+  call assert_equal([], getcompletion('Revue', 'command'))
   call revue#session#Help()
   call assert_equal('help', b:revue_view)
   call assert_equal({}, revue#session#Inspect(id).threadmap)
   call assert_equal('', maparg('r', 'n'))
-  call assert_equal(0, exists(':RevueReply'))
+  call assert_equal(0, exists(':ReviewReply'))
   call cursor(4, 1)
   call revue#session#Reply()
   call revue#session#NewConversation()
@@ -69,26 +74,26 @@ try
   " Message identity, body selection, quoting, and refresh anchoring.
   call win_gotoid(s.headwin)
   call cursor(3, 1)
-  RevueThread
+  ReviewThread
   call assert_equal('local-thread', revue#session#Inspect(id).panelthread)
   call cursor(1, 1)
-  RevueNextMessage
+  ReviewNextMessage
   call assert_match('morgan', getline('.'))
-  RevueNextMessage
+  ReviewNextMessage
   call assert_match('alex', getline('.'))
   let selected = revue#discussion#Selected(revue#session#Inspect(id), line('.'))
   call assert_equal('local-reply-1', selected.comment)
-  RevueCopyMessage a
+  ReviewCopyMessage a
   call assert_match('Yes. I', getreg('a'))
   call setreg('b', 'retain register')
-  RevueCopyLink b
+  ReviewCopyLink b
   call assert_equal('retain register', getreg('b'))
   let g:rich.snapshot.threads[0].comments[1].url = 'https://example.test/review#reply-1'
   call revue#session#Refresh()
-  RevueCopyLink b
+  ReviewCopyLink b
   call assert_equal('https://example.test/review#reply-1', getreg('b'))
   call feedkeys("2\<CR>", 't')
-  RevueActions
+  ReviewActions
   call assert_match('Yes. I', getreg('"'))
   call cursor(selected.body_end, 1)
   call feedkeys('VQ', 'xt')
@@ -99,25 +104,25 @@ try
   let text_before_preview = getline(1, '$')
   let composer = win_getid()
   let discussion_win = revue#session#Inspect(id).panelwin
-  RevuePreview
+  ReviewPreview
   call assert_equal('preview', b:revue_view)
   call assert_match('Reply · completion.vim', join(getline(1, '$'), "\n"))
   call assert_match('My additional reply.', join(getline(1, '$'), "\n"))
   call assert_equal(0, &modifiable)
-  call assert_equal(0, exists(':RevueSend'))
+  call assert_equal(0, exists(':ReviewSend'))
   call assert_true(win_id2tabwin(discussion_win)[0] > 0)
   call revue#session#Refresh()
   call assert_equal('preview', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_equal(composer, win_getid())
   call assert_equal(text_before_preview, getline(1, '$'))
   call assert_true(len(filter(prop_list(1), {_, p -> p.type ==# 'RevueDraftContext'})) > 0)
-  RevueClose
+  ReviewClose
   call assert_equal('threads', b:revue_view)
-  RevueQuote
+  ReviewQuote
   call assert_match('My additional reply.', join(getline(1, '$'), "\n"))
   call assert_match('> Could we keep prefix', join(getline(1, '$'), "\n"))
-  RevueClose
+  ReviewClose
   let selected = revue#discussion#Selected(revue#session#Inspect(id), line('.'))
   call assert_equal('local-reply-1', selected.comment)
   " An earlier message growing must not shift selection onto a different reply.
@@ -137,20 +142,20 @@ try
   let g:rich.snapshot.threads[0].start = 2
   call revue#session#Refresh()
   call cursor(2, 1)
-  RevueReply
+  ReviewReply
   call assert_equal('local-thread', revue#session#Inspect(id).drafts[-1].thread)
-  RevueClose
+  ReviewClose
   call assert_equal(s.headwin, win_getid())
   call assert_equal(2, line('.'))
   " If the originating source window is closed, restore its side and anchor.
   call win_gotoid(s.basewin)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   let composer = win_getid()
   call win_gotoid(s.basewin)
   close
   call win_gotoid(composer)
-  RevueClose
+  ReviewClose
   call assert_equal(revue#session#Inspect(id).basewin, win_getid())
   call assert_equal('base', b:revue_side)
   call assert_equal(3, line('.'))
@@ -165,25 +170,25 @@ try
     call assert_equal('', maparg(key, 'n'), key)
   endfor
   call assert_equal('<Plug>(revue-reply)', maparg('gr', 'n'))
-  call assert_equal(2, exists(':RevueThreads'))
+  call assert_equal(2, exists(':ReviewThreads'))
   call assert_false(empty(maparg('<Plug>(revue-threads)', 'n')))
-  RevueThreads
+  ReviewThreads
   call assert_equal('threads', b:revue_view)
   call assert_equal('', maparg('<CR>', 'n'))
-  RevueJump
+  ReviewJump
   call assert_equal(s.headwin, win_getid())
-  RevueComment
+  ReviewComment
   call setline(1, ['```suggestion', 'replacement from the original comparison', '```'])
   let draft_id = revue#session#Inspect(id).drafts[-1].id
   let composer = win_getid()
   let lock = revue#session#Inspect(id).draftpath . '.lock'
   call mkdir(lock)
-  RevueClose
+  ReviewClose
   call assert_equal(composer, win_getid())
   call assert_equal(1, &modified)
   call assert_match('SAVE FAILED', &statusline)
   call delete(lock, 'd')
-  RevueClose
+  ReviewClose
   call assert_equal(s.headwin, win_getid())
   call revue#session#Close()
   " A restored old draft must not preview new source as its removed lines.
@@ -201,7 +206,7 @@ try
     endif
   endfor
   call assert_equal('draft', b:revue_role)
-  RevuePreview
+  ReviewPreview
   call assert_match('Original source is not loaded', join(getline(1, '$'), "\n"))
   call assert_notmatch('__NEW_REVISION__', join(getline(1, '$'), "\n"))
   for row in range(1, line('$'))

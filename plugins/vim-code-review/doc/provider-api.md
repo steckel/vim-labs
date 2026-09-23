@@ -52,10 +52,10 @@ actions until the native review is published. Unknown ownership/read failure
 is explicit; another actor's pending summary is never imported. This filtering
 does not erase previously saved local caches when accounts change.
 
-`:RevuePending` exposes inventory, summary, private comments and reviewed source.
-`:RevueOpenPending` navigates to the exact loaded message, retaining return
+`:ReviewPending` exposes inventory, summary, private comments and reviewed source.
+`:ReviewOpenPending` navigates to the exact loaded message, retaining return
 context. A changed/disappeared selection becomes inert on refresh. Optional
-`capabilities.submit_pending` enables `:RevuePublishPending [event]`, which uses
+`capabilities.submit_pending` enables `:ReviewPublishPending [event]`, which uses
 the backend's review action IDs and permissions. A durable `submit_pending`
 draft stores native `pending_review`, `actor`, `expected_version`,
 `pending_head`, full frozen `pending_comments`, selected `event`, editable
@@ -64,7 +64,7 @@ is excluded. This operation is separate from batch submission.
 
 Publication preview shows all included private comments and your summary.
 When the server changes, it also shows current server summary/comments.
-`:RevuePendingBase` explicitly accepts refreshed pending contents and comparison
+`:ReviewPendingBase` explicitly accepts refreshed pending contents and comparison
 after confirmation, preserving the user's summary. It cannot alter an unknown
 publication. The backend checks exact ownership, version/comment set, decision
 permission and the PR source refs before submitting the existing review ID.
@@ -80,12 +80,12 @@ receipt markers. Recovery reads the existing review and never submits it again;
 later dismissal does not erase its prior publication receipt. Missing or
 malformed success remains unknown. No live GitHub publication was used in tests.
 
-Optional `capabilities.discard_pending` enables `:RevueDiscardPending` on a
+Optional `capabilities.discard_pending` enables `:ReviewDiscardPending` on a
 selected native review. It prepares a read-only operation and immediately opens
 a full preview of the private summary and every comment to be removed. The
 operation freezes `pending_review`, `actor`, `expected_version`, `pending_head`,
 `pending_comments`, `pending_body` and normal comparison/operation fields; `body`
-is empty. `:RevueSend` requires a Delete confirmation. `:RevueDiscard` cancels
+is empty. `:ReviewSend` requires a Delete confirmation. `:ReviewDiscard` cancels
 only this local operation. Neither action includes unrelated outbox drafts.
 Existing publication/discard operations for the same native ID are reused,
 including unknown operations. Changing intent requires cancelling the known
@@ -110,7 +110,7 @@ review was deleted during verification.
 
 Optional `capabilities.delete_pending_comment: {enabled, body_required: false}`
 and message `capabilities.delete: {enabled, scope: "message", reason?}` expose
-`:RevueDeletePendingComment`. A root's scope must be established before enabling
+`:ReviewDeletePendingComment`. A root's scope must be established before enabling
 it. GitHub currently disables roots with replies; replies and roots without
 replies are supported. Review summaries and published feedback are separate.
 
@@ -156,9 +156,9 @@ the same pending identity fields and their own message versions. Summary
 `capabilities.edit.body_required: false` permits clearing a private summary;
 inline comments still require text.
 
-`:RevueEditPending` edits the selected summary or exact comment in the inventory.
-`:RevueEditMessage` also works from a focused private discussion. Both use the
-same original/current/proposed preview and `:RevueEditBase` conflict workflow.
+`:ReviewEditPending` edits the selected summary or exact comment in the inventory.
+`:ReviewEditMessage` also works from a focused private discussion. Both use the
+same original/current/proposed preview and `:ReviewEditBase` conflict workflow.
 The confirmation says Save privately. An unavailable, changed-owner or published
 review retains the edit and cannot be accepted as a public edit via EditBase.
 Publish/discard opens an unfinished edit for that native review first; editing
@@ -179,7 +179,7 @@ race this write, including making the target public before the update arrives.
 The client labels current publication state only after refresh. Authenticated
 live private editing remains an integration gate; tests use fixtures.
 
-Optional `capabilities.start_pending` enables `:RevueStartPending`, an editable
+Optional `capabilities.start_pending` enables `:ReviewStartPending`, an editable
 optional-summary draft with kind `start_pending`, `pending_mode: "create"`,
 `pending_review: ""`, verified `actor`, and normal comparison/operation fields.
 `:w` remains a local save; Send confirms Save privately and creates the native
@@ -187,7 +187,7 @@ review. An existing native review opens the inventory instead. An unfinished
 creation is reused, including after restart.
 
 Optional `capabilities.save_pending: {enabled, kinds}` enables
-`:RevueSavePending` in a `comment` (including suggestion) or `file_comment` draft.
+`:ReviewSavePending` in a `comment` (including suggestion) or `file_comment` draft.
 This explicitly prepares private delivery and opens preview, preserving its
 text and source anchor. No backend write occurs until Send. With no native
 review, an inline comment binds `pending_mode: "create"`; with one review it
@@ -234,8 +234,8 @@ GitHub derives pending_reply from the verified actor, native thread identity and
 GraphQL viewerCanReply. Private roots continue to disable public reply and
 resolution actions, while their card footer offers Reply privately.
 
-`:RevueReplyPending` explicitly creates a private reply to a selected thread;
-`:RevueSavePending` can explicitly convert an editable ordinary reply draft.
+`:ReviewReplyPending` explicitly creates a private reply to a selected thread;
+`:ReviewSavePending` can explicitly convert an editable ordinary reply draft.
 Ordinary Reply and Quote automatically bind private delivery when the root or
 selected message is pending. Ordinary replies to published messages stay public.
 Existing replies retain text and delivery mode; changing a public draft to private
@@ -276,7 +276,7 @@ GitHub advertises comment/file_comment/reply and a 1000 ms interval, following
 its recommendation to space mutative requests.
 [GitHub API guidance](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api).
 
-`:RevueStageBatch` previews the selected bodies, actor, comparison, and native
+`:ReviewStageBatch` previews the selected bodies, actor, comparison, and native
 review (or creation intent). All selected items must have the same latest
 comparison. Review decisions, other unsupported kinds, already prepared private
 operations, and unselected drafts remain outside the queue. No decision is
@@ -355,7 +355,7 @@ The chooser retains compact Add/Remove choices, then lists people grouped by
 reaction in a read-only section. Participant rows cannot execute reaction
 writes. Own membership uses stable identity, not a matching display name. Names
 remain readable when the viewer's identity is unavailable. Reload uses
-`:RevueReactions`; close returns to the selected message. No extra network call
+`:ReviewReactions`; close returns to the selected message. No extra network call
 is added: GitHub retains user fields already present in its lazy reaction list;
 local membership details are included only on the detail read, not every card.
 
@@ -399,8 +399,8 @@ the existing draft. Edits are submitted separately from review batches.
 Before writing, validate review membership, exact thread/message/kind, actor,
 version and original body. A version conflict preserves the draft. The preview
 shows original and proposed text plus the current message when it differs.
-`:RevueRefresh` is also available in the composer without a default mapping.
-`:RevueEditBase` explicitly accepts the latest loaded version after confirmation,
+`:ReviewRefresh` is also available in the composer without a default mapping.
+`:ReviewEditBase` explicitly accepts the latest loaded version after confirmation,
 retaining replacement text; it does not merge content. Missing/deleted targets
 and frozen operations cannot acquire a new edit base.
 
@@ -442,7 +442,7 @@ for verification; tests inspect exact transport requests and recovery behavior.
 `revue#review#OpenReview(snapshot, Host, file_index)` opens a provider-supplied
 review and returns its session ID. `file_index = -1` opens the conversation;
 otherwise it selects a zero-based changed-file index. Reopening an existing
-visible change focuses its session. The local `:Revue` interface is unchanged.
+visible change focuses its session. The local `:Review` interface is unchanged.
 
 `Host` is a session-scoped Funcref accepting `(request, Done)`. It starts an
 asynchronous operation and calls `Done(result)` once. `result` is either
@@ -532,7 +532,7 @@ batch contract below. Thread-state operations use the extension below.
 An unsuccessful receipt read must retain an earlier unknown write outcome even
 if the read failure itself has `unknown: false`. Revue carries reconciliation
 intent through callbacks, keeps the operation immutable, and disallows discard
-or batch unpacking until resolved. `:RevueCheckReceipt` performs only recovery;
+or batch unpacking until resolved. `:ReviewCheckReceipt` performs only recovery;
 it does not turn a failed initial draft into a new submission.
 
 Capability rules are checked before draft creation and before submission.
@@ -567,7 +567,7 @@ boolean `resolved` (requested state), boolean `expected_resolved` (state inspect
 before acting), and the usual operation/comparison fields. An explicit
 Resolve/Reopen command or message-menu action sends in place, with no composer
 or second confirmation. Waiting/failure/unknown status stays beside the thread;
-`:RevueCheckThreadState` checks uncertain outcomes. Activity retains optional
+`:ReviewCheckThreadState` checks uncertain outcomes. Activity retains optional
 read-only operation details. The discussion stays expanded.
 State changes are sent individually and are not comment/review batch items.
 
@@ -654,7 +654,7 @@ commit. It retains text content and generates hunks from that exact content;
 later workspace edits do not alter the review. Binary/non-UTF-8 content and
 files over 2 MiB have explicit non-text states. Untracked files require opt-in,
 unsaved editor buffers are excluded, and capture does not stage or commit.
-The original `:Revue` path remains available for jj and callback/clipboard use.
+The original `:Review` path remains available for jj and callback/clipboard use.
 
 Local mutations validate snapshot identity and source ranges and serialize
 conversation updates with SQLite transactions. A receipt keyed by review and
@@ -727,8 +727,8 @@ The optional v1 outbox `navigation` field stores `selected`, `order`, and
 `references`. Each reference entry contains the backend reference, selected file
 ID/side and Vim view positions. It contains no snapshot, source cache, accepted
 conversation body or credentials. Startup opens current backend code;
-`:RevueResumeComparison` explicitly retrieves the saved selection. Opening a
-saved draft does not move its anchor; `:RevueDraftComparison` retrieves its source
+`:ReviewResumeComparison` explicitly retrieves the saved selection. Opening a
+saved draft does not move its anchor; `:ReviewDraftComparison` retrieves its source
 comparison. Original operation IDs and receipt-only recovery are unchanged.
 
 GitHub history paginates immutable compare-commit results and lists the current
@@ -839,7 +839,7 @@ comment. The binding normalizes the nested snapshot's review key/backend identit
 Core verifies the returned target, file inventory, snapshot identity and descriptor.
 Malformed or mismatched replies leave the discussion readable. Superseded requests
 are ignored; a valid late response can cache source without moving focus away
-from another message/view. `:RevueReturnContext` returns to the exact previous
+from another message/view. `:ReviewReturnContext` returns to the exact previous
 message/source in the current Vim session, recreating a managed panel if needed.
 The return origin is transient. Persisted references and newly created reply
 drafts retain `context`; `comparison` must reopen and validate that descriptor
@@ -1092,7 +1092,7 @@ comments, file comments, reviews and captures require the current one.
 
 Optional `capabilities.comparisons.refresh_on_open` asks the UI to retrieve
 current discussion when revisiting cached immutable source. Local views enable
-it. `:RevueThreadComparison` follows the exact original path/side/line when
+it. `:ReviewThreadComparison` follows the exact original path/side/line when
 provided, using existing async focus guards. This is not polling. Agent
 assignment/run state and MCP dispatch remain separate. Explicit local draft
 re-anchoring is described in its own capability contract below.
@@ -1121,7 +1121,7 @@ and published review summaries. It requires authenticated GraphQL access.
 Without this capability, Revue parses a documented Markdown subset locally.
 A message may include `resolved_links: {raw_destination: absolute_web_url}` for
 backend-owned resolution; the frontend guesses no relative base. The raw
-`:RevueBodyURLs` fallback includes URLs inside code and reference definitions.
+`:ReviewBodyURLs` fallback includes URLs inside code and reference definitions.
 Both routes retain raw Markdown for exact copy, quote and edit operations.
 
 Sources: [GitHub review-comment fields](https://docs.github.com/en/graphql/reference/pulls#pullrequestreviewcomment),
@@ -1192,7 +1192,7 @@ review states/bodies; local history consists of retained captures and current
 authored messages, without edit/resolution lifecycle records. State that scope.
 A reviewed commit can appear as `reviewed_head` and in details; it does not
 establish the original comparison base or current readiness. To enable
-`:RevueEventComparison`, an event may supply `reviewed_comparison` with a complete
+`:ReviewEventComparison`, an event may supply `reviewed_comparison` with a complete
 immutable reference (`snapshot`, `base`, `head`, and supported optional reference
 fields) and a nonempty `comparison_provenance` explaining its evidence. If
 `reviewed_head` is also supplied, it must match. A one-file `context` reference is

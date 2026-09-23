@@ -31,29 +31,29 @@ try
   endfor
   let g:id = revue#session#Open(g:fixture.snapshot, function('MemberHost'), 0)
   call cursor(3, 1)
-  RevueThread
+  ReviewThread
   call cursor(1, 1)
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   let selected = deepcopy(revue#discussion#Selected(revue#session#Inspect(g:id), line('.')))
   let origin = [win_getid(), bufnr(), getpos('.')]
   let origin_role = b:revue_view
-  RevueReactions
+  ReviewReactions
   call assert_equal(selected.comment, g:targets[-1].message)
   call assert_match('Me \[you\]', join(getline(1, '$'), "\n"))
   call assert_equal(1, count(getline(1, '$'), '  Alice Injected heading'))
   call assert_match('1 account(s) unavailable', join(getline(1, '$'), "\n"))
   call assert_match('Participant details unavailable', join(getline(1, '$'), "\n"))
   call search('^  Me', 'w')
-  RevueReact
+  ReviewReact
   call assert_equal(0, g:writes, 'A participant row is never an Add/Remove action')
   let g:data.actor = ''
   for item in g:data.items | unlet item.mine | endfor
-  RevueReactions
+  ReviewReactions
   call assert_match('  Me', join(getline(1, '$'), "\n"))
   call assert_notmatch('\[you\]', join(getline(1, '$'), "\n"))
   call assert_equal({}, revue#session#Inspect(g:id).reactionrows)
-  RevueClose
+  ReviewClose
   call assert_equal(origin_role, b:revue_view)
   call assert_equal(origin[2], getpos('.'))
   call assert_equal(selected.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)

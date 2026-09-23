@@ -57,7 +57,7 @@ function! revue#reaction#View(session, error) abort
   let lines = ['# Reactions' . (empty(message) ? '' : ' · ' . revue#message#Header(message, a:session.snapshot.author)),
         \ target.message_kind . ' message #' . target.message,
         \ empty(a:error) ? 'Actor: ' . revue#message#OneLine(get(data, 'actor_label', get(data, 'actor', ''))) : a:error,
-        \ ':RevueReact executes the selected action · :RevueClose returns', '']
+        \ ':ReviewReact executes the selected action · :ReviewClose returns', '']
   let choices = deepcopy(get(data, 'items', []))
   let ids = map(copy(choices), {_, item -> item.id})
   for draft in a:session.drafts
@@ -91,7 +91,7 @@ function! revue#reaction#View(session, error) abort
     if !empty(reason) | call add(lines, '  ' . reason) | endif
   endfor
   if empty(a:error)
-    call extend(lines, ['', '## People who reacted', 'As of this read · :RevueReactions reloads'])
+    call extend(lines, ['', '## People who reacted', 'As of this read · :ReviewReactions reloads'])
     let positive = filter(deepcopy(get(data, 'items', [])), {_, item -> item.count > 0})
     if empty(positive) | call add(lines, 'No reactions.') | endif
     for item in positive

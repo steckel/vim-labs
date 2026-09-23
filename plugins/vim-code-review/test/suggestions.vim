@@ -39,12 +39,12 @@ try
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/frozen')[0])
     call assert_equal(frozen, state.drafts[0])
     let g:fixture.snapshot.capabilities.suggestion.enabled = 0
-    RevueRefresh
-    2,3RevueSuggest
+    ReviewRefresh
+    2,3ReviewSuggest
     call assert_equal('draft', b:revue_role, 'existing frozen suggestion remains inspectable after permission loss')
     call assert_false(&modifiable)
     call assert_equal(split(frozen.body, "\n", 1), getline(1, '$'))
-    RevueSend
+    ReviewSend
     call assert_equal(1, len(g:writes))
     call assert_equal(1, g:writes[0].reconcile)
     call assert_equal(frozen.body, g:writes[0].draft.body)
@@ -53,14 +53,14 @@ try
   else
     let before = deepcopy(g:fixture.content)
     let g:fixture.snapshot.capabilities.suggestion.enabled = 0
-    RevueRefresh
-    RevueSuggest
+    ReviewRefresh
+    ReviewSuggest
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     let g:fixture.snapshot.capabilities.suggestion.enabled = 1
-    RevueRefresh
+    ReviewRefresh
     call win_gotoid(state.basewin)
     call cursor(3, 1)
-    RevueSuggest
+    ReviewSuggest
     call assert_equal([], revue#session#Inspect(g:id).drafts, 'base-side suggestions unavailable on this backend')
     call win_gotoid(state.headwin)
     call revue#session#Suggest(0, 9, 10)
@@ -88,25 +88,25 @@ try
     call assert_match('\[x\] suggestion', revue#batch#View([item], selected, 0).lines[0])
     let item.body = 'missing fenced replacement'
     call assert_match('exactly one suggestion', revue#batch#Error(snapshot, [item]))
-    RevueClose
-    2,3RevueSuggest
+    ReviewClose
+    2,3ReviewSuggest
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts), 'same anchor reopens the existing draft')
     call assert_equal(edited, getline(1, '$'))
     let editor = win_getid()
-    RevuePreview
+    ReviewPreview
     call assert_match('Suggestion preview', getline(1))
     call assert_match('let items = copy(a:items)', join(getline(1, '$'), "\n"))
     call assert_match('sort(copy(a:items))', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     call assert_equal([editor, edited], [win_getid(), getline(1, '$')])
     call SetBody(['```suggestion', 'unfinished'])
-    RevueSend
+    ReviewSend
     call assert_equal([], g:writes, 'malformed suggestion is not published')
-    RevuePreview
+    ReviewPreview
     call assert_match('Cannot submit: Close the suggestion fence', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     call SetBody(['```suggestion', '```'])
-    RevuePreview
+    ReviewPreview
     let additions = 0
     let deletions = 0
     for row in range(1, line('$'))
@@ -115,11 +115,11 @@ try
     endfor
     call assert_equal(0, additions, 'empty replacement is a deletion')
     call assert_true(deletions >= 2)
-    RevueClose
+    ReviewClose
     call SetBody(edited)
     let g:fixture.snapshot.capabilities.suggestion.enabled = 0
     call revue#session#Refresh()
-    RevueSend
+    ReviewSend
     call assert_equal([], g:writes)
     call assert_equal(edited, getline(1, '$'))
     let g:fixture.snapshot.capabilities.suggestion.enabled = 1
@@ -127,11 +127,11 @@ try
     let g:fixture.snapshot.snapshot = 'new-comparison'
     let g:fixture.snapshot.head = 'new-head'
     call revue#session#Refresh()
-    RevueSend
+    ReviewSend
     call assert_equal([], g:writes, 'stale suggestions retain original anchors')
     let g:fixture.snapshot = original
     call revue#session#Refresh()
-    RevueSend
+    ReviewSend
     call assert_equal(1, len(g:writes))
     call assert_equal(join(edited, "\n"), g:writes[0].draft.body)
     call assert_equal(v:true, g:writes[0].draft.suggestion)

@@ -20,10 +20,10 @@ endfunction
 
 function! revue#discussion#Threads(threads, title, ...) abort
   let unread = a:0 ? a:1 : {}
-  let view = {'lines': [a:title, ':RevueReply · :RevueQuote · :RevueJump · :RevueFocus · :RevueClose', ''], 'messages': {}, 'threads': {}}
+  let view = {'lines': [a:title, ':ReviewReply · :ReviewQuote · :ReviewJump · :ReviewFocus · :ReviewClose', ''], 'messages': {}, 'threads': {}}
   if a:0 > 2 && !empty(a:3)
     call extend(view.lines, ['', 'Original code context: ' . a:3,
-          \ a:0 > 3 && a:4 ? ':RevueReturnContext returns to the discussion you came from.' : ':RevueLatest opens the current review comparison.', ''])
+          \ a:0 > 3 && a:4 ? ':ReviewReturnContext returns to the discussion you came from.' : ':ReviewLatest opens the current review comparison.', ''])
   endif
   let resolved = len(filter(copy(a:threads), {_, t -> has_key(t, 'resolved') && t.resolved}))
   let unknown = len(filter(copy(a:threads), {_, t -> !has_key(t, 'resolved')}))
@@ -42,9 +42,9 @@ function! revue#discussion#Threads(threads, title, ...) abort
       endif
     endif
     if !empty(get(thread, 'original_comparison', {}))
-      call add(view.lines, 'Original comparison: ' . strpart(thread.original_comparison.head, 0, 12) . ' · :RevueThreadComparison')
+      call add(view.lines, 'Original comparison: ' . strpart(thread.original_comparison.head, 0, 12) . ' · :ReviewThreadComparison')
     elseif has_key(thread, 'original_source')
-      call add(view.lines, 'Original code: ' . (get(thread.original_source, 'available', 0) ? ':RevueThreadComparison verifies historical context' : get(thread.original_source, 'reason', 'unavailable')))
+      call add(view.lines, 'Original code: ' . (get(thread.original_source, 'available', 0) ? ':ReviewThreadComparison verifies historical context' : get(thread.original_source, 'reason', 'unavailable')))
     endif
     let index = 0
     for comment in thread.comments

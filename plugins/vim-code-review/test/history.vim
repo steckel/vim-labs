@@ -60,23 +60,23 @@ try
     call assert_equal(g:a.snapshot, state.resume_comparison)
     call assert_equal(g:a.snapshot, state.drafts[0].snapshot)
     let g:mode = 'failed'
-    RevueResumeComparison
+    ReviewResumeComparison
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_match('Historical commit unavailable', revue#session#Inspect(g:id).history_status)
     let g:mode = 'wrong'
-    RevueResumeComparison
+    ReviewResumeComparison
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_match('different comparison', revue#session#Inspect(g:id).history_status)
     let g:mode = 'deferred'
-    RevueResumeComparison
-    RevueHelp
+    ReviewResumeComparison
+    ReviewHelp
     let helpwin = win_getid()
     call g:CompareDone({'ok': 1, 'data': deepcopy(g:a)})
     call assert_equal(helpwin, win_getid())
     call assert_equal('help', b:revue_view)
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_true(has_key(revue#session#Inspect(g:id).comparisons[g:a.snapshot], 'snapshot'))
-    RevueResumeComparison
+    ReviewResumeComparison
     call assert_equal(g:a.snapshot, b:revue_comparison)
     call assert_equal([6, 2], [line('.'), col('.')])
     call assert_equal(qualified, revue#session#Inspect(g:id).snapshot.key)
@@ -86,17 +86,17 @@ try
     call revue#session#OpenComparison(g:d.snapshot)
     call assert_equal(g:d.snapshot, b:revue_comparison)
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).latest_comparison, 'historical lookup never assigns latest')
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'w')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(['Resume this old draft'], getline(1, '$'))
-    RevueDraftComparison
+    ReviewDraftComparison
     call assert_equal(g:a.snapshot, b:revue_comparison)
     " A late history response cannot roll back a newer refresh's latest pointer.
     let g:history_mode = 'deferred'
-    RevueComparisons
+    ReviewComparisons
     call assert_true(revue#session#Inspect(g:id).history_busy)
-    RevueRefresh
+    ReviewRefresh
     call assert_equal(g:d.snapshot, revue#session#Inspect(g:id).latest_comparison)
     call g:HistoryDone({'ok': 1, 'data': {'items': [], 'latest': deepcopy(g:b), 'complete': 1, 'scope': 'Old request'}})
     call assert_equal(g:d.snapshot, revue#session#Inspect(g:id).latest_comparison)
@@ -104,12 +104,12 @@ try
     call revue#session#Close()
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Resume this old draft')
-    RevueClose
+    ReviewClose
     call cursor(6, 2)
     let source = win_getid()
-    RevueComparisons
+    ReviewComparisons
     let state = revue#session#Inspect(g:id)
     call assert_equal(g:a.snapshot, state.snapshot.snapshot)
     call assert_equal(g:b.snapshot, state.latest_comparison)
@@ -118,16 +118,16 @@ try
     call assert_match('Not loaded', join(getline(1, '$'), "\n"))
     call assert_match('Fixture history', join(getline(1, '$'), "\n"))
     call search('\[latest\]', 'w')
-    RevueCopyComparison x
+    ReviewCopyComparison x
     call assert_equal(g:b.snapshot, json_decode(@x).snapshot)
     call cursor(1, 1)
     let @x = 'untouched'
-    RevueCopyComparison x
+    ReviewCopyComparison x
     call assert_equal('untouched', @x)
     " Editing the same composer while history loads also cancels the focus jump.
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'w')
-    RevueOpenOperation
+    ReviewOpenOperation
     let editor = win_getid()
     let g:mode = 'deferred'
     call revue#session#OpenComparison(g:d.snapshot)

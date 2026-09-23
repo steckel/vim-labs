@@ -36,10 +36,11 @@ purposes; neither requires the other.
 
 The package directories were renamed from `vim-revue` and `vim-reviewhub`.
 Existing installations should update runtime-path entries or package symlinks
-to the directories below. Vim commands (`:Revue*`, `:Reviews`), configuration,
-and persisted identities retain their existing names, preserving draft and
-review recovery. Replace the old installation entries instead of loading both
-copies of a plugin.
+to the directories below. Vim commands now use `:Review*` (with `:Reviews` for
+the GitHub inbox); the former command names are removed. Update command mappings
+and restart Vim after upgrading. Configuration and persisted identities retain
+their existing names, preserving draft and review recovery. Replace the old
+installation entries instead of loading both copies of a plugin.
 
 ## Install selected plugins
 
@@ -105,9 +106,11 @@ includes a configuration example, Vim requirements, and the editing contract.
 
 ## Try a review
 
-In a Git checkout, `:RevueLocal HEAD` captures saved changes into a local
-review. Use `c` to comment, `t` to read threads, and `r` to reply. Drafts and
-accepted local comments persist across Vim restarts.
+In a Git checkout, `:ReviewLocal HEAD` captures saved changes into a local
+review. Use `c` to comment, `t` to read threads, and `r` to reply. New feedback
+autosaves as Pending cards; `:ReviewClose` returns to the code. `:ReviewBatch`
+collects feedback: Space selects items, `a` selects all loaded, and `m` exports
+one Markdown buffer for your agent. Pending and saved feedback survive restarts.
 
 With the GitHub integration installed and authentication configured, `:Reviews
 owner/repo` opens the pull-request browser. GitHub publication uses explicit

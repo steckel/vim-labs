@@ -116,10 +116,10 @@ try
   let state = revue#session#Inspect(id)
   call assert_equal(8, len(state.card_body_caches))
   call assert_equal(9, len(state.snapshot.threads))
-  RevueRefresh
+  ReviewRefresh
   call assert_notmatch('card_body_caches', join(readfile(revue#session#Inspect(id).draftpath), "\n"))
   let g:cache_fixture.snapshot.threads = []
-  RevueRefresh
+  ReviewRefresh
   call assert_equal({}, revue#session#Inspect(id).card_body_caches)
   call revue#session#Close()
   call delete(g:revue_draft_dir, 'rf')

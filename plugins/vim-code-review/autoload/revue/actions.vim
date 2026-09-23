@@ -95,6 +95,12 @@ function! revue#actions#Items(context) abort
         \ ['delete-pending-comment', 'Write', 'Preview deletion of this private comment'],
         \ ['edit-pending', 'Write', 'Edit selected private feedback'],
         \ ['batch', 'Review', 'Choose local drafts for a review batch'],
+        \ ['export', 'Read', 'Collect feedback for a Markdown buffer'],
+        \ ['edit-feedback', 'Write', 'Edit pending feedback or read a saved discussion'],
+        \ ['toggle-feedback', 'Review', 'Select or remove this feedback'],
+        \ ['select-feedback', 'Review', 'Select all loaded feedback'],
+        \ ['clear-feedback', 'Review', 'Clear the feedback selection'],
+        \ ['export-markdown', 'Read', 'Export selected feedback to a Markdown buffer'],
         \ ['stage-batch', 'Review', 'Choose drafts to save privately'],
         \ ['pending', 'Review', 'Continue a review saved privately'],
         \ ['start-pending', 'Review', 'Prepare a new private review'],
@@ -135,6 +141,9 @@ endfunction
 function! revue#actions#Delivery(draft, snapshot) abort
   let kind = get(a:draft, 'kind', '')
   if get(a:draft, 'state', '') ==# 'unknown' | return 'Check receipt; do not resend' | endif
+  if get(get(a:snapshot, 'backend', {}), 'id', '') ==# 'local' && revue#local_feedback#IsFeedback(a:draft)
+    return 'Save pending feedback and return'
+  endif
   if kind ==# 'apply_suggestion' | return 'Apply suggestion to workspace (confirmation)' | endif
   if kind ==# 'participant_run' | return revue#runtime#Label(a:draft) . ' (confirmation)' | endif
   if kind ==# 'cancel_assignment' | return 'Revoke assignment MCP access (confirmation)' | endif

@@ -16,7 +16,7 @@ try
         \ 'snapshot': snapshot, 'Request': function('revue#backends#local#Request', [g:config.review])}, index)
   call WaitAnchor({-> !empty(revue#session#Inspect(g:id).loaded)})
   if restart
-    RevueRefresh
+    ReviewRefresh
     call WaitAnchor({-> !empty(revue#session#Inspect(g:id).snapshot.threads)})
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     let thread = revue#session#Inspect(g:id).snapshot.threads[0]
@@ -25,24 +25,25 @@ try
     call assert_equal('Draft moved deliberately.', thread.comments[0].body)
   else
     call cursor(2,1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Draft moved deliberately.')
-    RevueRefresh
+    ReviewRefresh
     call WaitAnchor({-> revue#session#Inspect(g:id).latest_comparison ==# g:config.latest.snapshot})
-    RevueReanchorDraft
+    ReviewReanchorDraft
     call WaitAnchor({-> revue#session#Inspect(g:id).snapshot.snapshot ==# g:config.latest.snapshot})
     for attempt in range(len(g:config.latest.files))
       if get(b:, 'revue_file', '') ==# 'moved.py' | break | endif
-      RevueNextFile
+      ReviewNextFile
     endfor
     call WaitAnchor({-> get(get(revue#session#Inspect(g:id).loaded, 'head', {}), 'kind', '') ==# 'text'})
-    1,2RevueReanchorHere
+    1,2ReviewReanchorHere
     call assert_equal('reanchor', b:revue_view)
-    RevueAcceptReanchor
+    ReviewAcceptReanchor
     let draft = revue#session#Inspect(g:id).drafts[0]
     call assert_equal(g:config.snapshot.snapshot, draft.reanchored_from.snapshot)
     call assert_equal('moved.py', draft.path)
-    RevueSend
+    " Exercise accepted-comment storage after moving the anchor.
+    call revue#session#Send()
     call WaitAnchor({-> empty(revue#session#Inspect(g:id).drafts)})
     call writefile(['done'], $REVUE_CAP_STORE . '/moved')
   endif

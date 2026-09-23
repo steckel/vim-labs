@@ -7,19 +7,19 @@ does not infer the destination from a backend name.
 ## User journey
 
 1. Open a current head-side discussion and select the message containing one
-   unquoted suggestion block. Use `:RevueApplySuggestion` or its message action.
+   unquoted suggestion block. Use `:ReviewApplySuggestion` or its message action.
    The action has no default mapping; `apply-suggestion` is configurable.
 2. A backend read verifies the saved file against the reviewed capture. The
    read-only preview shows the workspace path, range, comparison, message,
    original lines, replacement, line ending and file permissions.
-3. `:RevueSend` confirms the exact replacement. Closing the preview retains it;
+3. `:ReviewSend` confirms the exact replacement. Closing the preview retains it;
    choosing Apply again reopens the same operation. A known failed preview can
    be discarded explicitly before preparing another one.
 4. The local backend saves the replacement and captures the current saved
    workspace using the review's existing untracked-file choice. It does not
    commit, stage, push, publish feedback or resolve the thread. Unsaved Vim
    buffers are not included in the capture or reloaded by the operation.
-5. `:RevueLatest` opens the resulting comparison. The original discussion stays
+5. `:ReviewLatest` opens the resulting comparison. The original discussion stays
    available with its original source, independent resolution state and an
    application annotation on the exact message version.
 
@@ -92,7 +92,7 @@ rename are separate system calls; this does not claim an atomic compare-and-swap
 against arbitrary concurrent filesystem writers. Other applications should not
 write the same file during the confirmed apply operation.
 
-If the response is lost, `:RevueCheckReceipt` never writes the file again:
+If the response is lost, `:ReviewCheckReceipt` never writes the file again:
 
 - A saved receipt returns the original result even if the workspace changed
   later. It never reapplies the old proposal.

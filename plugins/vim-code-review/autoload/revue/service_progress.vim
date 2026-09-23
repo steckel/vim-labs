@@ -37,9 +37,9 @@ endfunction
 function! revue#service_progress#View(session) abort
   let state = a:session.service_progress
   let lines = ['# Service Viewed state', revue#message#OneLine(state.path),
-        \ ':RevueServiceProgress reloads · :RevueClose returns',
-        \ ':RevueMarkServiceViewed · :RevueUnmarkServiceViewed',
-        \ ':RevueCheckServiceViewed checks an uncertain operation', '']
+        \ ':ReviewServiceProgress reloads · :ReviewClose returns',
+        \ ':ReviewMarkServiceViewed · :ReviewUnmarkServiceViewed',
+        \ ':ReviewCheckServiceViewed checks an uncertain operation', '']
   if state.loading | call add(lines, 'Loading your service state…') | endif
   if !empty(state.error) | call add(lines, revue#message#OneLine(state.error)) | endif
   if !empty(state.data)

@@ -52,18 +52,18 @@ function! EventPage(cursor, next, found) abort
         \ 'complete': empty(a:next) ? v:true : v:false, 'threads': threads, 'conversation': []}
 endfunction
 function! ResetEvent() abort
-  RevueRefresh
-  RevueTimeline
+  ReviewRefresh
+  ReviewTimeline
   call PickEvent('b')
 endfunction
 try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'event-feedback', 'review': 'review', 'snapshot': g:latest, 'Request': function('EventHost')}, 0)
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, 'Unsent text retained through history retrieval')
-  RevueClose
-  RevueTimeline
+  ReviewClose
+  ReviewTimeline
   call cursor(1, 1)
   call assert_equal({}, EventItem('load-event-discussion'))
   call PickEvent('b')
@@ -72,81 +72,81 @@ try
   let selection = EventSelection()
   let choice = index(map(revue#session#ActionGuide(), {_, item -> item.id}), 'load-event-discussion') + 1
   call feedkeys(choice . "\<CR>", 't')
-  RevueReviewActions
+  ReviewReviewActions
   call assert_match('Loading more feedback', join(getline(1, '$'), "\n"))
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call assert_equal(1, len(g:pages), 'One bounded request; repeated action does not duplicate it')
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('first', 'second', 0)})
   call assert_equal('timeline', b:revue_view)
   call assert_equal(selection, EventSelection())
   call assert_equal(1, len(g:pages), 'Does not automatically drain the review')
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call assert_equal('second', g:pages[-1].request.cursor)
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('second', '', 1)})
   call assert_equal('local-reply-2', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   call assert_equal(len(g:fixture.snapshot.threads[0].comments), len(revue#session#Inspect(g:id).snapshot.threads[-1].comments))
-  RevueClose
+  ReviewClose
   call assert_equal(selection, EventSelection())
   call assert_equal({}, EventItem('load-event-discussion'))
   " Cancel/error/malformed results keep the event and permit retry.
   call ResetEvent()
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   let cancelled = g:pages[-1]
-  RevueCancelFeedback
+  ReviewCancelFeedback
   call cancelled.Done({'ok': 1, 'data': EventPage('first', '', 1)})
   call assert_equal([], revue#session#Inspect(g:id).snapshot.threads)
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call g:pages[-1].Done({'ok': 0, 'error': 'Network unavailable'})
   call assert_match('Network unavailable', join(getline(1, '$'), "\n"))
   call assert_equal(selection, EventSelection())
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('wrong', '', 1)})
   call assert_equal([], revue#session#Inspect(g:id).snapshot.threads)
   " A different selected event must not be replaced by late navigation.
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call PickEvent('a')
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('first', '', 1)})
   call assert_equal('timeline', b:revue_view)
   call assert_equal(['a', 1], EventSelection())
   " Help focus is preserved even when a whole discussion arrives.
   call ResetEvent()
-  RevueLoadEventDiscussion
-  RevueHelp
+  ReviewLoadEventDiscussion
+  ReviewHelp
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('first', '', 1)})
   call assert_equal('help', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_equal(selection, EventSelection())
-  RevueEventDiscussion
+  ReviewEventDiscussion
   call assert_equal('local-reply-2', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-  RevueClose
+  ReviewClose
   " Refresh invalidates late page results, even with the same source.
   call ResetEvent()
-  RevueLoadEventDiscussion
-  RevueReloadTimeline
+  ReviewLoadEventDiscussion
+  ReviewReloadTimeline
   call PickEvent('b')
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('first', '', 1)})
   call assert_equal('timeline', b:revue_view, 'Reloaded history invalidates automatic follow')
   call ResetEvent()
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, 'Typing while an event discussion arrives')
   let composer = win_getid()
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('first', '', 1)})
   call assert_equal(composer, win_getid())
   call assert_equal('Typing while an event discussion arrives', getline(1))
-  RevueClose
-  RevueTimeline
+  ReviewClose
+  ReviewTimeline
   call ResetEvent()
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   let old = g:pages[-1]
-  RevueRefresh
+  ReviewRefresh
   call old.Done({'ok': 1, 'data': EventPage('first', '', 1)})
   call assert_equal([], revue#session#Inspect(g:id).snapshot.threads)
   call assert_equal('timeline', b:revue_view)
   " Exhausting pages cannot imply deletion or fabricate the requested message.
-  RevueLoadEventDiscussion
+  ReviewLoadEventDiscussion
   call g:pages[-1].Done({'ok': 1, 'data': EventPage('first', '', 0)})
   call assert_equal('timeline', b:revue_view)
   call assert_match('All available feedback', EventItem('load-event-discussion').reason)

@@ -39,13 +39,13 @@ try
   call AwaitAbandon()
   if g:recover
     let operation=json_decode(readfile($REVUE_CAP_STORE . '/abandon-operation')[0])
-    RevueActivity
+    ReviewActivity
     for [row,target] in items(revue#session#Inspect(t:revue_session).activityrows)
       if target.operation ==# operation.id | call cursor(str2nr(row),1) | break | endif
     endfor
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_false(&modifiable)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call AwaitAbandon()
     call assert_true(g:requests[0].reconcile)
     call assert_true(revue#session#Inspect(t:revue_session).last_receipt.abandoned)
@@ -64,15 +64,15 @@ try
   else
     call assert_match('older assignment',AbandonAction('run-participant').reason)
     call assert_equal('',AbandonAction('abandon-run').reason)
-    RevueAbandonRun
+    ReviewAbandonRun
     call assert_equal('preview',b:revue_view)
     call assert_match('# Abandon prepared run',getline(1))
     call assert_match('Assignment access, comments',join(getline(1,'$'),"\n"))
-    RevueClose
+    ReviewClose
     call assert_false(&modifiable)
     call assert_equal('',revue#session#Inspect(t:revue_session).drafts[-1].body)
     call assert_equal([],g:requests)
-    RevueSend
+    ReviewSend
     call AwaitAbandon()
     call assert_equal('abandon',g:requests[0].draft.run_mode)
     call assert_equal('unknown',revue#session#Inspect(t:revue_session).drafts[-1].state)

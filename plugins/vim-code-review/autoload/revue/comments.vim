@@ -253,8 +253,13 @@ function! revue#comments#Rows(thread, width, ...) abort
   call add(rows, {'text': '├' . repeat('─', width - 2) . '┤', 'type': 'RevueCardBorder'})
   let reply = get(get(a:thread, 'capabilities', {}), 'reply', {})
   let private_reply = !empty(a:thread.comments) && get(a:thread.comments[0], 'publication', '') ==# 'pending' && get(get(get(a:thread, 'capabilities', {}), 'pending_reply', {}), 'enabled', 0)
-  call s:Text(rows, private_reply ? 'Reply privately…  ' . get(context, 'reply_hint', 'r') : get(reply, 'enabled', 1) ? 'Reply to this thread…  ' . get(context, 'reply_hint', 'r') : 'Reply unavailable · ' . revue#message#OneLine(get(reply, 'reason', 'This thread does not allow replies.')), width, 'RevueCardAction')
-  call s:Text(rows, 'Select / quote a message · ' . get(context, 'thread_hint', get(context, 'threads_hint', ':RevueThread')), width, 'RevueCardMeta')
+  if get(a:thread, 'local_pending', 0)
+    call s:Text(rows, 'Edit · :ReviewEditFeedback', width, 'RevueCardAction')
+    call s:Text(rows, 'Collect / export · :ReviewBatch', width, 'RevueCardMeta')
+  else
+    call s:Text(rows, private_reply ? 'Reply privately…  ' . get(context, 'reply_hint', 'r') : get(reply, 'enabled', 1) ? 'Reply to this thread…  ' . get(context, 'reply_hint', 'r') : 'Reply unavailable · ' . revue#message#OneLine(get(reply, 'reason', 'This thread does not allow replies.')), width, 'RevueCardAction')
+    call s:Text(rows, 'Select / quote a message · ' . get(context, 'thread_hint', get(context, 'threads_hint', ':ReviewThread')), width, 'RevueCardMeta')
+  endif
   if !empty(get(context, 'state_hint', '')) | call s:Text(rows, context.state_hint, width, 'RevueCardAction') | endif
   call add(rows, {'text': '╰' . repeat('─', width - 2) . '╯', 'type': 'RevueCardBorder'})
   " Limit reading width while carrying the card background across the source

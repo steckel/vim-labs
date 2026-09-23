@@ -68,13 +68,13 @@ try
     call revue#session#Refresh()
     let g:mode = 'read-failed'
     " Recovery has an explicit action, even after access loss.
-    RevueResolve
+    ReviewResolve
     call assert_equal([], g:calls)
-    RevueCheckThreadState
+    ReviewCheckThreadState
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_equal(0, &modifiable)
     call assert_match('Outcome unknown', revue#session#Inspect(g:id).message)
-    RevueCheckThreadState
+    ReviewCheckThreadState
     call assert_equal(2, len(g:calls))
     call assert_equal(1, g:calls[-1].reconcile)
     call assert_equal(pending.id, g:calls[-1].draft.id)
@@ -82,22 +82,22 @@ try
     " Missing feedback retains an Activity route to the same frozen operation.
     let saved_threads = g:fixture.snapshot.threads
     let g:fixture.snapshot.threads = []
-    RevueRefresh
+    ReviewRefresh
     let call_count = len(g:calls)
-    RevueCheckThreadState
+    ReviewCheckThreadState
     call assert_equal(call_count, len(g:calls))
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'W')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(pending.id, b:revue_draft)
-    RevueDiscard
+    ReviewDiscard
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(pending.id, g:calls[-1].draft.id)
     call assert_equal(1, g:calls[-1].reconcile)
     let g:fixture.snapshot.threads = saved_threads
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     call assert_equal('Requested thread state observed.', revue#session#Inspect(g:id).last_outcome)
     call assert_equal(v:true, revue#session#Inspect(g:id).snapshot.threads[0].resolved)
@@ -105,12 +105,12 @@ try
     " Missing state and missing target permission cannot create operations.
     call remove(g:fixture.snapshot.threads[0], 'resolved')
     call revue#session#Refresh()
-    RevueResolve
+    ReviewResolve
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     call StateRules(0)
     let g:fixture.snapshot.threads[0].capabilities.resolve.enabled = 0
     call revue#session#Refresh()
-    RevueResolve
+    ReviewResolve
     call assert_equal([], g:calls)
     call StateRules(0)
     " Overlapping threads require selection; no arbitrary target.
@@ -118,7 +118,7 @@ try
     let overlap.id = 'overlap'
     call add(g:fixture.snapshot.threads, overlap)
     call revue#session#Refresh()
-    RevueResolve
+    ReviewResolve
     call assert_equal('threads', b:revue_view)
     call assert_equal([], g:calls)
     call remove(g:fixture.snapshot.threads, -1)
@@ -128,9 +128,9 @@ try
     call assert_equal([], g:calls)
     call win_gotoid(g:source)
     call cursor(3, 1)
-    RevueThread
+    ReviewThread
     call cursor(1, 1)
-    RevueNextMessage
+    ReviewNextMessage
     let reader = win_getid()
     let reader_buffer = bufnr()
     let selected_message = revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment
@@ -138,7 +138,7 @@ try
     let g:mode = 'deferred'
     " Menu action is permission-aware and targets the selected thread.
     call feedkeys("4\<CR>", 't')
-    RevueActions
+    ReviewActions
     call assert_equal('submitting', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_equal(reader, win_getid())
     call assert_equal(reader_buffer, bufnr())
@@ -146,8 +146,8 @@ try
     call assert_equal(selected_message, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
     call assert_match('Resolve in progress', join(getline(1, '$'), "\n"))
     let before_calls = len(g:calls)
-    RevueResolve
-    RevueReopen
+    ReviewResolve
+    ReviewReopen
     call assert_equal(before_calls, len(g:calls))
     call assert_equal('preserve native register', @z)
     call assert_equal(v:false, revue#session#Inspect(g:id).snapshot.threads[0].resolved)
@@ -164,27 +164,27 @@ try
     call assert_match('1 resolved', join(getline(1, '$'), "\n"))
     call assert_match('Could we keep prefix', join(getline(1, '$'), "\n"))
     call assert_equal('Thread resolved.', revue#session#Inspect(g:id).last_outcome)
-    let rows = revue#comments#Rows(revue#session#Inspect(g:id).snapshot.threads[0], 80, {'state_hint': ':RevueReopen reopen thread'})
-    call assert_match('RevueReopen', join(map(copy(rows), {_, r -> r.text}), ' '))
+    let rows = revue#comments#Rows(revue#session#Inspect(g:id).snapshot.threads[0], 80, {'state_hint': ':ReviewReopen reopen thread'})
+    call assert_match('ReviewReopen', join(map(copy(rows), {_, r -> r.text}), ' '))
     " Reopening is separate from replying and does not hide content.
     let g:mode = 'ok'
-    RevueReopen
+    ReviewReopen
     call assert_equal(v:false, revue#session#Inspect(g:id).snapshot.threads[0].resolved)
     call assert_match('1 unresolved', join(getline(1, '$'), "\n"))
     let count_before = len(g:calls)
-    RevueReopen
+    ReviewReopen
     call assert_equal(count_before, len(g:calls), 'Already-desired state does not write')
     let g:mode = 'wrong-type'
-    RevueResolve
+    ReviewResolve
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'ok'
-    RevueCheckThreadState
-    RevueReopen
+    ReviewCheckThreadState
+    ReviewReopen
     " Completion while composing preserves actual Insert mode and text.
     let g:mode = 'deferred'
-    RevueResolve
+    ReviewResolve
     let g:typing_operation = g:calls[-1].draft.id
-    RevueReply
+    ReviewReply
     call setline(1, 'Human draft λ')
     let composer = [win_getid(), bufnr()]
     call timer_start(30, function('ResolutionWhileTyping'))
@@ -195,40 +195,40 @@ try
     call assert_equal('Human draft λ typed during resolution', getline(1))
     call assert_equal('preserve native register', @z)
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
-    RevueDiscard
+    ReviewDiscard
     let g:mode = 'ok'
-    RevueReopen
+    ReviewReopen
     " A completed attempt cannot overwrite a newer operation's status.
     call g:Deferred({'ok': 0, 'unknown': 1, 'error': 'Late duplicate callback'})
     call assert_equal([], revue#session#Inspect(g:id).drafts)
     call assert_equal(v:false, revue#session#Inspect(g:id).snapshot.threads[0].resolved)
     let g:mode = 'throw'
-    RevueResolve
+    ReviewResolve
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_match('transport interrupted', revue#session#Inspect(g:id).message)
     let guide = revue#session#ActionGuide()
     call assert_equal(1, len(filter(copy(guide), {_, item -> item.id ==# 'check-thread-state'})))
     let g:mode = 'ok'
-    RevueCheckThreadState
-    RevueReopen
+    ReviewCheckThreadState
+    ReviewReopen
     let g:mode = 'reject'
-    RevueResolve
+    ReviewResolve
     let rejected = deepcopy(revue#session#Inspect(g:id).drafts[-1])
     call assert_equal('failed', rejected.state)
     call assert_equal(0, &modifiable)
     call assert_equal(v:false, revue#session#Inspect(g:id).snapshot.threads[0].resolved)
     let g:mode = 'malformed'
-    RevueResolve
+    ReviewResolve
     call assert_equal(rejected.id, revue#session#Inspect(g:id).drafts[-1].id)
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'ok'
-    RevueCheckThreadState
+    ReviewCheckThreadState
     call assert_equal([], revue#session#Inspect(g:id).drafts)
-    RevueReopen
+    ReviewReopen
     let g:fixture.snapshot.threads[0].outdated = v:true
     call revue#session#Refresh()
     let g:mode = 'unknown'
-    RevueResolve
+    ReviewResolve
     let pending = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', pending.state)
     call assert_match('outdated', join(getline(1, '$'), "\n"))

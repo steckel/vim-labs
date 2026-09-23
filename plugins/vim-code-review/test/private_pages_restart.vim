@@ -11,11 +11,11 @@ function! PrivateRestart(request, Done) abort
 endfunction
 try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'private-restart', 'review': '42', 'snapshot': g:fixture.first, 'Request': function('PrivateRestart')}, 0)
-  RevuePending
+  ReviewPending
   call cursor(5, 1)
   call assert_false(get(get(revue#session#Inspect(g:id), 'pending_verification', {}), 'loading', 0))
   call assert_false(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
-  RevueVerifyPending
+  ReviewVerifyPending
   if filereadable($REVUE_CAP_STORE . '/first')
     call assert_true(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)
     call assert_match('4/4 comments loaded', join(getline(1, '$'), "\n"))

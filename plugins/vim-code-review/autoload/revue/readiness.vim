@@ -78,8 +78,8 @@ endfunction
 function! revue#readiness#View(session) abort
   let state = a:session.readiness
   let data = state.data
-  let lines = ['# Review readiness', ':RevueReloadReadiness · :RevueMoreChecks · :RevueClose',
-        \ 'gx opens selected details · gy copies link · :RevueCancelReadiness',
+  let lines = ['# Review readiness', ':ReviewReloadReadiness · :ReviewMoreChecks · :ReviewClose',
+        \ 'gx opens selected details · gy copies link · :ReviewCancelReadiness',
         \ 'Reported checks · policy coverage may be incomplete']
   if state.loading | call add(lines, 'Loading checks… previous observations remain readable.')
   elseif !empty(state.error) | call add(lines, 'Readiness: ' . revue#message#OneLine(state.error)) | endif

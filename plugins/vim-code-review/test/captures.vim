@@ -54,12 +54,12 @@ try
   if filereadable($REVUE_CAP_STORE . '/accepted')
     let g:accepted = json_decode(readfile($REVUE_CAP_STORE . '/accepted')[0])
     let g:latest.capabilities.capture.enabled = 0
-    RevueRefresh
-    RevueCapture
+    ReviewRefresh
+    ReviewCapture
     call assert_equal('draft', b:revue_role)
     call assert_false(&modifiable)
     call assert_match('delivery still unknown', join(getline(1, '$'), "\n"))
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(g:writes))
     call assert_equal(1, g:writes[0].reconcile)
     call assert_equal(g:accepted, g:writes[0].draft)
@@ -68,13 +68,13 @@ try
     call assert_equal(g:first.snapshot, state.drafts[0].snapshot)
     call assert_equal(g:second.snapshot, state.last_receipt.snapshot)
     call assert_equal(g:second.snapshot, state.activity[-1].receipt.snapshot)
-    RevueThreads
+    ReviewThreads
     call assert_match('Original source:', join(getline(1, '$'), "\n"))
     let g:missing_original = 1
-    RevueThreadComparison
+    ReviewThreadComparison
     call assert_equal(g:second.snapshot, revue#session#Inspect(g:id).snapshot.snapshot, 'missing original file does not redirect to another file')
     let g:missing_original = 0
-    RevueThreadComparison
+    ReviewThreadComparison
     call assert_equal(g:first.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call assert_equal(3, line('.'), 'original comparison command targets the original source line')
     call assert_equal(g:fixture.content.head.lines, getbufline(state.head, 1, '$'))
@@ -83,34 +83,34 @@ try
     call revue#session#OpenComparison(g:first.snapshot)
     call assert_equal(reads_before + 1, g:history_reads, 'cached original source still refreshes shared conversation')
     call assert_equal('later-reply', revue#session#Inspect(g:id).snapshot.threads[0].comments[-1].id)
-    RevueDiscussions Before capture
+    ReviewDiscussions Before capture
     call search('## Local draft', 'W')
-    RevueOpenDiscussion
+    ReviewOpenDiscussion
     call assert_equal('Before capture: retain this draft', getline(1))
-    RevueSend
+    ReviewSend
     call assert_equal(1, len(g:writes), 'old draft cannot be retargeted to the newer capture')
   else
     call assert_match('does not support', revue#capabilities#Error({}, {'kind': 'capture'}, 0))
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Before capture: retain this draft')
-    RevueClose
-    RevueCapture tracked
+    ReviewClose
+    ReviewCapture tracked
     call assert_false(&modifiable)
     call assert_match('Exclude untracked', join(getline(1, '$'), "\n"))
     let fields = deepcopy(revue#session#Inspect(g:id).drafts[-1])
     call assert_equal('', fields.body)
     call assert_equal(v:false, fields.untracked)
-    RevuePreview
+    ReviewPreview
     call assert_match('Capture preview', getline(1))
     call assert_notmatch('Draft preview', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     call assert_false(&modifiable)
-    RevueClose
-    RevueCapture!
+    ReviewClose
+    ReviewCapture!
     call assert_equal(2, len(revue#session#Inspect(g:id).drafts))
     call assert_equal(v:false, revue#session#Inspect(g:id).drafts[-1].untracked, 'existing pending capture retains its settings')
-    RevueSend
+    ReviewSend
     call assert_equal(1, len(g:writes))
     call assert_equal('', g:writes[0].draft.body, 'preview text is not serialized as feedback')
     call assert_false(&modifiable)

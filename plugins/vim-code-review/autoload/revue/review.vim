@@ -536,7 +536,7 @@ export def Submit()
   Close()
 enddef
 
-# Provider-neutral entry point; the local :Revue workflow remains available.
+# Provider-neutral entry point; the local :Review workflow remains available.
 export def OpenReview(snapshot: dict<any>, Host: func, file_idx: number = -1): string
   return revue#backend#Open({id: 'provider-v1', connection: '', review: snapshot.key,
     snapshot: snapshot, Request: Host, legacy_key: snapshot.key}, file_idx)

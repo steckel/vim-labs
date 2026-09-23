@@ -36,7 +36,7 @@ function! RuntimeItem() abort
 endfunction
 function! WaitComplete() abort
   for _ in range(70)
-    RevueReloadAssignments
+    ReviewReloadAssignments
     call WaitRuntime()
     let item=revue#assignment#Find(revue#session#Inspect(t:revue_session),g:config.assignment)
     let latest=get(get(item,'runs',[]),-1,{})
@@ -52,14 +52,14 @@ try
   call WaitRuntime()
   if g:recover
     let operation=json_decode(readfile($REVUE_CAP_STORE . '/run-operation')[0])
-    RevueActivity
+    ReviewActivity
     for [row,target] in items(revue#session#Inspect(t:revue_session).activityrows)
       if target.operation ==# operation.id | call cursor(str2nr(row),1) | break | endif
     endfor
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_false(&modifiable)
     call assert_equal(operation.id,b:revue_draft)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call WaitRuntime()
     call assert_true(g:requests[0].reconcile)
     call assert_equal([],filter(copy(revue#session#Inspect(t:revue_session).drafts),{_,d -> d.kind ==# 'participant_run'}))
@@ -97,25 +97,25 @@ try
     let saved=deepcopy(g:revue_participants)
     let g:revue_participants=[]
     call assert_match('Configure',RuntimeItem().reason)
-    RevueRunParticipant
+    ReviewRunParticipant
     call assert_equal('assignment',b:revue_view)
     let g:revue_participants=saved
   endif
-  RevueRunParticipant
+  ReviewRunParticipant
   call assert_equal('preview',b:revue_view)
   call assert_match('Workspace: ',join(getline(1,'$'),"\n"))
   call assert_match('workspace-write',join(getline(1,'$'),"\n"))
   if g:recover | call assert_match(prior.thread,join(getline(1,'$'),"\n")) | endif
-  RevueClose
+  ReviewClose
   call assert_false(&modifiable)
   call assert_equal('',revue#session#Inspect(t:revue_session).drafts[-1].body)
   if !g:recover
     let g:revue_participants[0].runtime.sandbox='read-only'
-    RevueSend
+    ReviewSend
     call assert_equal([],g:requests)
     let g:revue_participants[0].runtime.sandbox='workspace-write'
   endif
-  RevueSend
+  ReviewSend
   call WaitRuntime()
   if !g:recover
     call assert_equal('unknown',revue#session#Inspect(t:revue_session).drafts[-1].state)

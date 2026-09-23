@@ -34,6 +34,7 @@ function! revue#message#Metadata(comment) abort
   let publication = get(a:comment, 'publication', '')
   if publication ==# 'pending' | call add(parts, 'Pending review') | endif
   if publication ==# 'local' | call add(parts, 'Saved locally') | endif
+  if publication ==# 'local_pending' | call add(parts, get(a:comment, 'pending_status', 'Pending')) | endif
   let application = get(a:comment, 'suggestion_application', {})
   if type(application) == v:t_dict && !empty(get(a:comment, 'version', '')) && get(application, 'message_version', '') ==# a:comment.version && index(['applied', 'observed'], get(application, 'state', '')) >= 0 && type(get(application, 'label', 0)) == v:t_string
     call add(parts, revue#message#OneLine(application.label))

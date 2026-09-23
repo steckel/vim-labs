@@ -29,7 +29,7 @@ function! ReanchorHost(request, Done) abort
 endfunction
 function! PickTarget() abort
   call win_gotoid(revue#session#Inspect(g:id).headwin)
-  1,2RevueReanchorHere
+  1,2ReviewReanchorHere
   call assert_equal('reanchor', b:revue_view)
 endfunction
 try
@@ -42,27 +42,27 @@ try
     call assert_equal(g:body, draft.body)
     call assert_equal(g:a.snapshot, draft.reanchored_from.snapshot)
     call assert_equal('renamed.vim', draft.path)
-    RevueActivity
+    ReviewActivity
     call search('## Pending', 'w')
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(split(g:body, "\n", 1), getline(1, '$'))
     call assert_equal(g:b.snapshot, draft.snapshot)
     " A move selection is ephemeral; restarting cannot implicitly accept it.
-    RevueReanchorDraft
+    ReviewReanchorDraft
     call cursor(3, 1)
-    RevueReanchorHere
+    ReviewReanchorHere
     call assert_equal(draft, revue#session#Inspect(g:id).drafts[0])
   else
     call win_gotoid(revue#session#Inspect(g:id).headwin)
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, split(g:body, "\n", 1))
     call revue#session#SaveDraft()
     let old = deepcopy(revue#session#Inspect(g:id).drafts[0])
     let g:latest = deepcopy(g:b)
-    RevueRefresh
+    ReviewRefresh
     let editor = bufnr()
-    RevueReanchorDraft
+    ReviewReanchorDraft
     call assert_equal(g:b.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     call PickTarget()
     let text = join(getline(1, '$'), "\n")
@@ -71,29 +71,29 @@ try
     call assert_match('head-b', text)
     call assert_equal(old, revue#session#Inspect(g:id).drafts[0])
     call assert_false(&modifiable)
-    RevueHelp
-    RevueClose
+    ReviewHelp
+    ReviewClose
     call assert_equal('reanchor', b:revue_view)
-    RevueHelp
-    RevueCancelReanchor
+    ReviewHelp
+    ReviewCancelReanchor
     call assert_equal(editor, bufnr())
     call assert_equal(old, revue#session#Inspect(g:id).drafts[0])
-    RevueReanchorDraft
+    ReviewReanchorDraft
     call PickTarget()
     " A refreshed review invalidates acceptance even if its source ID is unchanged.
-    RevueRefresh
-    RevueAcceptReanchor
+    ReviewRefresh
+    ReviewAcceptReanchor
     call assert_equal(old, revue#session#Inspect(g:id).drafts[0])
-    RevueClose
+    ReviewClose
     call PickTarget()
     " Another writer prevents any in-memory or durable half-move.
     let path = revue#session#Inspect(g:id).draftpath
     call mkdir(path . '.lock')
-    RevueAcceptReanchor
+    ReviewAcceptReanchor
     call assert_equal(old, revue#session#Inspect(g:id).drafts[0])
     call assert_equal(old, json_decode(join(readfile(path), "\n")).drafts[0])
     call delete(path . '.lock', 'd')
-    RevueAcceptReanchor
+    ReviewAcceptReanchor
     let draft = deepcopy(revue#session#Inspect(g:id).drafts[0])
     call assert_notequal(old.id, draft.id)
     call assert_equal('renamed.vim', draft.path)
@@ -103,7 +103,7 @@ try
     call assert_equal('draft', draft.state)
     call assert_equal(draft.id, b:revue_draft)
     call assert_equal(split(g:body, "\n", 1), getline(1, '$'))
-    RevueClose
+    ReviewClose
     call assert_equal('renamed.vim', b:revue_file)
     call writefile([json_encode(draft)], $REVUE_CAP_STORE . '/accepted')
     for fields in [{'state': 'unknown'}, {'state': 'submitting'}, {'pending_mode': 'add'}, {'kind': 'reply'}, {'kind': 'edit'}, {'kind': 'batch'}]

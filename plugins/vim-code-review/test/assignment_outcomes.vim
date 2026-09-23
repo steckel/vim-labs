@@ -44,24 +44,24 @@ try
   call WaitOutcomes()
   if g:recover
     let operation = json_decode(readfile($REVUE_CAP_STORE . '/cancel-operation')[0])
-    RevueActivity
+    ReviewActivity
     for [row, target] in items(revue#session#Inspect(t:revue_session).activityrows)
       if target.operation ==# operation.id | call cursor(str2nr(row), 1) | break | endif
     endfor
-    RevueOpenOperation
+    ReviewOpenOperation
     call assert_equal(operation.id, b:revue_draft)
     call assert_false(&modifiable)
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call WaitOutcomes()
     let session = revue#session#Inspect(t:revue_session)
     call assert_equal([], filter(copy(session.drafts), {_, d -> d.kind ==# 'cancel_assignment'}))
     call assert_true(session.last_receipt.cancelled)
     call assert_true(session.last_receipt.recovered)
-    RevueAssignments
+    ReviewAssignments
     call WaitOutcomes()
     call assert_match('Cancelled', join(getline(1,'$'), "\n"))
   else
-    RevueAssignments
+    ReviewAssignments
     call WaitOutcomes()
     call assert_equal('', revue#session#Inspect(t:revue_session).assignments.error)
     let probe = revue#session#Inspect(t:revue_session)
@@ -75,7 +75,7 @@ try
       call assert_equal(1,len(probe.assignments.items))
     endfor
     call search('^## ', 'w')
-    RevueOpenAssignment
+    ReviewOpenAssignment
     call assert_equal('assignment', b:revue_view)
     call assert_match('addressed', join(getline(1,'$'), "\n"))
     call search('Inspect the follow-up capture', 'w')
@@ -83,7 +83,7 @@ try
     redraw!
     let reading = winsaveview()
     let g:read_mode = 'hold'
-    RevueReloadAssignments
+    ReviewReloadAssignments
     call g:Held({'ok':1,'data':g:assignment_data})
     call assert_equal(reading.lnum,line('.'))
     call assert_equal(reading.topline,winsaveview().topline)
@@ -92,7 +92,7 @@ try
     " Compact reading text does not change identities used for navigation.
     let original = revue#session#Inspect(t:revue_session)
     let item = original.assignments.items[0]
-    call assert_equal(2, exists(':RevueAssignmentDetails'))
+    call assert_equal(2, exists(':ReviewAssignmentDetails'))
     call assert_false(stridx(join(getline(1, '$'), "\n"), item.id) >= 0)
     call assert_false(stridx(join(getline(1, '$'), "\n"), g:config.message) >= 0)
     let origin_window = win_getid()
@@ -101,8 +101,8 @@ try
     let outcome_view = winsaveview()
     let @a = 'preserved register'
     let g:read_mode = 'hold'
-    RevueReloadAssignments
-    RevueAssignmentDetails
+    ReviewReloadAssignments
+    ReviewAssignmentDetails
     let details_window = win_getid()
     let details = getline(1, '$')
     call assert_false(&modifiable)
@@ -120,76 +120,76 @@ try
     call assert_equal(details_window, win_getid())
     call assert_equal(details, getline(1, '$'), 'Details retain the inspected record during refresh')
     let g:read_mode = 'real'
-    RevueClose
+    ReviewClose
     redraw!
     call assert_equal(origin_window, win_getid())
     call assert_equal(outcome_view.lnum, line('.'))
     call assert_equal(outcome_view.topline, winsaveview().topline)
     call assert_equal(g:config.message, revue#session#Inspect(t:revue_session).assignment_view_rows[string(line('.'))].message)
-    RevueAssignmentDiscussion
+    ReviewAssignmentDiscussion
     call assert_equal(g:config.message, revue#discussion#Selected(revue#session#Inspect(t:revue_session), line('.')).comment)
-    RevueClose
+    ReviewClose
     call assert_equal('assignment', b:revue_view)
     call assert_equal(g:config.message, revue#session#Inspect(t:revue_session).assignment_view_rows[string(line('.'))].message)
-    RevueAssignmentReply
+    ReviewAssignmentReply
     call assert_equal(g:config.reply, revue#discussion#Selected(revue#session#Inspect(t:revue_session), line('.')).comment)
-    RevueClose
-    RevueAssignmentComparison
+    ReviewClose
+    ReviewAssignmentComparison
     for _ in range(500)
       if !empty(get(revue#session#Inspect(t:revue_session), 'context_return', {})) | break | endif
       sleep 10m
     endfor
     call assert_equal(g:config.original_reference.snapshot, revue#session#Inspect(t:revue_session).snapshot.snapshot)
-    RevueReturnContext
+    ReviewReturnContext
     call assert_equal('assignment', b:revue_view)
-    RevueAssignmentResult
+    ReviewAssignmentResult
     for _ in range(500)
       if !empty(get(revue#session#Inspect(t:revue_session), 'context_return', {})) | break | endif
       sleep 10m
     endfor
     call assert_equal(g:config.snapshot.snapshot, revue#session#Inspect(t:revue_session).snapshot.snapshot)
-    RevueReturnContext
+    ReviewReturnContext
     call assert_equal('assignment', b:revue_view)
     let g:read_mode = 'hold'
-    RevueReloadAssignments
+    ReviewReloadAssignments
     let Old = g:Held
-    RevueCancelAssignmentsRead
+    ReviewCancelAssignmentsRead
     call Old({'ok':1,'data':{'items':[]}})
     call assert_equal(1,len(revue#session#Inspect(t:revue_session).assignments.items))
     call assert_match('cancelled',revue#session#Inspect(t:revue_session).assignments.error)
-    RevueReloadAssignments
+    ReviewReloadAssignments
     let bad = deepcopy(g:assignment_data)
     let bad.review = 'foreign'
     call g:Held({'ok':1,'data':bad})
     call assert_equal(1,len(revue#session#Inspect(t:revue_session).assignments.items))
     call assert_match('another review',revue#session#Inspect(t:revue_session).assignments.error)
-    RevueReloadAssignments
-    RevueHelp
+    ReviewReloadAssignments
+    ReviewHelp
     call g:Held({'ok':1,'data':g:assignment_data})
     call assert_equal('help',b:revue_view)
-    RevueClose
+    ReviewClose
     call assert_equal('assignment',b:revue_view)
     call SelectOutcome()
-    RevueReloadAssignments
-    RevueAssignmentDiscussion
-    RevueReply
+    ReviewReloadAssignments
+    ReviewAssignmentDiscussion
+    ReviewReply
     call setline(1,'Human draft survives assignment reload')
     let editor = bufnr()
     call g:Held({'ok':1,'data':g:assignment_data})
     call assert_equal(editor,bufnr())
     call assert_equal('Human draft survives assignment reload',getline(1))
-    RevueClose
-    RevueClose
+    ReviewClose
+    ReviewClose
     call assert_equal('assignment', b:revue_view)
     let g:read_mode = 'real'
-    RevueCancelAssignment
+    ReviewCancelAssignment
     call assert_equal('preview',b:revue_view)
     call assert_match('does not stop',join(getline(1,'$'),"\n"))
-    RevueClose
-    RevueSend
+    ReviewClose
+    ReviewSend
     call WaitOutcomes()
     call assert_equal('unknown',filter(copy(revue#session#Inspect(t:revue_session).drafts),{_,d -> d.kind ==# 'cancel_assignment'})[0].state)
-    RevueDiscard
+    ReviewDiscard
     call assert_false(&modifiable)
   endif
   call revue#session#Close()

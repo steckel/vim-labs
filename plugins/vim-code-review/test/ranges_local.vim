@@ -24,19 +24,19 @@ try
         \ 'snapshot': snapshot, 'Request': function('revue#backends#local#Request', [g:data.review])}, 0)
   call RangeWait('!empty(revue#session#Inspect(g:id).loaded)')
   if restarting
-    RevueResumeComparison
+    ReviewResumeComparison
   else
     call cursor(2, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Retain this actual local draft')
-    RevueClose
-    RevueComparisons
+    ReviewClose
+    ReviewComparisons
     call RangeWait('!get(revue#session#Inspect(g:id), "history_busy", 0)')
     call RangePick(g:data.first.snapshot)
-    RevueRangeStart
+    ReviewRangeStart
     call RangePick(g:data.second.snapshot)
-    RevueRangeEnd
-    RevueOpenRange
+    ReviewRangeEnd
+    ReviewOpenRange
   endif
   call RangeWait('has_key(revue#session#Inspect(g:id).snapshot, "range") && !empty(revue#session#Inspect(g:id).loaded)')
   let state = revue#session#Inspect(g:id)

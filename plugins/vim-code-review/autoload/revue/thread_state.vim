@@ -10,6 +10,6 @@ function! revue#thread_state#Status(draft) abort
   if empty(a:draft) | return '' | endif
   let verb = a:draft.resolved ? 'Resolve' : 'Reopen'
   if a:draft.state ==# 'submitting' | return verb . ' in progress; waiting for outcome.' | endif
-  if a:draft.state ==# 'unknown' | return verb . ' outcome unknown; :RevueCheckThreadState checks the original operation.' | endif
-  return verb . (a:draft.state ==# 'failed' ? ' failed' : ' prepared') . '; :Revue' . verb . ' retries. :RevueActivity has details.'
+  if a:draft.state ==# 'unknown' | return verb . ' outcome unknown; :ReviewCheckThreadState checks the original operation.' | endif
+  return verb . (a:draft.state ==# 'failed' ? ' failed' : ' prepared') . '; :Review' . verb . ' retries. :ReviewActivity has details.'
 endfunction

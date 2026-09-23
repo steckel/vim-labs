@@ -51,6 +51,7 @@ printf 'chrome: PASS (compact context, quiet bars, full preview details, narrow 
 vim -Nu NONE -i NONE -n -es -S "$root/test/backends.vim"
 printf 'backends: PASS (connection isolation, refresh routing, legacy draft keys)\n'
 python3 "$root/test/local_backend.py"
+python3 "$root/test/local_feedback.py"
 python3 "$root/test/participants.py"
 python3 "$root/test/runtime.py"
 python3 "$root/test/assignment_ui.py"

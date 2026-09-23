@@ -54,21 +54,21 @@ try
   let g:id = revue#session#Open(g:fixture.snapshot, function('DeleteHost'), 0)
   if filereadable($REVUE_CAP_STORE . '/private-delete')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/private-delete')[0])
-    RevuePending
+    ReviewPending
     call cursor(5, 1)
-    RevuePublishPending COMMENT
+    ReviewPublishPending COMMENT
     call assert_equal(frozen.id, b:revue_draft)
     call assert_false(&modifiable)
-    RevueDiscard
+    ReviewDiscard
     call assert_equal(2, len(revue#session#Inspect(g:id).drafts))
     let g:fixture.snapshot.capabilities.delete_pending_comment.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_equal(1, g:calls[-1].reconcile)
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     let session = revue#session#Inspect(g:id)
     call assert_equal(1, len(session.drafts))
     call assert_equal('Keep my local draft', session.drafts[0].body)
@@ -78,16 +78,16 @@ try
     call assert_true(session.last_receipt.observed)
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Keep my local draft')
-    RevueClose
+    ReviewClose
     call SelectReply()
     let g:fixture.snapshot.capabilities.delete_pending_comment.enabled = 0
-    RevueRefresh
-    RevueDeletePendingComment
+    ReviewRefresh
+    ReviewDeletePendingComment
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     let g:fixture.snapshot.capabilities.delete_pending_comment.enabled = 1
-    RevueRefresh
+    ReviewRefresh
     call SelectReply()
     let guide = revue#session#ActionGuide()
     call assert_equal('', filter(copy(guide), {_, x -> x.id ==# 'delete-pending-comment'})[0].reason)
@@ -100,38 +100,38 @@ try
     call assert_true(revue#delete#Receipt(fields, receipt))
     let receipt.message = 102
     call assert_false(revue#delete#Receipt(fields, receipt), 'receipt target must be an opaque string')
-    RevueDeletePendingComment
+    ReviewDeletePendingComment
     call assert_equal('preview', b:revue_view)
     let preview = join(getline(1, '$'), "\n")
     call assert_match('Second reply to delete', preview)
     call assert_notmatch('First reply stays', preview)
     call assert_match('comment #102', preview)
-    RevueClose
+    ReviewClose
     call assert_false(&modifiable)
     let g:fixture.snapshot.threads[0].comments[2].body = 'Second reply edited elsewhere'
     let g:fixture.snapshot.threads[0].comments[2].version = 'v2'
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal(0, len(g:calls))
-    RevuePreview
+    ReviewPreview
     call assert_match('Current message changed', join(getline(1, '$'), "\n"))
     call assert_match('Second reply edited elsewhere', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueDiscard
+    ReviewClose
+    ReviewDiscard
     call SelectReply()
     call search('^Root stays', 'w')
-    RevueDeletePendingComment
+    ReviewDeletePendingComment
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts), 'root with replies must be unavailable')
-    RevuePending
+    ReviewPending
     call search('^Second reply', 'w')
-    RevueDeletePendingComment
+    ReviewDeletePendingComment
     call assert_equal('preview', b:revue_view)
-    RevueClose
+    ReviewClose
     let g:mode = 'reject'
-    RevueSend
+    ReviewSend
     call assert_equal('failed', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state)
     call assert_equal('102', frozen.message)

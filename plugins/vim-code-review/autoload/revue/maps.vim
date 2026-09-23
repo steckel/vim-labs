@@ -19,7 +19,9 @@ function! revue#maps#Apply(role) abort
   call add(actions, ['assign', 'Assign', '', 'Assign()'])
   call add(actions, ['assignments', 'Assignments', '', 'Assignments()'])
   call add(actions, ['cancel-assignments-read', 'CancelAssignmentsRead', '', 'CancelAssignmentsRead()'])
-  call add(actions, ['batch', 'Batch', '<LocalLeader>b', "Batch('', 'public')"])
+  call add(actions, ['batch', 'Batch', '<LocalLeader>b', 'Batch()'])
+  call add(actions, ['export', 'Export', '', 'Feedback()'])
+  if a:role !=# 'feedback' | call add(actions, ['edit-feedback', 'EditFeedback', '', 'EditFeedback()']) | endif
   call add(actions, ['stage-batch', 'StageBatch', '', "Batch('', 'private')"])
   call add(actions, ['start-pending', 'StartPending', '', 'StartPending()'])
   call add(actions, ['pending', 'Pending', '', 'Pending()'])
@@ -49,7 +51,7 @@ function! revue#maps#Apply(role) abort
     call extend(actions, [['mark-service-viewed', 'MarkServiceViewed', '', 'ServiceViewed(1)'], ['unmark-service-viewed', 'UnmarkServiceViewed', '', 'ServiceViewed(0)'], ['check-service-viewed', 'CheckServiceViewed', '', 'ServiceViewed(-1)']])
   endif
   if a:role ==# 'files'
-    call add(actions, ['open', 'Open', '<CR>', 'Activate()'])
+    call add(actions, ['open', 'OpenFile', '<CR>', 'Activate()'])
   elseif index(['base', 'head'], a:role) >= 0
     call extend(actions, [['comment', 'Comment', 'c', 'Comment(0)'], ['reply', 'Reply', 'r', 'Reply()'],
           \ ['suggest', 'Suggest', '', 'Suggest(0)'],
@@ -65,7 +67,7 @@ function! revue#maps#Apply(role) abort
     call add(actions, ['save-pending', 'SavePending', '', 'SavePending()'])
     call add(actions, ['pending-base', 'PendingBase', '', 'PendingBase()'])
     call add(actions, ['refresh', 'Refresh', '', 'Refresh()'])
-    call extend(actions, [['send', 'Send', '<C-S>', 'Send()'], ['discard', 'Discard', '', 'Discard()'],
+    call extend(actions, [['send', 'Send', '<C-S>', 'SaveFeedback()'], ['discard', 'Discard', '', 'Discard()'],
           \ ['preview', 'Preview', '<LocalLeader>p', 'Preview()']])
   elseif index(['assignments', 'assignment'], a:role) >= 0
     call extend(actions, [['run-participant', 'RunParticipant', '', 'RunParticipant()'], ['abandon-run', 'AbandonRun', '', 'RunParticipant(1)']])
@@ -83,6 +85,12 @@ function! revue#maps#Apply(role) abort
   elseif a:role ==# 'assignment-selection'
     call extend(actions, [['assignment-toggle', 'ToggleAssignment', '<Space>', 'ToggleAssignment()'],
           \ ['assignment-prepare', 'PrepareAssignment', '<CR>', 'PrepareAssignment()']])
+  elseif a:role ==# 'feedback'
+    call extend(actions, [['toggle-feedback', 'ToggleFeedback', '<Space>', 'ToggleFeedback()'],
+          \ ['edit-feedback', 'EditFeedback', '<CR>', 'EditFeedback()'],
+          \ ['select-feedback', 'SelectFeedback', 'a', 'SelectFeedback(1)'],
+          \ ['clear-feedback', 'ClearFeedback', 'u', 'SelectFeedback(0)'],
+          \ ['export-markdown', 'ExportMarkdown', 'm', 'ExportMarkdown()']])
   elseif a:role ==# 'batch'
     call extend(actions, [['batch-toggle', 'ToggleDraft', '<Space>', 'ToggleBatchDraft()'],
           \ ['batch-edit', 'EditDraft', '<CR>', 'EditBatchDraft()'],
@@ -158,38 +166,38 @@ function! revue#maps#Apply(role) abort
   endif
   for action in actions
     let [id, name, default, invocation] = action
-    let command = 'Revue' . name
+    let command = 'Review' . name
     execute 'command! -buffer ' . command . ' call revue#session#' . invocation
     if id ==# 'copy-message' || id ==# 'copy-link'
       execute 'command! -buffer -register ' . command . ' call revue#session#CopyMessage(' . (id ==# 'copy-link' ? 1 : 0) . ', <q-reg>)'
     elseif id ==# 'copy-receipt'
-      command! -buffer -register RevueCopyReceipt call revue#session#CopyReceipt(<q-reg>)
+      command! -buffer -register ReviewCopyReceipt call revue#session#CopyReceipt(<q-reg>)
     elseif id ==# 'copy-comparison'
-      command! -buffer -register RevueCopyComparison call revue#session#CopyComparison(<q-reg>)
+      command! -buffer -register ReviewCopyComparison call revue#session#CopyComparison(<q-reg>)
     elseif id ==# 'discussions'
-      command! -buffer -nargs=* RevueDiscussions call revue#session#Discussions(<q-args>)
+      command! -buffer -nargs=* ReviewDiscussions call revue#session#Discussions(<q-args>)
     elseif id ==# 'range-start'
-      command! -buffer -nargs=? RevueRangeStart call revue#session#RangeEndpoint('from', <q-args>)
+      command! -buffer -nargs=? ReviewRangeStart call revue#session#RangeEndpoint('from', <q-args>)
     elseif id ==# 'range-end'
-      command! -buffer -nargs=? RevueRangeEnd call revue#session#RangeEndpoint('to', <q-args>)
+      command! -buffer -nargs=? ReviewRangeEnd call revue#session#RangeEndpoint('to', <q-args>)
     elseif id ==# 'file-filter'
-      command! -buffer -nargs=* -complete=customlist,revue#discovery#CompleteFile RevueFileFilter call revue#session#Filter('file', <q-args>)
+      command! -buffer -nargs=* -complete=customlist,revue#discovery#CompleteFile ReviewFileFilter call revue#session#Filter('file', <q-args>)
     elseif id ==# 'discussion-filter'
-      command! -buffer -nargs=* -complete=customlist,revue#discovery#CompleteDiscussion RevueDiscussionFilter call revue#session#Filter('discussion', <q-args>)
+      command! -buffer -nargs=* -complete=customlist,revue#discovery#CompleteDiscussion ReviewDiscussionFilter call revue#session#Filter('discussion', <q-args>)
     elseif id ==# 'reanchor-here'
-      command! -buffer -range RevueReanchorHere call revue#session#ReanchorHere(0, <line1>, <line2>)
+      command! -buffer -range ReviewReanchorHere call revue#session#ReanchorHere(0, <line1>, <line2>)
     elseif id ==# 'comment'
-      command! -buffer -range RevueComment call revue#session#Comment(0, <line1>, <line2>)
+      command! -buffer -range ReviewComment call revue#session#Comment(0, <line1>, <line2>)
     elseif id ==# 'suggest'
-      command! -buffer -range RevueSuggest call revue#session#Suggest(0, <line1>, <line2>)
+      command! -buffer -range ReviewSuggest call revue#session#Suggest(0, <line1>, <line2>)
     elseif id ==# 'capture'
-      command! -buffer -nargs=? -bang RevueCapture call revue#session#Capture(<bang>0, <q-args>)
+      command! -buffer -nargs=? -bang ReviewCapture call revue#session#Capture(<bang>0, <q-args>)
     elseif id ==# 'publish-pending'
-      command! -buffer -nargs=? RevuePublishPending call revue#session#PublishPending(<q-args>)
+      command! -buffer -nargs=? ReviewPublishPending call revue#session#PublishPending(<q-args>)
     elseif id ==# 'quote-attributed'
-      command! -buffer -range RevueQuoteAttributed call revue#session#Quote(<range> ? 2 : 0, <line1>, <line2>, 1)
+      command! -buffer -range ReviewQuoteAttributed call revue#session#Quote(<range> ? 2 : 0, <line1>, <line2>, 1)
     elseif id ==# 'quote'
-      command! -buffer -range RevueQuote call revue#session#Quote(<range> ? 2 : 0, <line1>, <line2>)
+      command! -buffer -range ReviewQuote call revue#session#Quote(<range> ? 2 : 0, <line1>, <line2>)
     endif
     call add(b:revue_commands, command)
     let plug = '<Plug>(revue-' . id . ')'

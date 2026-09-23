@@ -73,18 +73,18 @@ endfunction
 
 function! revue#timeline#View(session) abort
   let state = a:session.timeline
-  let lines = ['# Review history', ':RevueOlderEvents · :RevueReloadTimeline · :RevueCancelTimeline · :RevueClose',
+  let lines = ['# Review history', ':ReviewOlderEvents · :ReviewReloadTimeline · :ReviewCancelTimeline · :ReviewClose',
         \ 'Enter opens a loaded discussion · gx opens the event link · gy copies its link',
         \ printf('%d events loaded%s · newest first', len(state.items), has_key(state, 'total') ? ' / ' . state.total . ' reported' : ''),
         \ state.scope]
   if state.loading | call add(lines, 'Loading history… existing events remain readable.')
   elseif !empty(state.error) | call add(lines, 'History unavailable: ' . revue#message#OneLine(state.error))
   elseif state.complete | call add(lines, 'Oldest available event reached. Reload to check for newer activity.')
-  else | call add(lines, ':RevueOlderEvents loads more history.') | endif
+  else | call add(lines, ':ReviewOlderEvents loads more history.') | endif
   call extend(lines, revue#feedback#Lines(a:session))
   if !empty(get(get(a:session.snapshot, 'feedback', {}), 'cursor', ''))
     let targeted = !empty(filter(copy(state.items), {_, event -> revue#feedback#LookupSupported(a:session.snapshot, get(event, 'target', {}))}))
-    call add(lines, targeted ? ':RevueLoadEventDiscussion fetches the selected discussion when supported; otherwise one page.' : ':RevueLoadEventDiscussion loads one feedback page and follows the selected event if found.')
+    call add(lines, targeted ? ':ReviewLoadEventDiscussion fetches the selected discussion when supported; otherwise one page.' : ':ReviewLoadEventDiscussion loads one feedback page and follows the selected event if found.')
   endif
   let view = {'lines': lines, 'rows': {}}
   for event in reverse(copy(state.items))
@@ -95,12 +95,12 @@ function! revue#timeline#View(session) abort
     for detail in event.details | call add(view.lines, revue#message#OneLine(detail)) | endfor
     if has_key(event, 'reviewed_comparison')
       call add(view.lines, 'Source: ' . revue#message#OneLine(event.reviewed_comparison.base) . ' → ' . revue#message#OneLine(event.reviewed_comparison.head))
-      call add(view.lines, revue#message#OneLine(event.comparison_provenance) . ' · :RevueEventComparison')
+      call add(view.lines, revue#message#OneLine(event.comparison_provenance) . ' · :ReviewEventComparison')
     endif
     if !empty(event.body) | call extend(view.lines, [''] + split(event.body, "\n", 1)) | endif
     for row in range(first, len(view.lines)) | let view.rows[string(row)] = {'id': event.id, 'first': first, 'last': len(view.lines)} | endfor
   endfor
-  if empty(state.items) && !state.loading | call add(view.lines, 'No events loaded. :RevueReloadTimeline retries; local delivery receipts are in :RevueActivity.') | endif
+  if empty(state.items) && !state.loading | call add(view.lines, 'No events loaded. :ReviewReloadTimeline retries; local delivery receipts are in :ReviewActivity.') | endif
   return view
 endfunction
 

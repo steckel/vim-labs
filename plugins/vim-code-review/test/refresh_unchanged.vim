@@ -16,16 +16,16 @@ function! UnchangedHost(request, Done) abort
 endfunction
 try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'unchanged', 'review': 'review', 'snapshot': g:latest, 'Request': function('UnchangedHost')}, 0)
-  RevueConversation
+  ReviewConversation
   let panel = bufnr()
-  RevueNewConversation
+  ReviewNewConversation
   call setline(1, 'Unsent local text')
   let composer = bufnr()
   let panel_tick = getbufvar(panel, 'changedtick')
   call assert_equal(100, len(getbufvar(panel, 'revue_markdown_cache')))
   let draft_tick = b:changedtick
   let pos = getpos('.')
-  RevueRefresh
+  ReviewRefresh
   call assert_equal(panel_tick, getbufvar(panel, 'changedtick'), 'starting a refresh does not rebuild conversation')
   call assert_match('Refreshing', revue#session#RefreshLabel(g:id))
   call g:ReadDone({'ok': 1, 'data': deepcopy(g:latest)})
@@ -35,7 +35,7 @@ try
   call assert_equal('', revue#session#RefreshLabel(g:id))
   call assert_equal('succeeded', revue#session#Inspect(g:id).refresh_state.status)
   " A changed message must repaint even while another buffer is being edited.
-  RevueRefresh
+  ReviewRefresh
   let old_body = g:latest.conversation[4].body
   let g:latest.conversation[4].body = 'New reply body from server **updated**'
   call g:ReadDone({'ok': 1, 'data': deepcopy(g:latest)})
@@ -46,22 +46,22 @@ try
   call assert_true(!empty(filter(prop_list(updated_row, {'bufnr': panel}), {_, p -> p.type ==# 'RevueInlineStrong'})), 'new body has current formatting')
   call assert_equal(composer, bufnr())
   call assert_equal('Unsent local text', getline(1))
-  RevueRefresh
+  ReviewRefresh
   let g:latest.capabilities.conversation.enabled = 0
   call g:ReadDone({'ok': 1, 'data': deepcopy(g:latest)})
   call assert_false(empty(filter(revue#session#ActionGuide(), {_, item -> item.id ==# 'send'})[0].reason))
   call assert_equal('Unsent local text', getline(1))
   " Failure status remains visible without destroying the retained conversation.
   let panel_tick = getbufvar(panel, 'changedtick')
-  RevueRefresh
+  ReviewRefresh
   call g:ReadDone({'ok': 0, 'error': 'Offline'})
   call assert_equal(panel_tick, getbufvar(panel, 'changedtick'))
   call assert_match('Refresh failed', revue#session#RefreshLabel(g:id))
-  RevueCancelRefresh
+  ReviewCancelRefresh
   call assert_equal('', revue#session#RefreshLabel(g:id))
-  RevueHelp
+  ReviewHelp
   call assert_equal({}, getbufvar(panel, 'revue_markdown_cache'), 'changing panel role clears retained parses')
-  RevueClose
+  ReviewClose
   call revue#session#Close()
 catch
   call add(v:errors, v:exception . ' at ' . v:throwpoint)

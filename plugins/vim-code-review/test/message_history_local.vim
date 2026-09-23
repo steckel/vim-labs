@@ -12,17 +12,17 @@ try
   let g:id = revue#backend#Open({'id': 'local', 'connection': g:config.connection, 'review': g:config.review,
         \ 'snapshot': g:config.snapshot, 'Request': function('revue#backends#local#Request', [g:config.review])}, 0)
   call WaitForHistory({-> !empty(revue#session#Inspect(g:id).loaded)})
-  RevueThreads
+  ReviewThreads
   for [row, target] in items(revue#session#Inspect(g:id).messagemap)
     if target.comment ==# g:config.message | call cursor(str2nr(row), 1) | break | endif
   endfor
-  RevueMessageHistory
+  ReviewMessageHistory
   call WaitForHistory({-> !revue#session#Inspect(g:id).message_history.loading})
   call assert_equal('', revue#session#Inspect(g:id).message_history.error)
   call assert_match('-Original reply', join(getline(1, '$'), "\n"))
   call assert_match('+Revised reply', join(getline(1, '$'), "\n"))
   call assert_false(&modifiable)
-  RevueClose
+  ReviewClose
   call assert_equal(g:config.message, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   call revue#session#Close()
 catch

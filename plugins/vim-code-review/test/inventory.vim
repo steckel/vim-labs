@@ -35,23 +35,23 @@ endfunction
 try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'coverage', 'review': 'review', 'snapshot': g:latest, 'Request': function('InventoryHost')}, 0)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, 'Unsent text survives inventory reads')
-  RevueClose
-  RevueDiscussions
+  ReviewClose
+  ReviewDiscussions
   call assert_match('Threads: 1/3 loaded · partial', InventoryText())
   call assert_match('Conversation: 0 loaded · unsupported', InventoryText())
   call assert_match('excludes unloaded pages', InventoryText())
   call InventoryPick('local-reply-2')
   let selected = revue#discovery#Key(InventoryTarget())
-  RevueRefresh
+  ReviewRefresh
   call assert_match('Refreshing review', InventoryText())
   call assert_equal(selected, revue#discovery#Key(InventoryTarget()))
   call g:ReadDone({'ok': 0, 'error': 'Second page failed'})
   call assert_match('previously loaded feedback retained', InventoryText())
   call assert_equal(selected, revue#discovery#Key(InventoryTarget()))
   call assert_equal('Unsent text survives inventory reads', revue#session#Inspect(g:id).drafts[0].body)
-  RevueRefresh
+  ReviewRefresh
   let more = deepcopy(g:latest.threads[0])
   let more.id = 'next-thread'
   let more.comments = [extend(deepcopy(more.comments[0]), {'id': 'next-root', 'body': 'New page needle'})]
@@ -62,13 +62,13 @@ try
   call assert_match('completion.vim.*\[2\].*\[1 new\]', join(getbufline(revue#session#Inspect(g:id).tree, 1, '$'), "\n"))
   call assert_equal(selected, revue#discovery#Key(InventoryTarget()))
   call assert_notmatch('Refresh failed', InventoryText())
-  RevueDiscussions New page needle
+  ReviewDiscussions New page needle
   call assert_match('1 matching threads (1 matching messages)', InventoryText())
   call InventoryPick('next-root')
-  RevueOpenDiscussion
+  ReviewOpenDiscussion
   call assert_equal('next-root', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-  RevueClose
-  RevueDiscussions not-present
+  ReviewClose
+  ReviewDiscussions not-present
   call assert_match('No discussions match in loaded feedback', InventoryText())
   " Missing and malformed coverage never imply an empty complete review.
   for metadata in [{}, [], {'threads': []}, {'threads': {'state': 'complete', 'total': 0}}, {'threads': {'state': 'complete', 'total': '2'}}]
@@ -85,17 +85,17 @@ try
     call assert_notmatch("\n", revue#inventory#Entry(sample, 'threads').reason)
   endfor
   " A late successful refresh while editing must preserve buffer/focus/body.
-  RevueDiscussionFilter clear
+  ReviewDiscussionFilter clear
   call InventoryPick('local-reply-2')
-  RevueRefresh
-  RevueOpenDiscussion
-  RevueReply
+  ReviewRefresh
+  ReviewOpenDiscussion
+  ReviewReply
   call setline(1, 'Keep editing while coverage updates')
   let editing = win_getid()
   call g:ReadDone({'ok': 1, 'data': deepcopy(g:latest)})
   call assert_equal(editing, win_getid())
   call assert_equal('Keep editing while coverage updates', getline(1))
-  RevueClose
+  ReviewClose
   call revue#session#Close()
 catch
   call add(v:errors, v:exception . ' at ' . v:throwpoint)

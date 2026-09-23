@@ -19,12 +19,12 @@ function! LinkHost(request, Done) abort
   endif
 endfunction
 function! ChangeLinkTarget(timer) abort
-  RevueNextMessage
+  ReviewNextMessage
   call feedkeys("1\<CR>", 't')
 endfunction
 function! ChangeLinkBody(timer) abort
   let g:fixture.snapshot.threads[0].comments[0].body = 'Replacement https://example.test/updated'
-  RevueRefresh
+  ReviewRefresh
   call feedkeys("2\<CR>", 't')
 endfunction
 " Intercept browser dispatch: no real browser or network in this test.
@@ -50,46 +50,46 @@ try
   endfor
   let g:id = revue#session#Open(g:fixture.snapshot, function('LinkHost'), 0)
   call cursor(3, 1)
-  RevueThread
+  ReviewThread
   call cursor(1, 1)
-  RevueNextMessage
+  ReviewNextMessage
   let initial = [win_getid(), bufnr(), winsaveview()]
   let target = revue#discussion#Selected(revue#session#Inspect(g:id), line('.'))
-  call assert_equal(2, exists(':RevueBodyLinks'))
+  call assert_equal(2, exists(':ReviewBodyLinks'))
   call assert_match('BodyLinks', maparg('<Plug>(revue-body-links)', 'n'))
   let @" = 'keep'
   call feedkeys("0\<CR>", 't')
-  RevueBodyURLs
+  ReviewBodyURLs
   call assert_equal('keep', @")
   call feedkeys("1\<CR>0\<CR>", 't')
-  RevueBodyURLs
+  ReviewBodyURLs
   call assert_equal('keep', @")
   call feedkeys("2\<CR>2\<CR>", 't')
-  RevueBodyURLs
+  ReviewBodyURLs
   call assert_equal(urls[1].url, @")
   call assert_equal([], g:opened)
   call feedkeys("6\<CR>4\<CR>2\<CR>", 't')
-  RevueActions
+  ReviewActions
   call assert_equal(urls[3].url, @", 'message action routes to the body chooser')
   call feedkeys("1\<CR>1\<CR>", 't')
-  RevueBodyURLs
+  ReviewBodyURLs
   call assert_equal([[urls[0].url, 0]], g:opened)
   call assert_equal(initial, [win_getid(), bufnr(), winsaveview()], 'chooser preserves discussion view')
   call assert_equal(target.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   " Selection changes while the menu is up must not open the old target.
   call feedkeys("1\<CR>", 't')
   call timer_start(20, function('ChangeLinkTarget'))
-  RevueBodyURLs
+  ReviewBodyURLs
   call assert_equal(1, len(g:opened))
   call assert_notequal(target.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
-  RevuePreviousMessage
+  ReviewPreviousMessage
   let @" = 'retained through refresh'
   call feedkeys("1\<CR>", 't')
   call timer_start(20, function('ChangeLinkBody'))
-  RevueBodyURLs
+  ReviewBodyURLs
   call assert_equal('retained through refresh', @", 'updated message cannot copy stale URL')
   call assert_match('Replacement', revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).message.body)
-  RevueHelp
+  ReviewHelp
   let @" = 'still keep'
   call revue#session#BodyLinks()
   call assert_equal('still keep', @")

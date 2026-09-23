@@ -73,65 +73,65 @@ try
   call assert_equal('same [Author] · Edited · Saved locally', revue#message#Header(plain, 'same'))
   let g:id = revue#session#Open(g:fixture.snapshot, function('MessageHost'), 0)
   call cursor(3, 1)
-  RevueThread
+  ReviewThread
   call cursor(1, 1)
-  RevueNextMessage
+  ReviewNextMessage
   let state = revue#session#Inspect(g:id)
   call assert_match('morgan \[Contributor\]', getline('.'))
   call assert_match('Updated', getline('.'))
   call assert_equal([[line('.')]], [FocusMatches()[0].pos1])
-  RevueNextMessage
+  ReviewNextMessage
   call assert_match('alex \[Author\]', getline('.'))
   call assert_match('Edited · Saved locally', getline('.'))
   let message = revue#discussion#Selected(revue#session#Inspect(g:id), line('.'))
   call cursor(message.body_start, 1)
   call revue#session#MessageFocus()
   call assert_equal([message.start], FocusMatches()[0].pos1, 'body focus identifies its author header')
-  RevueCopyMessage z
+  ReviewCopyMessage z
   call assert_equal(message.message.body, @z, 'metadata never contaminates raw-body copy')
-  RevueQuote
+  ReviewQuote
   call assert_match('^> > Could we keep prefix', getline(1))
   call assert_notmatch('Saved locally\|\[Author\]', join(getline(1, '$'), "\n"))
   let editor = win_getid()
   let drafttext = getline(1, '$')
-  RevuePreview
+  ReviewPreview
   call assert_match('Reply preview', getline(1))
-  RevueClose
+  ReviewClose
   call assert_equal([editor, drafttext], [win_getid(), getline(1, '$')])
-  RevueClose
+  ReviewClose
   call assert_equal(message.comment, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)
   call assert_equal(1, len(FocusMatches()))
   call insert(g:fixture.snapshot.threads[0].comments, {'id': 'new', 'author': 'other', 'body': 'Inserted message', 'created': ''}, 0)
-  RevueRefresh
+  ReviewRefresh
   let selected = revue#discussion#Selected(revue#session#Inspect(g:id), line('.'))
   call assert_equal(message.comment, selected.comment)
   call assert_equal([selected.start], FocusMatches()[0].pos1)
-  RevueHelp
+  ReviewHelp
   call assert_equal([], FocusMatches(), 'Help has no selected-message decoration')
-  RevueClose
+  ReviewClose
   call assert_equal(1, len(FocusMatches()))
-  RevueClose
+  ReviewClose
   call assert_equal([], FocusMatches(), 'source has no message header match')
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, ['```suggestion', 'replacement', '```'])
   let comment_id = b:revue_draft
-  RevueClose
+  ReviewClose
   let g:fixture.snapshot.snapshot = 'message-new-comparison'
   let g:fixture.snapshot.head = 'new-head'
   let g:fixture.content.head.lines[2] = '__NEW_CODE__'
-  RevueRefresh
-  RevueLatest
+  ReviewRefresh
+  ReviewLatest
   let state = revue#session#Inspect(g:id)
   call win_gotoid(state.treewin)
   for [row, target] in items(state.rows)
     if get(target, 'id', '') ==# comment_id
       call cursor(str2nr(row), 1)
-      RevueOpen
+      ReviewOpenFile
       break
     endif
   endfor
-  RevuePreview
+  ReviewPreview
   call assert_match('Older comparison', join(getline(1, '$'), "\n"))
   call assert_match('let use_fuzzy = !empty(a:query)', join(getline(1, '$'), "\n"))
   call assert_notmatch('__NEW_CODE__', join(getline(1, '$'), "\n"), 'preview uses the cached original source')

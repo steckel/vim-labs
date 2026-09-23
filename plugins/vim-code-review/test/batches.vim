@@ -34,7 +34,7 @@ function! AddDraft(text) abort
   call revue#session#Comment(0)
   call setline(1, a:text)
   let id = revue#session#Inspect(g:id).drafts[-1].id
-  RevueClose
+  ReviewClose
   return id
 endfunction
 function! SelectDraft(id) abort
@@ -63,16 +63,16 @@ try
     call revue#session#Batch(saved.id)
     let g:mode = 'failed'
     for attempt in range(3)
-      RevueSendBatch
+      ReviewSendBatch
       call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
       call assert_equal(1, g:calls[-1].reconcile)
       call assert_equal(saved.id, g:calls[-1].draft.id)
       call assert_equal(saved.items, g:calls[-1].draft.items)
-      RevueUnpackBatch
+      ReviewUnpackBatch
       call assert_equal('batch', revue#session#Inspect(g:id).drafts[-1].kind)
     endfor
     let g:mode = 'ok'
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal(4, len(g:calls))
     call assert_equal(1, g:calls[0].reconcile)
     call assert_equal(saved.id, g:calls[0].draft.id)
@@ -91,15 +91,15 @@ try
     call revue#session#NewConversation()
     call setline(1, 'Leave this unselected')
     let excluded = revue#session#Inspect(g:id).drafts[-1].id
-    RevueClose
-    RevueBatch
+    ReviewClose
+    ReviewBatch
     call SelectDraft(excluded)
     call assert_equal(0, get(revue#session#Inspect(g:id).batchselected, excluded, 0))
     call SelectDraft(first)
     call SelectDraft(second)
-    RevueEditDraft
+    ReviewEditDraft
     call setline(1, 'Edited second concern')
-    RevueClose
+    ReviewClose
     call assert_match('Edited second concern', join(getline(1, '$'), "\n"))
     " An edit from another window invalidates the displayed batch preview.
     for buf in revue#session#Inspect(g:id).buffers
@@ -107,10 +107,10 @@ try
         call setbufline(buf, 1, 'Changed outside the queue')
       endif
     endfor
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal([], g:calls)
     call assert_match('Changed outside the queue', join(getline(1, '$'), "\n"))
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal(1, len(g:calls))
     call assert_equal(2, len(g:calls[0].draft.items))
     call assert_equal('Changed outside the queue', g:calls[0].draft.items[1].body)
@@ -118,30 +118,30 @@ try
     call assert_equal(excluded, revue#session#Inspect(g:id).drafts[0].id)
 
     let incomplete = AddDraft('Receipt must acknowledge this item')
-    RevueBatch
+    ReviewBatch
     call SelectDraft(incomplete)
     let g:mode = 'incomplete'
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_match('Incomplete batch receipt', revue#session#Inspect(g:id).drafts[-1].error)
     let g:mode = 'ok'
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal(1, g:calls[-1].reconcile)
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
 
     let failed = AddDraft('Fix after rejection')
-    RevueBatch
+    ReviewBatch
     call SelectDraft(failed)
     let g:mode = 'failed'
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal('failed', revue#session#Inspect(g:id).drafts[-1].state)
-    RevueUnpackBatch
+    ReviewUnpackBatch
     call assert_equal(failed, revue#session#Inspect(g:id).drafts[-1].id)
     call assert_equal('Fix after rejection', revue#session#Inspect(g:id).drafts[-1].body)
     let g:mode = 'unknown'
-    RevueSendBatch
+    ReviewSendBatch
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
-    RevueUnpackBatch
+    ReviewUnpackBatch
     call assert_equal('batch', revue#session#Inspect(g:id).drafts[-1].kind)
     call assert_equal(5, len(g:calls))
   endif

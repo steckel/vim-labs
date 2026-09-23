@@ -46,7 +46,7 @@ try
         call assert_equal(g:fixture.content.head.lines,getbufline(state.head,1,'$'))
         call assert_true(len(g:delivered_props)>10)
       endif
-      RevueRestoreLayout
+      ReviewRestoreLayout
       if narrow
         for window in g:saved_layout.windows
           let info = getwininfo(window.id)[0]

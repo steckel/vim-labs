@@ -54,20 +54,20 @@ This names an assignment recipient; it does not configure or start a runtime.
 IDs must be stable and unique. Entries need nonempty `id` and `label` strings.
 Invalid entries are omitted; no valid entries yields a setup explanation.
 
-1. Open `:RevueAssign` from a local review. From a selected thread message, that
+1. Open `:ReviewAssign` from a local review. From a selected thread message, that
    message starts selected. Otherwise choose from the loaded saved line/file
    messages; review-wide conversation and local drafts are excluded.
-2. Use Space / `:RevueToggleAssignment` to select up to 50 messages. The list
+2. Use Space / `:ReviewToggleAssignment` to select up to 50 messages. The list
    shows file, range, author and excerpt. It reflects feedback loaded when opened;
    reopen it after loading more feedback to include that feedback.
-3. Enter / `:RevuePrepareAssignment` chooses a participant and opens a read-only
+3. Enter / `:ReviewPrepareAssignment` chooses a participant and opens a read-only
    preview with the full selected bodies and comparison. The participant can
    read whole selected threads, including later human replies.
-4. `:RevueClose` returns to the saved local operation. `:RevueSend` confirms and
-   saves the assignment to the backend. `:RevueDiscard` cancels an unsent operation.
+4. `:ReviewClose` returns to the saved local operation. `:ReviewSend` confirms and
+   saves the assignment to the backend. `:ReviewDiscard` cancels an unsent operation.
    Ordinary review batches do not publish assignments.
-5. `:RevueActivity` retains the assignment receipt. Unknown outcomes stay frozen;
-   `:RevueCheckReceipt` recovers the original assignment, including after restart.
+5. `:ReviewActivity` retains the assignment receipt. Unknown outcomes stay frozen;
+   `:ReviewCheckReceipt` recovers the original assignment, including after restart.
    It cannot create an assignment if no receipt exists.
 
 Mappings are configurable through the existing Revue action map. The guide lists
@@ -83,7 +83,7 @@ second Vim process recovering the same two-message assignment exactly once.
 
 ## Inspect outcomes and cancel participation in Vim
 
-`:RevueAssignments` reads saved assignments for the owning review. Enter opens
+`:ReviewAssignments` reads saved assignments for the owning review. Enter opens
 one assignment with its original selected text, per-comment outcome, run ID when
 reported and verified result comparison when present. Addressed is the participant's
 claim; it does not resolve the discussion. Assigned, working, needs input, addressed,
@@ -91,24 +91,24 @@ failed and cancellation remain distinct, including mixed outcomes in one assignm
 
 Within the detail view:
 
-- Enter / `:RevueAssignmentDiscussion` opens the exact original message.
-- `:RevueAssignmentReply` opens the latest loaded reply from this assignment
+- Enter / `:ReviewAssignmentDiscussion` opens the exact original message.
+- `:ReviewAssignmentReply` opens the latest loaded reply from this assignment
   addressed to that original message. Missing loaded feedback is explicit;
   refresh/load more review feedback before trying again.
-- `:RevueAssignmentComparison` opens the comparison assigned to the participant.
-  `:RevueAssignmentResult` opens the selected outcome's verified result capture.
-  `:RevueReturnContext` returns from source to the same outcome.
-- `:RevueClose` returns from discussion to the same outcome, or from an assignment
+- `:ReviewAssignmentComparison` opens the comparison assigned to the participant.
+  `:ReviewAssignmentResult` opens the selected outcome's verified result capture.
+  `:ReviewReturnContext` returns from source to the same outcome.
+- `:ReviewClose` returns from discussion to the same outcome, or from an assignment
   to the list. Reopening managed panels preserves the return target.
-- `:RevueReloadAssignments` refreshes outcomes. `:RevueCancelAssignmentsRead`
+- `:ReviewReloadAssignments` refreshes outcomes. `:ReviewCancelAssignmentsRead`
   cancels the read and retains loaded results. Late, malformed or foreign-review
   replies cannot replace the view. A reload preserves reading position and a human
   draft in another window. There is no background polling.
-- `:RevueCancelAssignment` opens a read-only cancellation preview. Close the preview
-  and use `:RevueSend` to confirm. Cancellation revokes assignment MCP access,
+- `:ReviewCancelAssignment` opens a read-only cancellation preview. Close the preview
+  and use `:ReviewSend` to confirm. Cancellation revokes assignment MCP access,
   including reads, while preserving conversation and outcomes. It does **not** stop
   an operating-system process. Assignment version changes require a fresh preview.
-  Lost results stay frozen for `:RevueCheckReceipt`, including after restarting Vim.
+  Lost results stay frozen for `:ReviewCheckReceipt`, including after restarting Vim.
 
 These actions use separate `assignments` and `cancel_assignment` backend capabilities;
 no participant configuration is required to inspect or cancel an existing assignment.

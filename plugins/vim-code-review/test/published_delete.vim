@@ -54,19 +54,19 @@ try
   if filereadable($REVUE_CAP_STORE . '/published-delete')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/published-delete')[0])
     call SelectReply()
-    RevueDeleteMessage
+    ReviewDeleteMessage
     call assert_equal(frozen.id, b:revue_draft)
     call assert_false(&modifiable)
-    RevueDiscard
+    ReviewDiscard
     call assert_equal(2, len(revue#session#Inspect(g:id).drafts))
     let g:fixture.snapshot.capabilities.delete_message.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal('unknown', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_equal(1, g:calls[-1].reconcile)
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     let session = revue#session#Inspect(g:id)
     call assert_equal(1, len(session.drafts))
     call assert_equal('Keep my local draft', session.drafts[0].body)
@@ -77,16 +77,16 @@ try
     call assert_equal('101', revue#discussion#Selected(session, line('.')).comment, 'successful deletion returns beside the removed reply')
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Keep my local draft')
-    RevueClose
+    ReviewClose
     call SelectReply()
     let g:fixture.snapshot.capabilities.delete_message.enabled = 0
-    RevueRefresh
-    RevueDeleteMessage
+    ReviewRefresh
+    ReviewDeleteMessage
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     let g:fixture.snapshot.capabilities.delete_message.enabled = 1
-    RevueRefresh
+    ReviewRefresh
     call SelectReply()
     let guide = revue#session#ActionGuide()
     call assert_equal('', filter(copy(guide), {_, x -> x.id ==# 'delete-message'})[0].reason)
@@ -99,7 +99,7 @@ try
     call assert_true(revue#delete_message#Receipt(fields, receipt))
     let receipt.message = 102
     call assert_false(revue#delete_message#Receipt(fields, receipt), 'receipt target must be an opaque string')
-    RevueDeleteMessage
+    ReviewDeleteMessage
     call assert_equal('preview', b:revue_view)
     let preview = join(getline(1, '$'), "\n")
     call assert_match('Second reply to delete', preview)
@@ -109,31 +109,31 @@ try
     let batch_snapshot = deepcopy(revue#session#Inspect(g:id).snapshot)
     let batch_snapshot.capabilities.batch = {'enabled': 1, 'mode': 'atomic', 'kinds': ['delete_message']}
     call assert_match('confirmed separately', revue#batch#Error(batch_snapshot, [revue#session#Inspect(g:id).drafts[-1]]))
-    RevueClose
+    ReviewClose
     call assert_false(&modifiable)
     let g:fixture.snapshot.threads[0].comments[2].body = 'Second reply edited elsewhere'
     let g:fixture.snapshot.threads[0].comments[2].version = 'v2'
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal(0, len(g:calls))
-    RevuePreview
+    ReviewPreview
     call assert_match('Current message changed', join(getline(1, '$'), "\n"))
     call assert_match('Second reply edited elsewhere', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueDiscard
+    ReviewClose
+    ReviewDiscard
     call SelectReply()
     call search('^Root stays', 'w')
-    RevueDeleteMessage
+    ReviewDeleteMessage
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts), 'root with replies must be unavailable')
     call SelectReply()
-    RevueDeleteMessage
+    ReviewDeleteMessage
     call assert_equal('preview', b:revue_view)
-    RevueClose
+    ReviewClose
     let g:mode = 'reject'
-    RevueSend
+    ReviewSend
     call assert_equal('failed', revue#session#Inspect(g:id).drafts[-1].state)
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state)
     call assert_equal('102', frozen.message)

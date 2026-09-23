@@ -27,13 +27,13 @@ function! revue#feedback#Lines(session) abort
   let lines = []
   if get(state, 'snapshot', '') ==# a:session.snapshot.snapshot
     if get(state, 'loading', 0)
-      call add(lines, (get(state, 'mode', '') ==# 'lookup' ? 'Loading selected discussion…' : 'Loading more feedback…') . ' :RevueCancelFeedback keeps existing discussions.')
+      call add(lines, (get(state, 'mode', '') ==# 'lookup' ? 'Loading selected discussion…' : 'Loading more feedback…') . ' :ReviewCancelFeedback keeps existing discussions.')
     elseif !empty(get(state, 'error', ''))
       call add(lines, (get(state, 'mode', '') ==# 'lookup' ? 'Discussion unavailable: ' : 'Feedback page unavailable: ') . revue#message#OneLine(state.error))
     endif
   endif
   if !empty(get(get(a:session.snapshot, 'feedback', {}), 'cursor', ''))
-    call add(lines, 'More feedback available · :RevueLoadMoreFeedback')
+    call add(lines, 'More feedback available · :ReviewLoadMoreFeedback')
   endif
   return lines
 endfunction

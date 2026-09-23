@@ -16,11 +16,11 @@ try
     call assert_equal('interrupted', revue#session#Inspect(g:id).refresh_state.status)
     call assert_false(revue#session#Inspect(g:id).busy)
     call assert_equal([], filter(revue#session#ActionGuide(), {_, a -> index(['continue-refresh', 'cancel-refresh'], a.id) >= 0}))
-    RevueRefresh
+    ReviewRefresh
     call g:RefreshDone({'ok': 1, 'data': g:fixture.snapshot})
     call assert_equal('succeeded', revue#session#Inspect(g:id).refresh_state.status)
   else
-    RevueRefresh
+    ReviewRefresh
     let first = deepcopy(g:fixture.snapshot)
     let first.threads[0].id = 'new-first-thread'
     let first.feedback = {'cursor': 'another-page'}

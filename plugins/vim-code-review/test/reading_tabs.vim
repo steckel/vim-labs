@@ -34,7 +34,7 @@ try
   call setline(1, 'User workspace stays open')
   let user_buffer = bufnr()
   let id = revue#session#Open(g:fixture.snapshot, function('LayoutHost'), 0)
-  RevueRestoreLayout
+  ReviewRestoreLayout
   let source = revue#session#Inspect(id)
   botright new
   call setline(1, 'User split inside the review')
@@ -46,7 +46,7 @@ try
   let source_tree = winlayout()
   let source_tab = tabpagenr()
   call setreg('a', 'Register remains native')
-  RevueThread
+  ReviewThread
   let reader = win_getid()
   call assert_equal('Discussion', expand('%:t'))
   call assert_equal(1, winnr('$'))
@@ -56,10 +56,10 @@ try
   call assert_equal(source_tree, winlayout(source_tab))
   call assert_equal(source.basewin, revue#session#Inspect(id).basewin)
   call assert_equal(source.headwin, revue#session#Inspect(id).headwin)
-  RevueFiles
+  ReviewFiles
   call assert_equal(reader, win_getid())
   call assert_equal(0, revue#session#Inspect(id).treewin)
-  RevueFiles
+  ReviewFiles
   call assert_equal(reader, win_getid())
   call assert_equal(1, winnr('$'))
   let source_tree = winlayout(source_tab)
@@ -67,7 +67,7 @@ try
   normal! zz
   let selected = revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment
   call assert_equal('local-reply-2', selected)
-  RevueReply
+  ReviewReply
   let composer = win_getid()
   call assert_equal('Reply', expand('%:t'))
   call setline(1, ['Draft in the full-area editor', 'Exact Unicode: λ界'])
@@ -75,7 +75,7 @@ try
   call assert_equal(1, winnr('$'))
   call assert_true(winheight(0) >= 21)
   " Refresh while the reader is hidden must not switch tabs or move typing.
-  RevueRefresh
+  ReviewRefresh
   let earlier = deepcopy(g:fixture.snapshot.threads[0].comments[1])
   let earlier.id = 'earlier-reply'
   let earlier.body = 'An earlier inserted reply'
@@ -85,7 +85,7 @@ try
   call assert_equal(['Draft in the full-area editor', 'Exact Unicode: λ界'], getline(1, '$'))
   call assert_match('An earlier inserted reply', join(getbufline(winbufnr(reader), 1, '$'), "\n"))
   " The hidden-window repaint must preserve actual Insert mode, not only text.
-  RevueRefresh
+  ReviewRefresh
   let g:fixture.snapshot.threads[0].comments[1].body .= ' (updated while typing)'
   call cursor(1, 1)
   call timer_start(30, function('TypingRefresh'))
@@ -94,49 +94,49 @@ try
   call assert_equal(g:typing_before, g:typing_after)
   call assert_equal(composer, win_getid())
   call assert_equal('Draft in the full-area editor typed during refresh', getline(1))
-  RevuePreview
+  ReviewPreview
   call assert_equal('Preview', expand('%:t'))
   call assert_equal(1, winnr('$'))
   call assert_true(winheight(0) >= 21)
   call assert_match('Exact Unicode: λ界', join(getline(1, '$'), "\n"))
-  RevueClose
+  ReviewClose
   call assert_equal(composer, win_getid())
-  RevueClose
+  ReviewClose
   call assert_equal(reader, win_getid())
   call assert_equal(selected, revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment)
   call assert_true(search('An earlier inserted reply', 'bnW') > 0)
   call assert_equal(1, winnr('$'))
-  RevueClose
+  ReviewClose
   call assert_equal(source.headwin, win_getid())
   call assert_equal(source_tree, winlayout())
   call assert_equal(source_sizes, Sizes())
   call assert_equal(3, line('.'))
   call assert_equal('Register remains native', getreg('a'))
   " Following source and reopening the reader reuses original windows.
-  RevueThread
+  ReviewThread
   let reader = win_getid()
   call revue#session#Next(0)
   call assert_equal(source.headwin, win_getid())
   call assert_equal(source_tree, winlayout())
-  RevueThread
+  ReviewThread
   call assert_equal(reader, win_getid())
   call assert_equal(1, winnr('$'))
   " Reopen an existing draft from another tab without creating a duplicate.
-  RevueQuote
+  ReviewQuote
   let composer = win_getid()
   let draft = bufnr()
   call win_gotoid(reader)
-  RevueQuote
+  ReviewQuote
   call assert_equal(composer, win_getid())
   call assert_equal(draft, bufnr())
-  RevueClose
+  ReviewClose
   " A user split in a reader tab must survive Close and session cleanup.
   belowright new
   call setline(1, 'User notes in the reader tab')
   let reader_notes_window = win_getid()
   let reader_notes_buffer = bufnr()
   call win_gotoid(reader)
-  RevueClose
+  ReviewClose
   call assert_equal(source.headwin, win_getid())
   call assert_true(revue#layout#Exists(reader_notes_window))
   call assert_equal(['User notes in the reader tab'], getbufline(reader_notes_buffer, 1, '$'))
@@ -152,19 +152,19 @@ try
   set columns=120 lines=40
   let id = revue#session#Open(g:fixture.snapshot, function('LayoutHost'), 0)
   let source_tab = tabpagenr()
-  RevueThread
+  ReviewThread
   call assert_equal(source_tab, tabpagenr())
   call assert_true(winnr('$') > 1)
-  RevueClose
+  ReviewClose
   let g:revue_reading_layout = 'tab'
-  RevueThread
+  ReviewThread
   call assert_equal(1, winnr('$'))
-  RevueRestoreLayout
+  ReviewRestoreLayout
   call assert_equal(source_tab, tabpagenr())
-  RevueThread
+  ReviewThread
   execute 'tabclose ' . source_tab
   call assert_equal('threads', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_equal(3, winnr('$'), 'Closed source tab is recreated separately from the reader')
   call assert_equal('head', b:revue_role)
   call assert_equal(g:fixture.content.head.lines, getline(1, '$'))

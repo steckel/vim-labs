@@ -21,14 +21,14 @@ try
   call reviewhub#bridge#Open(conn, g:opened.data, 0)
   let g:id = t:revue_session
   call PrivateAwait({-> !empty(revue#session#Inspect(g:id).loaded)})
-  RevuePending
+  ReviewPending
   call cursor(5, 1)
-  RevueLoadMoreFeedback
+  ReviewLoadMoreFeedback
   call PrivateAwait({-> !revue#session#Inspect(g:id).feedback_read.loading})
   call assert_equal('', revue#session#Inspect(g:id).feedback_read.error)
   call assert_equal(4, len(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').comments))
   call cursor(5, 1)
-  RevueVerifyPending
+  ReviewVerifyPending
   call PrivateAwait({-> !revue#session#Inspect(g:id).pending_verification.loading})
   call assert_equal('', revue#session#Inspect(g:id).pending_verification.error)
   call assert_true(revue#pending#Find(revue#session#Inspect(g:id).snapshot, '7').complete)

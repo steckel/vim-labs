@@ -9,18 +9,18 @@ try
     sleep 10m
     let attempts += 1
   endwhile
-  RevueThreads
+  ReviewThreads
   call cursor(1,1)
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
   let selected = revue#discussion#Selected(revue#session#Inspect(t:revue_session), line('.'))
   call assert_equal(config.agent_message, selected.comment)
   call assert_match('Agent', getline(selected.start))
   call assert_notmatch('Author', getline(selected.start))
   call assert_false(selected.message.capabilities.edit.enabled)
-  RevueQuote
+  ReviewQuote
   call assert_match('> > Explain this change', join(getline(1,'$'), "\n"))
-  RevueClose
+  ReviewClose
   call assert_equal(config.agent_message, revue#discussion#Selected(revue#session#Inspect(t:revue_session),line('.')).comment)
   call revue#session#Close()
 catch

@@ -36,9 +36,9 @@ try
   let s:result.native_diff_keys = [maparg(']c', 'n'), maparg('[c', 'n')]
   let s:result.backward_search_key = maparg('?', 'n')
   let s:result.inline_enter = maparg('<CR>', 'n')
-  let s:result.resolve_command_exists = exists(':RevueResolve')
+  let s:result.resolve_command_exists = exists(':ReviewResolve')
   try
-    RevueResolve
+    ReviewResolve
     let s:result.resolve_result = 'returned'
   catch
     let s:result.resolve_result = v:exception
@@ -46,7 +46,7 @@ try
   call revue#session#Threads()
   call revue#session#Help()
   let s:result.help_thread_targets = deepcopy(revue#session#Inspect(id).threadmap)
-  let s:result.help_reply_command = exists(':RevueReply')
+  let s:result.help_reply_command = exists(':ReviewReply')
   call revue#session#Refresh()
   let s:result.view_after_help_refresh = b:revue_view
   call win_gotoid(session.treewin)

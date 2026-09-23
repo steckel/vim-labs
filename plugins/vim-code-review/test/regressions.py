@@ -25,7 +25,7 @@ execute 'set runtimepath^=' . fnameescape('ROOT')
 runtime plugin/revue.vim
 cd REPO
 try
- call revue#review#Open()
+ Review HEAD
  call revue#review#NextFile()
  call assert_false(exists('g:revue_injected'))
  call revue#review#Close()

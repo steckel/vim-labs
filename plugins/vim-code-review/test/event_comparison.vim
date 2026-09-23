@@ -45,72 +45,72 @@ try
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'event-comparison', 'review': 'review', 'snapshot': g:current, 'Request': function('ComparisonEventHost')}, 0)
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(3, 1)
-  RevueComment
+  ReviewComment
   call setline(1, 'Retain current-source draft')
-  RevueClose
-  RevueTimeline
+  ReviewClose
+  ReviewTimeline
   call PickComparisonEvent('unknown-base')
   call assert_match('head alone', ComparisonEventItem().reason)
-  RevueEventComparison
+  ReviewEventComparison
   call assert_equal([], g:requests)
   call PickComparisonEvent('old-review')
   call assert_equal('', ComparisonEventItem().reason)
   let choice = index(map(revue#session#ActionGuide(), {_, i -> i.id}), 'event-comparison') + 1
   call feedkeys(choice . "\<CR>", 't')
-  RevueReviewActions
+  ReviewReviewActions
   call assert_equal(g:event.reviewed_comparison, g:requests[-1].request.reference)
   call g:requests[-1].Done({'ok': 0, 'error': 'Source unavailable'})
   call assert_equal(['old-review', 1], ComparisonEventSelection())
   call assert_equal({}, get(revue#session#Inspect(g:id), 'context_return', {}))
-  RevueEventComparison
+  ReviewEventComparison
   let malformed = deepcopy(g:old)
   let malformed.files = [0]
   call g:requests[-1].Done({'ok': 1, 'data': malformed})
   call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
-  RevueEventComparison
+  ReviewEventComparison
   call g:requests[-1].Done({'ok': 1, 'data': deepcopy(g:old)})
   call assert_equal(g:old.snapshot, b:revue_comparison)
   call assert_equal('old-review', revue#session#Inspect(g:id).context_return.timeline_target.id)
   close
-  RevueReturnContext
+  ReviewReturnContext
   call assert_equal('timeline', b:revue_view)
   call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
   call assert_equal(['old-review', 1], ComparisonEventSelection())
   " Same screen row after history reload must not authorize late navigation.
-  RevueEventComparison
-  RevueReloadTimeline
+  ReviewEventComparison
+  ReviewReloadTimeline
   call PickComparisonEvent('old-review')
   call g:requests[-1].Done({'ok': 1, 'data': deepcopy(g:old)})
   call assert_equal('timeline', b:revue_view)
   call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
-  RevueEventComparison
+  ReviewEventComparison
   call PickComparisonEvent('other-review')
   call g:requests[-1].Done({'ok': 1, 'data': deepcopy(g:old)})
   call assert_equal(['other-review', 1], ComparisonEventSelection())
   call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
-  RevueEventComparison
-  RevueHelp
+  ReviewEventComparison
+  ReviewHelp
   call g:requests[-1].Done({'ok': 1, 'data': deepcopy(g:old)})
   call assert_equal('help', b:revue_view)
-  RevueClose
+  ReviewClose
   call assert_equal(['other-review', 1], ComparisonEventSelection())
   " A reused snapshot ID with different endpoints cannot replace cached identity.
   let g:other.reviewed_comparison.base = 'conflicting-base'
-  RevueReloadTimeline
+  ReviewReloadTimeline
   call PickComparisonEvent('other-review')
   call assert_match('conflicts', ComparisonEventItem().reason)
   let calls = len(g:requests)
-  RevueEventComparison
+  ReviewEventComparison
   call assert_equal(calls, len(g:requests))
   " An event for the already displayed comparison still enters source view.
   let g:other.reviewed_comparison = revue#comparisons#Reference(g:current)
   let g:other.reviewed_head = g:current.head
-  RevueReloadTimeline
+  ReviewReloadTimeline
   call PickComparisonEvent('other-review')
-  RevueEventComparison
+  ReviewEventComparison
   call g:requests[-1].Done({'ok': 1, 'data': deepcopy(g:current)})
   call assert_equal('head', b:revue_role)
-  RevueReturnContext
+  ReviewReturnContext
   call assert_equal(['other-review', 1], ComparisonEventSelection())
   " Empty retained comparisons remain inspectable and returnable.
   let empty_source = deepcopy(g:old)
@@ -120,12 +120,12 @@ try
   let empty_source.threads = []
   let g:other.reviewed_comparison = revue#comparisons#Reference(empty_source)
   let g:other.reviewed_head = empty_source.head
-  RevueReloadTimeline
+  ReviewReloadTimeline
   call PickComparisonEvent('other-review')
-  RevueEventComparison
+  ReviewEventComparison
   call g:requests[-1].Done({'ok': 1, 'data': empty_source})
   call assert_equal('empty-comparison', revue#session#Inspect(g:id).snapshot.snapshot)
-  RevueReturnContext
+  ReviewReturnContext
   call assert_equal(['other-review', 1], ComparisonEventSelection())
   call assert_equal('Retain current-source draft', revue#session#Inspect(g:id).drafts[0].body)
   call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).drafts[0].snapshot)

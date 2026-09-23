@@ -1,10 +1,10 @@
 # Read-only review readiness
 
-`:RevueReadiness` opens checks and review requirements through the backend's
-readiness capability. It is also available from `:RevueReviewActions`.
-There is no default key for opening the view. `:RevueReloadReadiness` reloads
-from the first page, `:RevueMoreChecks` loads one more page, and
-`:RevueCancelReadiness` stops adopting the active read. `:RevueClose` returns
+`:ReviewReadiness` opens checks and review requirements through the backend's
+readiness capability. It is also available from `:ReviewReviewActions`.
+There is no default key for opening the view. `:ReviewReloadReadiness` reloads
+from the first page, `:ReviewMoreChecks` loads one more page, and
+`:ReviewCancelReadiness` stops adopting the active read. `:ReviewClose` returns
 to the originating view. On a fact or check, `gx` opens its source link and
 `gy` copies it; these bindings are configurable.
 

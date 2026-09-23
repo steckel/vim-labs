@@ -24,46 +24,46 @@ try
   let g:id = revue#session#Open(g:fixture.snapshot, function('MoveEdgeHost'), 0)
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(3,1)
-  RevueSuggest
+  ReviewSuggest
   let original = deepcopy(revue#session#Inspect(g:id).drafts[0])
   let editor = bufnr()
-  RevueReanchorDraft
-  RevueReanchorHere
+  ReviewReanchorDraft
+  ReviewReanchorHere
   call assert_false(has_key(revue#session#Inspect(g:id).reanchor, 'proposal'), 'same anchor is not a move')
   call win_gotoid(revue#session#Inspect(g:id).basewin)
   call cursor(1,1)
-  RevueReanchorHere
+  ReviewReanchorHere
   call assert_false(has_key(revue#session#Inspect(g:id).reanchor, 'proposal'), 'suggestions cannot move to an unsupported side')
   call win_gotoid(revue#session#Inspect(g:id).headwin)
-  1,2RevueReanchorHere
+  1,2ReviewReanchorHere
   call assert_match('Suggestion replacement is unchanged', join(getline(1, '$'), "\n"))
   call assert_equal(original.body, revue#session#Inspect(g:id).reanchor.proposal.body)
   call setbufline(editor, 1, 'Edited while choosing a location')
-  RevueAcceptReanchor
+  ReviewAcceptReanchor
   call assert_equal(original.id, revue#session#Inspect(g:id).drafts[0].id)
   call assert_match('Edited while choosing', revue#session#Inspect(g:id).drafts[0].body)
-  RevueCancelReanchor
+  ReviewCancelReanchor
   call assert_equal(editor, bufnr())
   call assert_equal('Edited while choosing a location', getline(1))
-  RevueClose
+  ReviewClose
   call win_gotoid(revue#session#Inspect(g:id).headwin)
-  RevueFileComment
+  ReviewFileComment
   call setline(1, 'This concerns the whole file.')
-  RevueReanchorDraft
-  RevueNextFile
-  RevueReanchorHere
+  ReviewReanchorDraft
+  ReviewNextFile
+  ReviewReanchorHere
   call assert_equal('reanchor', b:revue_view)
   call assert_match('whole file', join(getline(1, '$'), "\n"))
   let before = deepcopy(revue#session#Inspect(g:id).drafts)
   let g:fixture.snapshot.capabilities.reanchor_draft.enabled = 0
-  RevueRefresh
-  RevueAcceptReanchor
+  ReviewRefresh
+  ReviewAcceptReanchor
   call assert_equal(before, revue#session#Inspect(g:id).drafts)
   let g:fixture.snapshot.capabilities.reanchor_draft.enabled = 1
-  RevueRefresh
-  RevueClose
-  RevueReanchorHere
-  RevueAcceptReanchor
+  ReviewRefresh
+  ReviewClose
+  ReviewReanchorHere
+  ReviewAcceptReanchor
   let moved = revue#session#Inspect(g:id).drafts[-1]
   call assert_equal('another.vim', moved.path)
   call assert_false(has_key(moved, 'side'))

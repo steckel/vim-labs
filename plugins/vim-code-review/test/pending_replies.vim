@@ -34,85 +34,85 @@ endfunction
 function! FocusReply() abort
   call win_gotoid(revue#session#Inspect(g:id).headwin)
   call cursor(3, 1)
-  RevueThread
+  ReviewThread
   call cursor(1, 1)
-  RevueNextMessage
-  RevueNextMessage
+  ReviewNextMessage
+  ReviewNextMessage
 endfunction
 try
   let g:id = revue#session#Open(g:fixture.snapshot, function('PrivateReplyHost'), 0)
   if filereadable($REVUE_CAP_STORE . '/private-reply')
     let frozen = json_decode(readfile($REVUE_CAP_STORE . '/private-reply')[0])
     let g:fixture.snapshot.pending_reviews.items = []
-    RevueRefresh
+    ReviewRefresh
     call FocusReply()
-    RevueReplyPending
+    ReviewReplyPending
     call assert_equal(frozen.id, b:revue_draft, 'existing private reply reopens after browser publication')
     call assert_false(&modifiable)
-    RevueClose
-    RevueQuote
+    ReviewClose
+    ReviewQuote
     call assert_equal(frozen.id, b:revue_draft, 'quote must not bypass an unknown private save')
     call assert_equal(frozen.body, join(getline(1, '$'), "\n"))
-    RevueDiscard
-    RevueSavePending
+    ReviewDiscard
+    ReviewSavePending
     let g:mode = 'reject'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(frozen, revue#session#Inspect(g:id).drafts[-1])
     let g:mode = 'ok'
-    RevueCheckReceipt
+    ReviewCheckReceipt
     call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
     call assert_equal('Unrelated local feedback', revue#session#Inspect(g:id).drafts[0].body)
     call assert_equal(1, g:calls[-1].reconcile)
     let g:fixture.snapshot.pending_reviews.items = [g:native]
-    RevueRefresh
+    ReviewRefresh
     call FocusReply()
-    RevueReplyPending
+    ReviewReplyPending
     let private = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('add', private.pending_mode, 'explicit private reply on a published thread')
     call assert_equal('older-source', private.pending_head)
-    RevueDiscard
+    ReviewDiscard
     call FocusReply()
-    RevueReply
+    ReviewReply
     call assert_false(has_key(revue#session#Inspect(g:id).drafts[-1], 'pending_mode'), 'ordinary reply on a published thread remains ordinary')
-    RevueDiscard
+    ReviewDiscard
     let g:thread.comments[0].publication = 'pending'
     let g:thread.capabilities.reply.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     call FocusReply()
-    RevueReply
+    ReviewReply
     call assert_equal('add', revue#session#Inspect(g:id).drafts[-1].pending_mode, 'ordinary reply to a private thread stays private')
-    RevueDiscard
+    ReviewDiscard
     call FocusReply()
-    RevueQuote
+    ReviewQuote
     call assert_equal('add', revue#session#Inspect(g:id).drafts[-1].pending_mode, 'a new quote in a private thread stays private')
     call assert_match('^>', getline(1))
-    RevueDiscard
+    ReviewDiscard
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Unrelated local feedback')
-    RevueClose
+    ReviewClose
     call FocusReply()
-    RevueReply
+    ReviewReply
     call setline(1, 'Retain my existing reply text.')
     let public_id = b:revue_draft
-    RevueClose
+    ReviewClose
     let g:thread.comments[0].publication = 'pending'
     let g:thread.capabilities.reply.enabled = 0
     let g:fixture.snapshot.capabilities.reply.enabled = 0
-    RevueRefresh
+    ReviewRefresh
     call FocusReply()
-    RevueReply
+    ReviewReply
     call assert_equal(public_id, b:revue_draft, 'private intent does not silently replace a public draft')
     call assert_false(has_key(revue#session#Inspect(g:id).drafts[-1], 'pending_mode'))
-    RevueSavePending
+    ReviewSavePending
     call assert_match('Add private feedback to pending review #7', join(getline(1, '$'), "\n"))
     call assert_match('Retain my existing reply text.', join(getline(1, '$'), "\n"))
-    RevueClose
-    RevueClose
+    ReviewClose
+    ReviewClose
     call FocusReply()
     let selected = deepcopy(revue#discussion#Selected(revue#session#Inspect(g:id), line('.')))
-    RevueQuote
+    ReviewQuote
     call assert_equal(public_id, b:revue_draft)
     call assert_match('^Retain my existing reply text.', getline(1))
     call assert_true(stridx(join(getline(1, '$'), "\n"), '> ' . split(selected.message.body, "\n", 1)[0]) >= 0)
@@ -122,17 +122,17 @@ try
     let rows = revue#comments#Rows(g:thread, 90)
     call assert_match('Reply privately', join(map(copy(rows), {_, r -> r.text}), "\n"))
     let g:thread.capabilities.pending_reply.enabled = 0
-    RevueRefresh
-    RevueSend
+    ReviewRefresh
+    ReviewSend
     call assert_equal([], g:calls)
     let g:thread.capabilities.pending_reply.enabled = 1
-    RevueRefresh
+    ReviewRefresh
     let g:mode = 'reject'
-    RevueSend
+    ReviewSend
     call assert_equal('failed', revue#session#Inspect(g:id).drafts[-1].state)
     call assert_true(&modifiable)
     let g:mode = 'bad'
-    RevueSend
+    ReviewSend
     let frozen = revue#session#Inspect(g:id).drafts[-1]
     call assert_equal('unknown', frozen.state, 'wrong reply thread receipt cannot clear the draft')
     call writefile([json_encode(frozen)], $REVUE_CAP_STORE . '/private-reply')

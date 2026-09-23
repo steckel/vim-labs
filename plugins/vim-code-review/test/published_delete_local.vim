@@ -16,23 +16,23 @@ try
         \ 'snapshot': g:config.snapshot, 'Request': function('revue#backends#local#Request', [g:config.review])}, 0)
   call WaitForDelete({-> !empty(revue#session#Inspect(g:id).loaded)})
   if filereadable($REVUE_CAP_STORE . '/deleted')
-    RevueRefresh
+    ReviewRefresh
     call WaitForDelete(function('DeletedHere'))
     call assert_equal([], revue#session#Inspect(g:id).drafts)
-    RevueActivity
+    ReviewActivity
     call assert_match('deleted', join(getline(1, '$'), "\n"))
   else
-    RevueThreads
+    ReviewThreads
     for [row, target] in items(revue#session#Inspect(g:id).messagemap)
       if target.comment ==# g:config.message | call cursor(str2nr(row), 1) | break | endif
     endfor
-    RevueDeleteMessage
+    ReviewDeleteMessage
     call assert_equal('preview', b:revue_view)
     call assert_match('local review', join(getline(1, '$'), "\n"))
     call assert_match('Remove this reply', join(getline(1, '$'), "\n"))
     call assert_false(&modifiable)
-    RevueClose
-    RevueSend
+    ReviewClose
+    ReviewSend
     call WaitForDelete({-> empty(revue#session#Inspect(g:id).drafts)})
     call WaitForDelete(function('DeletedHere'))
     call assert_equal(g:config.root, revue#discussion#Selected(revue#session#Inspect(g:id), line('.')).comment)

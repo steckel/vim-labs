@@ -39,7 +39,7 @@ mutation validation remains separate.
 Evidence and real Vim cell renders (local evidence: `../output/direct-reactions/validation.json`).
 
 **Implementation follow-up — UX-18d:** compact assignment metadata and the
-read-only `:RevueAssignmentDetails` view now have a verified core. The full
+read-only `:ReviewAssignmentDetails` view now have a verified core. The full
 Revue suite passes. Paired terminal renders place the first body at row 14
 instead of 15 and the second outcome heading at row 20 instead of 22 in the
 80×24 fixture. A naive full-area tab clone gains two window rows but rebuilds
@@ -272,7 +272,7 @@ the normal repaint path; changed-page rendering is the next measurement target.
 
 **Private paging follow-up:** UX-13/15/16 cut B now loads private comments within
 complete feedback threads, retaining private parent/actor/native permissions and
-per-review loaded/total counts. `:RevueVerifyPending` retrieves the complete
+per-review loaded/total counts. `:ReviewVerifyPending` retrieves the complete
 selected review before publication, discard or summary editing. Partial records
 cannot prepare whole-review mutations. Stale, cancelled and malformed reads
 retain loaded data; restart obtains fresh headers. The Pending view now uses
@@ -321,7 +321,7 @@ and 80×24 preview (local evidence: `../output/reanchor/80-preview.png`) record 
 The capture is an isolated Vim fixture terminal render, not an OS screenshot.
 Original source can be unavailable and is labeled; remote messages are never moved.
 
-**Deletion follow-up:** `:RevueDeleteMessage` previews exact saved-message scope,
+**Deletion follow-up:** `:ReviewDeleteMessage` previews exact saved-message scope,
 checks permission/content and confirms before sending. Accepted deletion returns
 to a neighboring message; unknown outcomes remain frozen and only reconcile.
 Local deletion is atomic with receipts/audit events and covers replies, roots,
@@ -447,7 +447,7 @@ complete GitHub parity or live verification for every role and repository rule.
 | Journey | GitHub reference | Current Revue | Difference and disposition |
 | --- | --- | --- | --- |
 | Discover/open a review | Inbox/list, identity, author, reviewer context (S01–02) | Companion discovery; backend identity and immutable source | Keep service-specific inbox filtering in the companion. Contextual action guide exists; validate discoverability with users. |
-| Consult review purpose | Overview beside code (S02/06) | `C` / `:RevueConversation` includes description and requested reviewers; now exposed in the outcome guide | UX-06d implemented; custom keys and return after refresh verified. |
+| Consult review purpose | Overview beside code (S02/06) | `C` / `:ReviewConversation` includes description and requested reviewers; now exposed in the outcome guide | UX-06d implemented; custom keys and return after refresh verified. |
 | Read code and discussions | Anchored cards, distinct message headers, replies, nested content (C01–05) | Core cards, full replies, gutter boundaries, quote/code/suggestion insets | Inline spans, labeled/reference links and attributed quotes implemented. Virtual rows retain formatting markers; real buffers support span styling. |
 | Choose a message | Per-message menu and permalink (C01/04) | `]m`/`[m`, `a`, quote/copy/link/edit/reactions in real-text discussion | Core equivalent. Source virtual rows are display-only; contextual guide exposes the route; user discoverability remains to validate. |
 | Write feedback | Line/range/file composer with preview (W01–03) | Visual selection, real Markdown buffer, contextual rows and preview | Core equivalent. Compact context implemented; validate unfamiliar-user workflow at 80 columns. |
@@ -643,7 +643,7 @@ visible and explain the browser fallback. Test a retained local capture,
 unknown base, unavailable revision and focus changing during retrieval.
 
 **UX-20c — Implemented: follow a history link across page boundaries.**
-`:RevueLoadEventDiscussion` loads one complete feedback page and follows the
+`:ReviewLoadEventDiscussion` loads one complete feedback page and follows the
 exact message if found. Further pages require another explicit action. The
 callback retains the event/target, source epoch and history serial; changed
 selection or focus prevents automatic navigation. Failure, cancellation and
@@ -658,10 +658,10 @@ details view. Keep target, publication/read-only state, coverage when partial,
 and a return cue visible. Apply the established card contrast to history entries
 and previews without adding folding. Test 80×24 and 120-column views with long
 quotes, multiple revisions and redacted content; compare the number of content
-rows before/after. Preserve `:RevueFocus`, opt-out, custom keys, source position
+rows before/after. Preserve `:ReviewFocus`, opt-out, custom keys, source position
 and exact reply return. Do not silently delete or rebuild user-owned splits.
 
-**UX-21b — Supported read core implemented.** `:RevueMessageHistory` opens
+**UX-21b — Supported read core implemented.** `:ReviewMessageHistory` opens
 available edits for the selected message; its original-service link names the
 message rather than promising a direct history URL. Reload/older/cancel and
 version checks are implemented. Keep local before/after changes distinct from
@@ -689,7 +689,7 @@ starting point, not work to implement again.
 ### UX-06a / UX-07 — Discover the next action (P1, M; Revue)
 
 **Implementation follow-up:** the core chooser is implemented as
-`:RevueReviewActions` / `<LocalLeader>a`. It groups outcomes, displays actual
+`:ReviewReviewActions` / `<LocalLeader>a`. It groups outcomes, displays actual
 bindings and reasons, identifies the message/draft, and retains separate
 local/private/public actions. Contextual Help includes the same guide.
 `test/action_guide.py` verifies real Vim menu selection, permissions changing
@@ -787,7 +787,7 @@ thread hiding and no source line-number changes.
 
 ### UX-08a — Stage selected drafts privately (P1, L; Revue + GitHub backend)
 
-**Implementation follow-up:** :RevueStageBatch now prepares a sequential private
+**Implementation follow-up:** :ReviewStageBatch now prepares a sequential private
 queue for new or existing native reviews. Exact selected bodies, actor and target
 are previewed; decisions remain separate. Steps retain independent receipts and
 stop on failure. Unknown requests recover without starting waiting writes;
@@ -853,7 +853,7 @@ copied text. Full HTML/GFM rendering is not a release requirement.
 
 ### UX-08b / UX-21 — Remove one private comment (P1, M; Revue + backend)
 
-**Implementation follow-up:** `:RevueDeletePendingComment` works from the native
+**Implementation follow-up:** `:ReviewDeletePendingComment` works from the native
 pending inventory and focused discussion/message actions. It previews exact
 contents, retains a read-only operation and requires explicit confirmation.
 Per-message scope, actor, native review, message version and body are checked;
@@ -960,7 +960,7 @@ explicitly unavailable. New anchors name both revisions and require selection.
 
 ### UX-20 / UX-21 — Inspect remote history and manage published text (P2, L; both layers)
 
-**UX-20a core verified:** `:RevueTimeline`, older-page/reload/cancel commands,
+**UX-20a core verified:** `:ReviewTimeline`, older-page/reload/cancel commands,
 stable event targets and GitHub/local projections are implemented. Boolean
 completion validation now accepts real JSON pages and rejects malformed values.
 The full timeline scenario passes, including delayed and overlapping reads,
@@ -1006,8 +1006,8 @@ independent stories; a readable timeline need not wait for deletion support.
 
 ### UX-13 / UX-15 / UX-16 — Keep large reviews navigable (P2, M; both layers)
 
-**Shared/local continuation follow-up:** `:RevueLoadMoreFeedback` and
-`:RevueCancelFeedback` now page complete discussions/messages, retain exact
+**Shared/local continuation follow-up:** `:ReviewLoadMoreFeedback` and
+`:ReviewCancelFeedback` now page complete discussions/messages, retain exact
 selection and typing, and expose retry without replacing earlier feedback.
 Loaded pages become searchable without manufacturing new-arrival markers.
 Refresh invalidates outstanding page callbacks even if the source is unchanged.
@@ -1055,7 +1055,7 @@ or failed-private feedback partial. Local retained-source reads report the
 current shared conversation's coverage.
 
 The index shows refresh progress/failure while retaining prior data, exact
-selection and unsent text. `:RevueRefresh` is the replacement-read retry path;
+selection and unsent text. `:ReviewRefresh` is the replacement-read retry path;
 this increment does not provide an append-page/cursor protocol. A failed read
 cannot look like an empty complete review. `test/inventory.py` exercises all
 coverage states, invalid counts, delayed refresh, partial-to-complete retry,

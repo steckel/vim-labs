@@ -28,22 +28,22 @@ try
   call cursor(1, 1)
   let guide = filter(revue#session#ActionGuide(), {_, item -> item.id ==# 'thread'})
   call assert_match('No loaded discussion', guide[0].reason)
-  RevueDiscussions Second page from
+  ReviewDiscussions Second page from
   call assert_match('No discussions match in loaded feedback', join(getline(1, '$'), "\n"))
-  RevueLoadMoreFeedback
+  ReviewLoadMoreFeedback
   call Await({-> !revue#session#Inspect(g:id).feedback_read.loading})
   call assert_equal('', revue#session#Inspect(g:id).feedback_read.error)
   call assert_match('Second page from the ReviewHub transport', join(getline(1, '$'), "\n"))
   call assert_equal(2, len(revue#session#Inspect(g:id).snapshot.threads))
   call assert_equal(3, len(revue#session#Inspect(g:id).snapshot.threads[1].comments), 'All replies remain in the loaded unit')
-  RevueRefresh
+  ReviewRefresh
   call Await({-> !revue#session#Inspect(g:id).busy})
   let requests = map(readfile($REVUE_CAP_STORE . '/github-requests.jsonl'), {_, line -> json_decode(line)})
   let refresh = filter(requests, {_, r -> r.op ==# 'open'})[-1]
   call assert_true(refresh.incremental, 'Capable refresh requests a bounded first page')
   call assert_equal('partial refresh', revue#session#Inspect(g:id).refresh_state.status)
   call assert_equal(2, len(revue#session#Inspect(g:id).snapshot.threads), 'Retain the previously loaded second page')
-  RevueContinueRefresh
+  ReviewContinueRefresh
   call Await({-> !revue#session#Inspect(g:id).busy})
   call assert_equal('succeeded', revue#session#Inspect(g:id).refresh_state.status)
   let g:opened = {}

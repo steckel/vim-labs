@@ -14,7 +14,7 @@ try
   let g:id = revue#backend#Open({'id': 'local', 'connection': g:config.connection, 'review': g:config.review,
         \ 'snapshot': g:config.snapshot, 'Request': function('revue#backends#local#Request', [g:config.review])}, 0)
   call WaitForEvent({-> !empty(revue#session#Inspect(g:id).loaded)})
-  RevueTimeline
+  ReviewTimeline
   call WaitForEvent({-> !revue#session#Inspect(g:id).timeline.loading})
   let state = revue#session#Inspect(g:id)
   let event = filter(copy(state.timeline.items), {_, e -> get(get(e, 'target', {}), 'message', '') ==# g:config.review_message})[0]
@@ -22,14 +22,14 @@ try
     if state.timelinerows[row].id ==# event.id | call cursor(str2nr(row) + 1, 1) | break | endif
   endfor
   let original_row = line('.')
-  RevueEventComparison
+  ReviewEventComparison
   call WaitForEvent({-> revue#session#Inspect(g:id).snapshot.snapshot ==# g:config.original.snapshot})
   call WaitForEvent({-> !empty(revue#session#Inspect(g:id).loaded)})
   call assert_equal(g:config.original.head, revue#session#Inspect(g:id).snapshot.head)
   call assert_equal(g:config.original.base, revue#session#Inspect(g:id).snapshot.base)
   call assert_equal('head', b:revue_role)
   call assert_notmatch('later source', join(getline(1, '$'), "\n"))
-  RevueReturnContext
+  ReviewReturnContext
   call assert_equal('timeline', b:revue_view)
   call assert_equal(original_row, line('.'))
   call assert_equal(event.id, revue#session#Inspect(g:id).timelinerows[string(line('.'))].id)

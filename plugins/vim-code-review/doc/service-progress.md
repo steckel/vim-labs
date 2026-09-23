@@ -7,15 +7,15 @@ silently synchronize the two meanings.
 
 ## Interaction
 
-From a selected source file or file-list row, use `:RevueServiceProgress`.
+From a selected source file or file-list row, use `:ReviewServiceProgress`.
 The read-only view shows the path, service actor, state and observed head.
 `dismissed` is displayed as “changed since last viewed.” Unknown/failed reads
 never appear as unviewed. Repeating the command reloads; close returns to source.
 No default keys were added. The contextual action guide lists the commands.
 
-- `:RevueMarkServiceViewed` explicitly marks this file viewed on the service.
-- `:RevueUnmarkServiceViewed` explicitly marks it unviewed on the service.
-- `:RevueCheckServiceViewed` checks an uncertain saved intent without repeating
+- `:ReviewMarkServiceViewed` explicitly marks this file viewed on the service.
+- `:ReviewUnmarkServiceViewed` explicitly marks it unviewed on the service.
+- `:ReviewCheckServiceViewed` checks an uncertain saved intent without repeating
   the write. It does nothing for a merely failed or absent operation.
 
 The normal mark/unmark path acts in place. It saves an outbox intent before
@@ -26,7 +26,7 @@ for inspection/discard first. An unknown intent must be checked before another
 state change. Activity retains receipt inspection and recovery after restart,
 even if the current service capability or file disappears.
 
-Local `:RevueViewed` / `:RevueUnviewed`, file filtering, resolution, unread state
+Local `:ReviewViewed` / `:ReviewUnviewed`, file filtering, resolution, unread state
 and comment visibility are unaffected. This does not automatically import
 service Viewed into a content-based local mark, export all local marks, hide
 files, fold comments, or change a review decision.

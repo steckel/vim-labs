@@ -126,13 +126,13 @@ and [session dispatch](../autoload/revue/session.vim).
 
 | Intent | Current Revue route | What to evaluate against GitHub |
 | --- | --- | --- |
-| Act on an exact reply | From code, `:RevueThread` (`<LocalLeader>t`); choose the thread if anchors overlap; `]m` / `[m` in Discussion; `a` for message actions | The selected author and message must remain apparent. Opening all file discussions with `t` is a different route. A command's existence does not establish discoverability. |
-| Quote a passage | Select real discussion text with Visual mode → `:RevueQuote` → edit draft → `:RevuePreview` → `:RevueClose` to return | Preserve the selected message and quoted bytes. Preview remains optional; users should not need to navigate a virtual card as if it were source text. |
-| Resolve without leaving code | `:RevueResolve` / `:RevueReopen`, or the selected message's available thread action | A direct action already exists. Waiting, failure and unknown delivery must be understandable at the thread; `:RevueCheckThreadState` inspects uncertain outcomes. |
-| Acknowledge a message | `:RevueReactions` → explicit Add/Remove chooser action | Already direct. Evaluate target/count/own-state clarity; participant inspection is available below the choices, with unavailable accounts labeled. |
-| Recover private work | `:RevuePending` for backend-private review; `:RevueActivity` for saved operation outcomes | These are distinct from the editable local draft. Keep publication scope visible rather than presenting all three as simply “pending.” |
-| Follow older feedback | `:RevueTimeline` → selected event → `:RevueLoadEventDiscussion`; `:RevueEventComparison` when supported | Targeted lookup already exists. Historical comparison still needs evidence of both sides; loading a message is not proof of its original base. |
-| Apply a suggestion | In Discussion, `:RevueApplySuggestion` → exact workspace preview → explicit application → `:RevueLatest` for result | Local saved-file application exists. GitHub's commit-producing action is a distinct backend capability, still missing here. |
+| Act on an exact reply | From code, `:ReviewThread` (`<LocalLeader>t`); choose the thread if anchors overlap; `]m` / `[m` in Discussion; `a` for message actions | The selected author and message must remain apparent. Opening all file discussions with `t` is a different route. A command's existence does not establish discoverability. |
+| Quote a passage | Select real discussion text with Visual mode → `:ReviewQuote` → edit draft → `:ReviewPreview` → `:ReviewClose` to return | Preserve the selected message and quoted bytes. Preview remains optional; users should not need to navigate a virtual card as if it were source text. |
+| Resolve without leaving code | `:ReviewResolve` / `:ReviewReopen`, or the selected message's available thread action | A direct action already exists. Waiting, failure and unknown delivery must be understandable at the thread; `:ReviewCheckThreadState` inspects uncertain outcomes. |
+| Acknowledge a message | `:ReviewReactions` → explicit Add/Remove chooser action | Already direct. Evaluate target/count/own-state clarity; participant inspection is available below the choices, with unavailable accounts labeled. |
+| Recover private work | `:ReviewPending` for backend-private review; `:ReviewActivity` for saved operation outcomes | These are distinct from the editable local draft. Keep publication scope visible rather than presenting all three as simply “pending.” |
+| Follow older feedback | `:ReviewTimeline` → selected event → `:ReviewLoadEventDiscussion`; `:ReviewEventComparison` when supported | Targeted lookup already exists. Historical comparison still needs evidence of both sides; loading a message is not proof of its original base. |
+| Apply a suggestion | In Discussion, `:ReviewApplySuggestion` → exact workspace preview → explicit application → `:ReviewLatest` for result | Local saved-file application exists. GitHub's commit-producing action is a distinct backend capability, still missing here. |
 
 ### Visual hierarchy: preserve and verify
 

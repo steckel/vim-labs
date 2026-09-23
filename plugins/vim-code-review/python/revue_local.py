@@ -218,7 +218,7 @@ def capture_files(root, base, untracked):
 def capture(request, allow_empty=False):
     root = Path(git(request["cwd"], "rev-parse", "--show-toplevel").stdout.decode().strip())
     if (root / ".jj").exists():
-        raise ValueError("Local snapshot capture currently supports Git only; use :Revue for jj.")
+        raise ValueError("Local snapshot capture currently supports Git only; use :Review for jj.")
     base = git(root, "rev-parse", "--verify", "--end-of-options", request.get("base", "HEAD") + "^{commit}").stdout.decode().strip()
     untracked = bool(request.get("untracked", False))
     files, contents = capture_files(root, base, untracked)

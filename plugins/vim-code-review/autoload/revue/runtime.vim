@@ -48,7 +48,7 @@ function! revue#runtime#CurrentError(snapshot, item, draft) abort
   let last = get(get(a:item, 'runs', []), -1, {})
   if get(last, 'process_held', 0) || index(['running', 'launching'], get(last, 'state', '')) >= 0 | return 'The previous process is still owned. Reload its state instead of starting another.' | endif
   if abandoning && (get(last, 'state', '') !=# 'prepared' || get(last, 'execution_started', 1)) | return 'Only an unstarted prepared run can be abandoned.' | endif
-  if !abandoning && get(last, 'state', '') ==# 'prepared' && get(last, 'expected_version', '') !=# a:item.version | return 'Prepared run uses an older assignment version; use :RevueAbandonRun to release it before preparing another run.' | endif
+  if !abandoning && get(last, 'state', '') ==# 'prepared' && get(last, 'expected_version', '') !=# a:item.version | return 'Prepared run uses an older assignment version; use :ReviewAbandonRun to release it before preparing another run.' | endif
   let fields = revue#runtime#Fields(a:snapshot, a:item, abandoning)
   for field in ['assignment', 'expected_version', 'runtime', 'run_mode', 'run', 'resume_run', 'thread', 'participant', 'reference', 'workspace', 'count']
     if type(get(a:draft, field, '')) != type(fields[field]) || get(a:draft, field, '') !=# fields[field] | return 'Assignment or run changed. Reload outcomes and prepare a new action.' | endif

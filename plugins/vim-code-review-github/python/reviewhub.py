@@ -519,7 +519,7 @@ class GitHub:
         rules['suggestion'] = {'enabled': enabled, 'reason': reason, 'sides': ['head']}
         rules['comment']['anchors'] = {
             'scope': 'diff', 'sides': ['base', 'head'],
-            'reason': 'Creating comments outside diff hunks is not verified for this GitHub API adapter. Open the review in GitHub, or use :RevueFileComment for whole-file feedback.'}
+            'reason': 'Creating comments outside diff hunks is not verified for this GitHub API adapter. Open the review in GitHub, or use :ReviewFileComment for whole-file feedback.'}
         rules['batch'] = {'enabled': enabled, 'body_required': False, 'reason': reason,
                           'mode': 'atomic', 'kinds': ['comment', 'review'], 'max_reviews': 1,
                           'review_body_optional_with_comments': True, 'default_label': 'Comment review'}

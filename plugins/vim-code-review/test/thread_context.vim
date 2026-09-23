@@ -61,81 +61,81 @@ try
   let restarting = filereadable($REVUE_CAP_STORE . '/restart')
   let g:id = revue#backend#Open({'id': 'fixture', 'connection': 'original-context', 'review': 'review', 'snapshot': g:current, 'Request': function('ContextHost')}, 0)
   if restarting
-    RevueResumeComparison
+    ReviewResumeComparison
     call assert_equal('context-fixture', b:revue_comparison)
     call assert_equal(3, line('.'))
     call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).drafts[0].snapshot)
     call assert_true(has_key(revue#session#Inspect(g:id).drafts[1], 'context'))
     call assert_true(empty(filter(revue#session#ActionGuide(), {_, item -> item.id ==# 'return-context'})))
-    RevueThread
+    ReviewThread
     call assert_match('original code context', &statusline)
     call assert_match('Original PR base unavailable', join(getline(1, '$'), "\n"))
-    call assert_match('RevueLatest opens', join(getline(1, '$'), "\n"))
+    call assert_match('ReviewLatest opens', join(getline(1, '$'), "\n"))
   else
     call cursor(3, 1)
-    RevueComment
+    ReviewComment
     call setline(1, 'Preserve draft on current code')
-    RevueClose
-    RevueThread
+    ReviewClose
+    ReviewThread
     call assert_equal('local-root', ContextMessage())
-    RevueNextMessage
+    ReviewNextMessage
     call assert_equal('local-reply-1', ContextMessage())
-    RevueNextMessage
+    ReviewNextMessage
     let message = ContextMessage()
     call assert_equal('local-reply-2', message)
     for mode in ['failed', 'wrong', 'malformed', 'bad-line', 'file-string', 'file-missing-path', 'file-path-type', 'missing-file']
       let g:mode = mode
-      RevueThreadComparison
+      ReviewThreadComparison
       call assert_equal(message, ContextMessage(), mode)
       call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     endfor
     let g:mode = 'ok'
-    RevueThreadComparison
+    ReviewThreadComparison
     call assert_equal('original-name.vim', b:revue_file)
     call assert_equal(3, line('.'))
     call assert_match('original code context', &statusline)
     call assert_equal('fixture', revue#session#Inspect(g:id).snapshot.backend.id)
-    RevueReturnContext
+    ReviewReturnContext
     call assert_equal(message, ContextMessage())
     call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     let g:mode = 'delay'
-    RevueThreadComparison
-    RevueHelp
+    ReviewThreadComparison
+    ReviewHelp
     let helpwin = win_getid()
     call g:ContextDone({'ok': 1, 'data': ContextData()})
     call assert_equal(helpwin, win_getid())
     call assert_equal('help', b:revue_view)
-    RevueClose
+    ReviewClose
     call assert_equal(message, ContextMessage())
     " A delayed lookup may populate the cache, but cannot move another reply.
-    RevueThreadComparison
-    RevuePreviousMessage
+    ReviewThreadComparison
+    ReviewPreviousMessage
     call assert_equal('local-reply-1', ContextMessage())
     call g:ContextDone({'ok': 1, 'data': ContextData()})
     call assert_equal('local-reply-1', ContextMessage())
     call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
-    RevueNextMessage
-    RevueThreadComparison
+    ReviewNextMessage
+    ReviewThreadComparison
     let g:current.threads[0].original_source.token = 'changed-anchor'
-    RevueRefresh
+    ReviewRefresh
     call g:ContextDone({'ok': 1, 'data': ContextData()})
     call assert_equal(g:current.snapshot, revue#session#Inspect(g:id).snapshot.snapshot)
     let g:current.threads[0].original_source.token = 'anchor-1'
-    RevueRefresh
+    ReviewRefresh
     let g:mode = 'ok'
-    RevueThreadComparison
-    RevueReply
+    ReviewThreadComparison
+    ReviewReply
     call setline(1, 'Reply in original code context')
     call assert_true(has_key(revue#session#Inspect(g:id).drafts[-1], 'context'))
-    RevueClose
+    ReviewClose
     " Closing the source discussion manually does not lose exact return identity.
     let sourcewin = win_getid()
     call win_gotoid(revue#session#Inspect(g:id).panelwin)
     close
     call win_gotoid(sourcewin)
-    RevueReturnContext
+    ReviewReturnContext
     call assert_equal(message, ContextMessage())
-    RevueThreadComparison
+    ReviewThreadComparison
     call writefile(['restart'], $REVUE_CAP_STORE . '/restart')
   endif
   call assert_equal([], filter(copy(g:calls), {_, call -> call.op ==# 'mutate'}))

@@ -89,7 +89,7 @@ endfunction
 
 function! s:Listed(store, result) abort
   if !a:result.ok | call s:Notice(a:result) | return | endif
-  if empty(a:result.data) | echom 'revue: No saved local reviews. Use :RevueLocal.' | return | endif
+  if empty(a:result.data) | echom 'revue: No saved local reviews. Use :ReviewLocal.' | return | endif
   new
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nomodeline nowrap
   let b:revue_local_reviews = a:result.data

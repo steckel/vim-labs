@@ -48,7 +48,7 @@ function! revue#message_history#View(state) abort
   call s:Append(view, 'Read-only · ' . coverage . (a:state.complete ? ' · all reported' : ' · partial'), 'RevueCardMeta')
   if !empty(a:state.scope) | call s:Append(view, a:state.scope, 'RevueCardMeta') | endif
   if a:state.loading
-    call s:Append(view, 'Loading edit history… :RevueCancelMessageHistory', 'RevueCardAction')
+    call s:Append(view, 'Loading edit history… :ReviewCancelMessageHistory', 'RevueCardAction')
   elseif !empty(a:state.error)
     call s:Append(view, 'History unavailable: ' . revue#message#OneLine(a:state.error), 'RevueCardAction')
   elseif a:state.complete && empty(a:state.items)

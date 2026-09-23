@@ -27,7 +27,7 @@ function! revue#anchor#Error(snapshot, draft, ...) abort
     return 'This source target is not in the loaded changed-file comparison. The original draft is retained.'
   endif
   if a:0
-    if get(a:1, 'kind', '') !=# 'text' | return 'Source text is unavailable on this side. Use :RevueFileComment for whole-file feedback.' | endif
+    if get(a:1, 'kind', '') !=# 'text' | return 'Source text is unavailable on this side. Use :ReviewFileComment for whole-file feedback.' | endif
     if end > len(a:1.lines) | return 'Select a line range within the immutable source.' | endif
   endif
   let policy = get(get(get(a:snapshot, 'capabilities', {}), 'comment', {}), 'anchors', {})
@@ -39,7 +39,7 @@ function! revue#anchor#Error(snapshot, draft, ...) abort
   if scope !=# 'diff' | return 'This backend supplied an unsupported line-anchor policy.' | endif
   if revue#anchor#InDiff(files[0], a:draft) | return '' | endif
   let reason = get(policy, 'reason', '')
-  return empty(reason) ? 'This backend supports line comments only within the returned diff hunks. Use :RevueFileComment or open the review in your browser.' : reason
+  return empty(reason) ? 'This backend supports line comments only within the returned diff hunks. Use :ReviewFileComment or open the review in your browser.' : reason
 endfunction
 
 function! revue#anchor#Label(thread) abort

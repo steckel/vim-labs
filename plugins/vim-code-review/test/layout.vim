@@ -26,7 +26,7 @@ try
     let s = revue#session#Inspect(id)
     call assert_equal(s.headwin, win_getid())
     if width < 120 | call assert_true(winwidth(0) > width - 10) | endif
-    RevueRestoreLayout
+    ReviewRestoreLayout
     " Selecting a file from base must retain that selected side.
     call win_gotoid(s.basewin)
     call revue#session#Next(0)
@@ -39,7 +39,7 @@ try
     call win_gotoid(s.headwin)
     let original = Sizes()
     call cursor(3, 3)
-    RevueThread
+    ReviewThread
     if get(revue#session#Inspect(id), 'focus_win', 0) != win_getid() | call revue#session#Focus() | endif
     let panel = win_getid()
     call assert_true(winheight(0) >= 44, string([width, winheight(0)]))
@@ -50,7 +50,7 @@ try
     call assert_true(line('w0') > 1)
     let selected = revue#discussion#Selected(revue#session#Inspect(id), line('.'))
     call assert_equal('local-reply-2', selected.comment)
-    RevueReply
+    ReviewReply
     call setline(1, 'A reply from the last message in a long thread.')
     let composer = win_getid()
     call assert_true(winheight(0) >= 42)
@@ -58,35 +58,35 @@ try
     call revue#session#Refresh()
     call assert_equal(composing_sizes, Sizes())
     call assert_equal(composer, win_getid())
-    RevuePreview
+    ReviewPreview
     call assert_true(winheight(0) >= 40)
     call assert_match('A reply from the last message', join(getline(1, '$'), "\n"))
-    RevueClose
+    ReviewClose
     call assert_equal(composer, win_getid())
-    RevueClose
+    ReviewClose
     call assert_equal(panel, win_getid())
     call assert_true(winheight(0) >= 44)
     call assert_equal('local-reply-2', revue#discussion#Selected(revue#session#Inspect(id), line('.')).comment)
-    RevueClose
+    ReviewClose
     call assert_equal(s.headwin, win_getid())
     call assert_equal(original, Sizes(), 'Restored source split sizes at ' . width)
     call assert_equal(3, line('.'))
     " The file list can be hidden/reopened without rebuilding source buffers.
     let headbuf = bufnr()
-    RevueFiles
+    ReviewFiles
     call assert_equal(0, revue#session#Inspect(id).treewin)
     call assert_equal(headbuf, bufnr())
     call assert_equal(id, revue#session#Open(g:fixture.snapshot, function('LayoutHost'), 0))
-    RevueFiles
+    ReviewFiles
     call assert_true(revue#session#Inspect(id).treewin > 0)
     call assert_equal(original, Sizes(), 'Restored file sidebar at ' . width)
-    RevueThread
-    RevueFiles
-    RevueFiles
-    RevueClose
+    ReviewThread
+    ReviewFiles
+    ReviewFiles
+    ReviewClose
     call assert_equal(original, Sizes(), 'Sidebar while reading at ' . width)
     " A source focus keeps coordinates/native diff and has bounded card width.
-    RevueFocus
+    ReviewFocus
     call assert_true(winwidth(0) > width - 10)
     call revue#session#ResizeCards()
     call assert_true(revue#session#Inspect(id).cardwidths[1] <= 100)
@@ -96,7 +96,7 @@ try
     call revue#session#ResizeCards()
     let &columns = 200
     call revue#session#ResizeCards()
-    RevueRestoreLayout
+    ReviewRestoreLayout
     call assert_equal(headbuf, bufnr())
     call assert_equal(3, winnr('$'))
     call revue#session#Close()
@@ -105,7 +105,7 @@ try
   set columns=80 lines=24
   let id = revue#session#Open(g:fixture.snapshot, function('LayoutHost'), 0)
   call assert_equal(0, get(revue#session#Inspect(id), 'focus_win', 0))
-  RevueThread
+  ReviewThread
   call assert_equal(0, get(revue#session#Inspect(id), 'focus_win', 0))
   call revue#session#Close()
   let rows = revue#comments#Rows(g:fixture.snapshot.threads[0], 40, {'outer_width': 160})

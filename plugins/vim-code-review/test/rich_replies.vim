@@ -70,34 +70,34 @@ try
   let bodyrow = selected.body_start
   call assert_true(!empty(filter(prop_list(bodyrow), {_, p -> p.type ==# 'RevueInlineCode'})))
   call assert_equal(g:body, join(getline(selected.body_start, selected.body_end), "\n"))
-  RevueCopyMessage
+  ReviewCopyMessage
   call assert_equal(g:body, @")
   call feedkeys("3\<CR>2\<CR>", 't')
-  RevueBodyLinks
+  ReviewBodyLinks
   call assert_equal('https://example.test/source/guide.md', @")
   call feedkeys("4\<CR>", 't')
-  RevueBodyLinks
+  ReviewBodyLinks
   call assert_equal('https://example.test/source/guide.md', @", 'unsupported schemes do not act')
   let g:fixture.snapshot.capabilities = extend(get(g:fixture.snapshot, 'capabilities', {}), {'rendered_links': {'enabled': 1}, 'reply': {'enabled': 1}, 'conversation': {'enabled': 1}})
-  RevueRefresh
+  ReviewRefresh
   call SelectRich()
   call feedkeys("1\<CR>2\<CR>", 't')
-  RevueBodyLinks
+  ReviewBodyLinks
   call assert_equal('https://server.test/resolved', @")
   let g:link_mode = 'bad'
-  RevueBodyLinks
+  ReviewBodyLinks
   call assert_equal('https://server.test/resolved', @", 'wrong backend identity is ignored')
   let g:link_mode = 'delay'
-  RevueBodyLinks
-  RevueNextMessage
+  ReviewBodyLinks
+  ReviewNextMessage
   call g:LinkDone({'ok': 1, 'data': deepcopy(g:link_data)})
   call assert_equal('https://server.test/resolved', @", 'late link response cannot act on another message')
   call SelectRich()
-  RevueReply
+  ReviewReply
   call setline(1, 'My existing response.')
-  RevueClose
+  ReviewClose
   call SelectRich()
-  RevueQuoteAttributed
+  ReviewQuoteAttributed
   call assert_equal(1, len(revue#session#Inspect(g:id).drafts))
   let composed = join(getline(1, '$'), "\n")
   call assert_match('^My existing response.', composed)
@@ -105,18 +105,18 @@ try
   call assert_match('https://example.test/review#reply-2', composed)
   call assert_true(stridx(composed, '> > ```suggestion') >= 0, 'quoted suggestion remains in quote container')
   call assert_match('> Use \*\*strong', composed)
-  RevuePreview
+  ReviewPreview
   let preview = join(getline(1, '$'), "\n")
   call assert_match('Quoted suggestion', preview)
   call assert_notmatch('Suggested change', preview)
   let inline = []
   for row in range(1, line('$')) | call extend(inline, filter(prop_list(row), {_, p -> p.type ==# 'RevueInlineCode'})) | endfor
   call assert_true(!empty(inline))
-  RevueClose
-  RevueClose
+  ReviewClose
+  ReviewClose
   call SelectRich()
   let before = len(revue#session#Inspect(g:id).drafts)
-  execute (bodyrow + 1) . ',' . (bodyrow + 1) . 'RevueQuoteAttributed'
+  execute (bodyrow + 1) . ',' . (bodyrow + 1) . 'ReviewQuoteAttributed'
   call assert_equal(before, len(revue#session#Inspect(g:id).drafts))
   call assert_match('> 日本語', join(getline(1, '$'), "\n"))
   call assert_equal(source, getbufline(revue#session#Inspect(g:id).head, 1, '$'))
