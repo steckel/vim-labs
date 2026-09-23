@@ -209,7 +209,8 @@ def RenderSidebar(uuid: string)
     if comment_count > 0
       badge = $' [{comment_count}]'
     endif
-    lines->add($'{marker} {change.status} {change.file}{badge}')
+    var path_label = has_key(change, 'old_file') ? change.old_file .. ' → ' .. change.file : change.file
+    lines->add($'{marker} {change.status} {path_label}{badge}')
     lmap[string(lnum)] = idx
     idx += 1
   endfor

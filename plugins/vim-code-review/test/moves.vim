@@ -50,6 +50,33 @@ try
     call assert_equal(g:fixture.files[1].after, getbufline(s.head, 1, '$'))
     call assert_equal(snapshot.threads, s.snapshot.threads)
     call revue#session#Close()
+  elseif $REVIEW_MOVES_MODE ==# 'jj_inventory'
+    let changes = revue#vcs#DiffNameStatus(revue#vcs#RepoRoot(), 'main')
+    call assert_equal([
+          \ {'status': 'A', 'file': 'added.py'},
+          \ {'status': 'R', 'file': g:fixture.new, 'old_file': g:fixture.old},
+          \ {'status': 'D', 'file': 'removed.py'}], changes)
+  elseif $REVIEW_MOVES_MODE ==# 'jj_rename'
+    let repo = revue#vcs#RepoRoot()
+    let changes = revue#vcs#DiffNameStatus(repo, 'main')
+    call assert_equal([{'status': 'R', 'file': g:fixture.new, 'old_file': g:fixture.old}], changes)
+    let patch = revue#vcs#RawDiff(repo, 'main', g:fixture.new, g:fixture.old)
+    call assert_match('rename from ', patch)
+    call assert_match('rename to ', patch)
+    if g:fixture.edited
+      call assert_match('+    return value + changed_constant', patch)
+    endif
+    Review
+    call feedkeys('h', 'xt')
+    call assert_equal(repo . '/' . g:fixture.new, expand('%:p'))
+    call assert_equal(g:fixture.after, getline(1, '$'))
+    let bases = filter(getbufinfo(), {_, b -> b.name =~# 'revue-base-'})
+    call assert_equal(1, len(bases))
+    call assert_equal(g:fixture.before, getbufline(bases[0].bufnr, 1, '$'))
+    let sidebars = filter(getbufinfo(), {_, b -> b.name =~# '__RevueReview_'})
+    call assert_equal(1, len(sidebars))
+    call assert_true(index(getbufline(sidebars[0].bufnr, 1, '$'), '▸ R ' . g:fixture.old . ' → ' . g:fixture.new) >= 0)
+    call revue#review#Close()
   else
     execute 'Review ' . g:fixture.base
     call feedkeys('h', 'xt')

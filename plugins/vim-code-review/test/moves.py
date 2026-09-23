@@ -75,3 +75,39 @@ for backend in ['git', 'jj']:
         (repo / 'nested').mkdir()
         run_vim({'base': 'HEAD' if backend == 'git' else '@-', 'files': [source, target]}, backend, repo / 'nested')
 print('moves: PASS (matching, cross-file labels, cards, source integrity, cleanup, Git/jj from subdirectory)')
+
+# jj's human summary compresses rename paths with {old => new}. Review
+# must use real source/target paths, including with spaces and braces.
+if shutil.which('jj'):
+    for edited in [False, True]:
+        with tempfile.TemporaryDirectory(prefix='review-jj-rename-') as tmp:
+            repo = Path(tmp)
+            def command(*args):
+                return subprocess.run(args, cwd=repo, check=True, capture_output=True, text=True).stdout
+            command('git', 'init', '-q', '-b', 'main')
+            command('git', 'config', 'user.name', 'Move Test')
+            command('git', 'config', 'user.email', 'moves@example.invalid')
+            old = "nested/old {source} 'name'.py"
+            new = "nested/new {target} 'name'.py"
+            (repo / 'nested').mkdir()
+            before = BLOCK + STAY
+            after = before.copy()
+            if edited:
+                after[1] = '    return value + changed_constant'
+            (repo / old).write_text('\n'.join(before) + '\n')
+            (repo / 'removed.py').write_text('this_file_will_be_removed = True\n')
+            command('git', 'add', '.')
+            command('git', 'commit', '-qm', 'base')
+            command('jj', 'git', 'init', '--colocate')
+            (repo / old).rename(repo / new)
+            (repo / new).write_text('\n'.join(after) + '\n')
+            summary = command('jj', 'diff', '--from', 'main', '--summary')
+            if not summary.startswith('R '):
+                print('moves: jj rename integration skipped (jj did not detect rename)')
+                continue
+            run_vim({'old': old, 'new': new, 'before': before, 'after': after,
+                     'edited': edited}, 'jj_rename', repo / 'nested')
+            (repo / 'removed.py').unlink()
+            (repo / 'added.py').write_text('this_file_is_new = True\n')
+            run_vim({'new': new, 'old': old}, 'jj_inventory', repo / 'nested')
+    print('moves: PASS (jj rename paths, paired buffers, edits, default :Review from subdirectory)')

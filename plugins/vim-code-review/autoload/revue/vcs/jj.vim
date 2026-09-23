@@ -8,11 +8,9 @@ vim9script
 # not a branch name.
 #
 # `--git`-format diffs come straight from jj in unified-diff form, so
-# RawDiff needs no translation. jj's own rename detection isn't
-# exercised by --summary/--git today (a plain move shows as D+A, not
-# R) — `old_relpath` is accepted for interface parity with the git
-# backend but unused here; revisit if jj adds copy/rename tracking to
-# these outputs.
+# RawDiff needs no translation. Machine-readable paths preserve jj's
+# rename/copy pairing; summary paths such as "dir/{old => new}.py"
+# are display labels, not filenames.
 
 # `cd <repo> && jj` is used instead of `jj -R <repo>` because `-R` does not
 # change the working directory, causing `jj diff` and `jj file show` to emit
@@ -41,6 +39,25 @@ export def CurrentRevision(repo: string): string
 enddef
 
 export def DiffNameStatus(repo: string, base: string): list<dict<any>>
+  var template = '"[" ++ json(status_char) ++ "," ++ json(path) ++ "," ++ json(source.path()) ++ "]\n"'
+  var structured = system(printf(
+    'cd %s && jj diff --color=never --from %s --template %s 2>/dev/null',
+    shellescape(repo), shellescape(base), shellescape(template)))
+  if v:shell_error == 0
+    var entries: list<dict<any>> = []
+    for line in split(structured, "\n")
+      var fields = json_decode(line)
+      var entry = {status: fields[0], file: fields[1]}
+      if fields[0] == 'R' || fields[0] == 'C'
+        entry.old_file = fields[2]
+      endif
+      entries->add(entry)
+    endfor
+    return entries
+  endif
+
+  # Older jj versions without diff templates still report ordinary A/M/D
+  # entries through --summary.
   var cmd = printf(
     'cd %s && jj diff --color=never --from %s --summary 2>/dev/null',
     shellescape(repo),
@@ -64,10 +81,10 @@ enddef
 
 export def ShowFile(repo: string, ref: string, relpath: string): dict<any>
   var cmd = printf(
-    'cd %s && jj file show -r %s %s 2>/dev/null',
+    'cd %s && jj file show -r %s -- %s 2>/dev/null',
     shellescape(repo),
     shellescape(ref),
-    shellescape(relpath)
+    shellescape('file:' .. json_encode(relpath))
   )
   var output = system(cmd)
   if v:shell_error != 0
@@ -77,11 +94,15 @@ export def ShowFile(repo: string, ref: string, relpath: string): dict<any>
 enddef
 
 export def RawDiff(repo: string, base: string, relpath: string, old_relpath: string = ''): string
+  var paths = shellescape('file:' .. json_encode(relpath))
+  if !empty(old_relpath) && old_relpath != relpath
+    paths ..= ' ' .. shellescape('file:' .. json_encode(old_relpath))
+  endif
   var cmd = printf(
     'cd %s && jj diff --color=never --from %s --git -- %s 2>/dev/null',
     shellescape(repo),
     shellescape(base),
-    shellescape(relpath)
+    paths
   )
   return system(cmd)
 enddef

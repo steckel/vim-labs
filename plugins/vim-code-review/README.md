@@ -102,6 +102,12 @@ shows **M> / Moved to path:lines**; the head side shows **<M / Moved from
 path:lines**, with a distinct line highlight. Moves can cross files when both
 files' patches are available in the review. Comment anchors stay unchanged.
 
+Whole-file renames reported by Git or jj appear as **R old → new** in the
+quick-review sidebar, with the original file in the base pane and the renamed
+file in the working-copy pane. Any edits made during the rename stay visible
+in the diff. Restart Vim after updating the plugin so already-loaded review
+code is replaced.
+
 Matching uses exact text and a unique changed-line seed, with at least 20
 letters/digits across the block. Tiny matches, ambiguous repeated blocks,
 copies without a deletion, and rewritten/indented code remain ordinary diffs.
