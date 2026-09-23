@@ -116,6 +116,11 @@ With the GitHub integration installed and authentication configured, `:Reviews
 owner/repo` opens the pull-request browser. GitHub publication uses explicit
 review actions and confirmation; local drafts are distinct from posted comments.
 
+Diffs also mark relocated code with **Moved from / Moved to** labels and
+**<M / M>** gutter markers, including moves between files in the review. This
+works in quick jj reviews (`:Review @-`) as well as Git and rich review views;
+[matching details and settings](plugins/vim-code-review/README.md#moved-code).
+
 For a fixture-only walkthrough, run:
 
 ```sh

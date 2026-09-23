@@ -49,6 +49,7 @@ export def Open(opts: dict<any> = {})
     comments:     [],
     sidebar_bufnr: -1,
     base_bufnr:   -1,
+    head_bufnr:   -1,
   }
 
   reviews[uuid] = state
@@ -81,6 +82,7 @@ export def Close()
   endif
 
   var state = reviews[uuid]
+  ClearMoves(state)
 
   if state.base_bufnr != -1 && bufexists(state.base_bufnr)
     execute $'bwipeout! {state.base_bufnr}'
@@ -296,6 +298,7 @@ enddef
 
 def SwitchToFile(uuid: string, idx: number)
   var state = reviews[uuid]
+  ClearMoves(state)
   state.current_idx = idx
 
   var change = state.changes[idx]
@@ -331,6 +334,7 @@ def SwitchToFile(uuid: string, idx: number)
   endif
 
   var head_bufnr = bufnr()
+  state.head_bufnr = head_bufnr
   b:revue_review_uuid = uuid
   b:revue_repo = state.repo
   setlocal signcolumn=auto
@@ -376,6 +380,7 @@ def SwitchToFile(uuid: string, idx: number)
 
   PlaceDiffSigns(state, head_bufnr, relpath, base_relpath)
   RestoreAnnotations(state, head_bufnr)
+  PaintMoves(state)
   RenderSidebar(uuid)
 
   if sidebar_wid != -1
@@ -606,6 +611,7 @@ enddef
 export def RefreshSidebar()
   var uuid = get(b:, 'revue_review_uuid', '')
   if !empty(uuid) && has_key(reviews, uuid)
+    PaintMoves(reviews[uuid])
     RenderSidebar(uuid)
   endif
 enddef
@@ -621,6 +627,46 @@ def FindReviewUuid(): string
     return keys(reviews)[0]
   endif
   return ''
+enddef
+
+# Changes in an editable source invalidate both ends of a displayed move.
+export def InvalidateMoves(uuid: string)
+  if has_key(reviews, uuid)
+    ClearMoves(reviews[uuid])
+  endif
+enddef
+
+def ClearMoves(state: dict<any>)
+  for bnr in [state.head_bufnr, state.base_bufnr]
+    if bnr > 0
+      revue#moves#Clear(bnr, 'ReviewMoves_' .. state.uuid)
+    endif
+  endfor
+  if state.head_bufnr > 0
+    augroup ReviewMoveEdits
+      execute $'autocmd! * <buffer={state.head_bufnr}>'
+    augroup END
+  endif
+enddef
+
+def PaintMoves(state: dict<any>)
+  ClearMoves(state)
+  if !get(g:, 'revue_moved_lines', 1)
+    return
+  endif
+  var files: list<dict<any>> = []
+  for change in state.changes
+    var old_path = get(change, 'old_file', change.file)
+    files->add({id: change.file, path: change.file, old_path: old_path,
+      patch: revue#vcs#RawDiff(state.repo, state.base, change.file, old_path)})
+  endfor
+  var moves = revue#moves#Detect(files)
+  var path = state.changes[state.current_idx].file
+  revue#moves#Paint(state.base_bufnr, 'base', path, moves, 'ReviewMoves_' .. state.uuid)
+  revue#moves#Paint(state.head_bufnr, 'head', path, moves, 'ReviewMoves_' .. state.uuid)
+  augroup ReviewMoveEdits
+    execute $'autocmd TextChanged,TextChangedI,BufWritePost,BufWinLeave <buffer={state.head_bufnr}> call revue#review#InvalidateMoves("{state.uuid}")'
+  augroup END
 enddef
 
 def PlaceDiffSigns(state: dict<any>, bnr: number, relpath: string, base_relpath: string)

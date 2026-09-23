@@ -17,7 +17,7 @@ enddef
 
 export def DiffNameStatus(repo: string, base: string): list<dict<any>>
   var cmd = printf(
-    'git -C %s diff --name-status %s 2>/dev/null',
+    'git -C %s diff --no-color --name-status %s 2>/dev/null',
     shellescape(repo),
     shellescape(base)
   )
@@ -68,7 +68,7 @@ export def RawDiff(repo: string, base: string, relpath: string, old_relpath: str
     ? shellescape(relpath)
     : shellescape(old_relpath) .. ' ' .. shellescape(relpath)
   var cmd = printf(
-    'git -C %s diff %s -- %s 2>/dev/null',
+    'git -C %s diff --no-color --no-ext-diff %s -- %s 2>/dev/null',
     shellescape(repo),
     shellescape(base),
     pathspec

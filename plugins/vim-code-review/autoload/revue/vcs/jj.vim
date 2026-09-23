@@ -42,7 +42,7 @@ enddef
 
 export def DiffNameStatus(repo: string, base: string): list<dict<any>>
   var cmd = printf(
-    'cd %s && jj diff --from %s --summary 2>/dev/null',
+    'cd %s && jj diff --color=never --from %s --summary 2>/dev/null',
     shellescape(repo),
     shellescape(base)
   )
@@ -78,7 +78,7 @@ enddef
 
 export def RawDiff(repo: string, base: string, relpath: string, old_relpath: string = ''): string
   var cmd = printf(
-    'cd %s && jj diff --from %s --git -- %s 2>/dev/null',
+    'cd %s && jj diff --color=never --from %s --git -- %s 2>/dev/null',
     shellescape(repo),
     shellescape(base),
     shellescape(relpath)

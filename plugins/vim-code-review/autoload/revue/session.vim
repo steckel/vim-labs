@@ -399,6 +399,7 @@ function! s:Select(session, index, ...) abort
   let a:session.loadjump = get(options, 'jump', {})
   let a:session.loaded = {}
   for side in ['base', 'head']
+    call revue#moves#Clear(a:session[side], 'ReviewMoves_' . a:session.id)
     call sign_unplace('RevueThreads_' . a:session.id, {'buffer': a:session[side]})
     call setbufvar(a:session[side], 'revue_file', file.path)
     call setbufvar(a:session[side], 'revue_comparison', a:session.snapshot.snapshot)
@@ -445,6 +446,10 @@ function! s:FileLoaded(id, generation, result) abort
     if ft =~# '^\w\+$' | call setbufvar(session[side], '&filetype', ft) | endif
     call win_execute(session[side . 'win'], 'diffthis')
     call revue#layout#SetBar(session[side . 'win'], ' ' . side . ' ' . strpart(session.snapshot[side], 0, 8) . ' · ' . substitute(file.path, '%', '%%', 'g'))
+  endfor
+  let moves = revue#moves#Detect(session.snapshot.files)
+  for side in ['base', 'head']
+    call revue#moves#Paint(session[side], side, file.id, moves, 'ReviewMoves_' . session.id)
   endfor
   let session.message = file.path . ' · ' . s:Hint(session.head, 'reply') . ' reply · ' . s:Hint(session.head, 'threads') . ' threads'
   call s:Annotations(session)

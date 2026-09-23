@@ -94,11 +94,30 @@ Inside review mode:
 | `q` | Close review |
 | `?` | Help |
 
+## Moved code
+
+Both quick reviews (`:Review HEAD` for Git, `:Review @-` for jj) and rich
+local/GitHub reviews mark matching removed and added blocks. The base side
+shows **M> / Moved to path:lines**; the head side shows **<M / Moved from
+path:lines**, with a distinct line highlight. Moves can cross files when both
+files' patches are available in the review. Comment anchors stay unchanged.
+
+Matching uses exact text and a unique changed-line seed, with at least 20
+letters/digits across the block. Tiny matches, ambiguous repeated blocks,
+copies without a deletion, and rewritten/indented code remain ordinary diffs.
+Incomplete provider patches can limit detection. Editing a quick-review source
+clears its displayed move markers; **R** in the sidebar recomputes them from
+saved changes. Rich local reviews retain their captured comparison.
+
+Set `let g:revue_moved_lines = 0` to disable marking. Themes can customize
+`ReviewMoved`, `ReviewMovedLine`, and `ReviewMovedLabel`.
+
 ## Configuration
 
 ```vim
 g:revue_default_base    " revision to diff against, default 'main'
 g:RevueSubmitCallback " funcref(message: string, context: dict<any>)
+g:revue_moved_lines    " mark relocated blocks in diffs; default 1
 g:revue_thread_separators " emphasize provider comment anchors in the number gutter; default 1
 g:revue_local_dir      " local backend data, default '~/.vim/revue-local'
 g:revue_python         " Python executable for the local backend, default 'python3'
