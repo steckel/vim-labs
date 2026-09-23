@@ -161,6 +161,7 @@ function! revue#session#Open(snapshot, Host, index) abort
   call revue#comparisons#Init(session)
   call s:Save(session)
   let s:sessions[session.id] = session
+  call revue#diff#Enter()
   tabnew
   let t:revue_session = session.id
   let session.tree = s:Buffer(session, 'files')
@@ -195,7 +196,7 @@ function! revue#session#Open(snapshot, Host, index) abort
 endfunction
 
 function! s:CodeMaps() abort
-  setlocal number signcolumn=number
+  setlocal number signcolumn=yes
   augroup RevueCards
     autocmd! * <buffer>
     autocmd VimResized,WinEnter <buffer> call revue#session#ResizeCards()
@@ -400,6 +401,7 @@ function! s:Select(session, index, ...) abort
   let a:session.loadjump = get(options, 'jump', {})
   let a:session.loaded = {}
   for side in ['base', 'head']
+    call revue#diff#Clear(a:session[side], 'ReviewDiff_' . a:session.id)
     call revue#moves#Clear(a:session[side], 'ReviewMoves_' . a:session.id)
     call sign_unplace('RevueThreads_' . a:session.id, {'buffer': a:session[side]})
     call setbufvar(a:session[side], 'revue_file', file.path)
@@ -450,6 +452,9 @@ function! s:FileLoaded(id, generation, result) abort
   endfor
   let moves = revue#moves#Detect(session.snapshot.files)
   for side in ['base', 'head']
+    if index(['text', 'absent'], a:result.data[side].kind) >= 0
+      call revue#diff#Paint(session[side], side, file, 'ReviewDiff_' . session.id)
+    endif
     call revue#moves#Paint(session[side], side, file.id, moves, 'ReviewMoves_' . session.id)
   endfor
   let session.message = file.path . ' · ' . s:Hint(session.head, 'reply') . ' reply · ' . s:Hint(session.head, 'threads') . ' threads'
@@ -5295,6 +5300,7 @@ function! revue#session#Close() abort
     if gettabvar(tab.tabnr, 'revue_reader', '') ==# session.id | call settabvar(tab.tabnr, 'revue_reader', '') | endif
   endfor
   call remove(s:sessions, session.id)
+  call revue#diff#Leave()
 endfunction
 
 function! s:ComparisonAvailability(session, reference) abort

@@ -1,40 +1,5 @@
 " Conservative, backend-independent moved-block detection over unified patches.
 " Only removed/added lines participate; unchanged context is never a move.
-function! s:Lines(files) abort
-  let sides = {'base': [], 'head': []}
-  for file in a:files
-    let old = 0
-    let new = 0
-    let left = 0
-    let right = 0
-    let edit = 0
-    for line in split(get(file, 'patch', ''), "\n", 1)
-      let hunk = matchlist(line, '^@@ -\(\d\+\)\%(,\(\d\+\)\)\? +\(\d\+\)\%(,\(\d\+\)\)\? @@')
-      if !empty(hunk)
-        let edit += 1
-        let [old, new] = [str2nr(hunk[1]), str2nr(hunk[3])]
-        let left = empty(hunk[2]) ? 1 : str2nr(hunk[2])
-        let right = empty(hunk[4]) ? 1 : str2nr(hunk[4])
-      elseif strpart(line, 0, 1) ==# '-' && left > 0
-        call add(sides.base, {'file': file.id, 'path': get(file, 'old_path', file.path), 'line': old, 'text': strpart(line, 1), 'edit': edit})
-        let old += 1
-        let left -= 1
-      elseif strpart(line, 0, 1) ==# '+' && right > 0
-        call add(sides.head, {'file': file.id, 'path': file.path, 'line': new, 'text': strpart(line, 1), 'edit': edit})
-        let new += 1
-        let right -= 1
-      elseif strpart(line, 0, 1) ==# ' ' && left > 0 && right > 0
-        let edit += 1
-        let old += 1
-        let new += 1
-        let left -= 1
-        let right -= 1
-      endif
-    endfor
-  endfor
-  return sides
-endfunction
-
 function! s:Adjacent(lines, first, second) abort
   return a:first >= 0 && a:second < len(a:lines) && a:lines[a:first].file ==# a:lines[a:second].file && a:lines[a:first].line + 1 == a:lines[a:second].line
 endfunction
@@ -46,7 +11,7 @@ endfunction
 
 function! revue#moves#Detect(files) abort
   if !get(g:, 'revue_moved_lines', 1) | return [] | endif
-  let sides = s:Lines(a:files)
+  let sides = revue#diff#Lines(a:files)
   let index = {'base': {}, 'head': {}}
   for side in ['base', 'head']
     for i in range(len(sides[side]))

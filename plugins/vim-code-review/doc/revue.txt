@@ -105,6 +105,17 @@ g:revue_default_base   Revision to diff against when none is given to
                         |:Review|.
                         Default: empty (HEAD for Git, @- for jj).
 
+                                                    *g:revue_diff_colors*
+g:revue_diff_colors    Use the review diff palette while a review is open.
+                        Default: 1. Set 0 to keep your colorscheme's colors.
+                        Prior colors return when the last review closes;
+                        colors changed by the user are preserved.
+
+Source panes show green + and red - signs beside their line numbers, marking
+only actual added/removed lines. Native changed-word highlighting, moved-code
+markers, and comment cards remain visible. ReviewDiffAdd and ReviewDiffDelete
+style the gutter signs.
+
 ==============================================================================
 6. EXTENDING                                                *revue-extending*
 

@@ -50,6 +50,7 @@ vim -Nu NONE -i NONE -n -es -S "$root/test/chrome.vim"
 printf 'chrome: PASS (compact context, quiet bars, full preview details, narrow return, permissions, quoted paths)\n'
 vim -Nu NONE -i NONE -n -es -S "$root/test/backends.vim"
 printf 'backends: PASS (connection isolation, refresh routing, legacy draft keys)\n'
+python3 "$root/test/diff_render.py"
 python3 "$root/test/moves.py"
 python3 "$root/test/unified_review.py"
 python3 "$root/test/local_backend.py"

@@ -94,6 +94,16 @@ interface and can be mapped to a key of your choice.
 | `q` | Close the current review view |
 | `g?` | Commands and actual bindings |
 
+## Diff appearance
+
+Both source panes keep line numbers and a separate diff gutter: green **+**
+for added head lines, red **−** for removed base lines. Unchanged context is
+unmarked. The review palette restores the dark diff backgrounds and brighter
+changed-word highlighting; comment cards and moved-block markers remain visible.
+Vim's global diff colors are restored when the last review closes, unless you
+changed them while it was open. Set `let g:revue_diff_colors = 0` to retain your
+colorscheme's diff palette. `ReviewDiffAdd` and `ReviewDiffDelete` style the signs.
+
 ## Moved code
 
 Git, jj, and GitHub reviews mark matching removed and added blocks. The base side
@@ -126,6 +136,7 @@ Set `let g:revue_moved_lines = 0` to disable marking. Themes can customize
 
 ```vim
 g:revue_default_base    " empty/default: HEAD for Git, @- for jj
+g:revue_diff_colors    " review diff palette while a review is open; default 1
 g:revue_moved_lines    " mark relocated blocks in diffs; default 1
 g:revue_thread_separators " emphasize provider comment anchors in the number gutter; default 1
 g:revue_local_dir      " local backend data, default '~/.vim/revue-local'
