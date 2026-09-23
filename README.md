@@ -126,6 +126,180 @@ This creates an isolated trial and opens a separate Vim instance. It does not
 publish comments. The [trial guide](plugins/vim-code-review/doc/ux-trial.md) explains
 the exercise and observation record.
 
+## Command map
+
+The tree below groups commands by task. Opening commands are global; most
+review actions exist only in the relevant review pane, composer, or picker.
+Available actions also depend on the backend and its permissions. Use
+`:ReviewHelp` (`g?`) for the current pane's bindings, or `:ReviewReviewActions`
+for its action chooser. Keys shown below are defaults and can be remapped.
+
+For the local feedback → agent workflow: **`:ReviewLocal HEAD` → `c` → write
+feedback → `:ReviewClose` → `:ReviewBatch` → Space or `a` → `m` → `ggVG"+y`**.
+The final step copies the Markdown buffer to your system clipboard; it does
+not start an agent or post to GitHub.
+
+<details>
+<summary>Full command tree: local reviews, GitHub, shared review tools, and live-editor MCP</summary>
+
+```text
+Vim Labs
+├── Start or resume a review
+│   ├── :ReviewLocal HEAD                 Saved working tree against HEAD
+│   ├── :ReviewLocal! HEAD                Include untracked, non-ignored files
+│   ├── :ReviewLocalReviews               List saved local reviews; Enter resumes
+│   ├── :ReviewLocalResume <id>           Resume one exact local review
+│   ├── :Reviews [owner/repo]             Open the GitHub PR inbox
+│   ├── :ReviewOpen <PR URL>              Open a GitHub PR directly
+│   └── :Review [revision]                Quick diff / callback / clipboard workflow
+│                                         Separate from persistent :ReviewLocal
+├── Write feedback
+│   ├── :ReviewComment                    c on a line; V then c for a range
+│   ├── :ReviewFileComment                Comment on the whole file
+│   ├── :ReviewSuggest                    Compose a suggested replacement; accepts a range
+│   ├── :ReviewReply                      r in a discussion or at a thread's source
+│   ├── :ReviewNewConversation            Write review-wide feedback
+│   ├── :ReviewReview                     s; compose a review summary / decision
+│   └── Composer
+│       ├── :w                            Save locally; local feedback also autosaves
+│       ├── :ReviewPreview                Preview the feedback and its context
+│       ├── :ReviewSend                   Ctrl-S; local feedback: save Pending and return
+│       │                                   Provider delivery / other operations: confirm
+│       ├── :ReviewClose                  Save and return; pending feedback stays available
+│       └── :ReviewDiscard                Discard the local draft after confirmation
+├── Local pending cards → Markdown for an agent
+│   ├── :ReviewEditFeedback               Edit a pending card at the source line
+│   ├── :ReviewBatch / :ReviewExport      Collect pending and previously saved feedback
+│   └── Feedback picker
+│       ├── :ReviewToggleFeedback         Space; select / deselect this item
+│       ├── :ReviewSelectFeedback         a; select all loaded feedback
+│       ├── :ReviewClearFeedback          u; clear the selection
+│       ├── :ReviewEditFeedback           Enter; edit pending or read saved feedback
+│       └── :ReviewExportMarkdown         m; selection → one editable Markdown buffer
+│                                           ggVG"+y copies all; :w <file> saves a copy
+│                                           Export preserves feedback and Pending status
+├── Read and navigate shared review panes
+│   ├── :ReviewOpenFile                   Enter in the file list
+│   ├── :ReviewNextFile / :ReviewPreviousFile           ]f / [f
+│   ├── :ReviewThread / :ReviewThreads    Focus one discussion / list file discussions
+│   ├── :ReviewFileThreads                List whole-file and inline discussions
+│   ├── :ReviewNextThread / :ReviewPreviousThread       ]t / [t
+│   ├── :ReviewNextMessage / :ReviewPreviousMessage     ]m / [m
+│   ├── :ReviewJump                       Enter in a discussion; return to its source
+│   ├── :ReviewConversation               C; read the review-wide conversation
+│   ├── :ReviewDiscussions [text]         Search loaded comments and drafts
+│   ├── :ReviewOpenDiscussion             Enter on a search result
+│   ├── :ReviewFileFilter <filter>        Filter the file list
+│   ├── :ReviewDiscussionFilter <filter>  Filter discussion results
+│   └── Layout and help
+│       ├── :ReviewFocus / :ReviewRestoreLayout        Focus pane / restore layout
+│       ├── :ReviewFiles                  Toggle the file sidebar
+│       ├── :ReviewHelp                   g?; current commands and mappings
+│       ├── :ReviewReviewActions          Contextual action chooser
+│       └── :ReviewClose                  Return from a pane or close the review
+├── Work with a saved message
+│   ├── :ReviewActions                    a; message action menu
+│   ├── :ReviewCopyMessage [register]     Copy the exact message body
+│   ├── :ReviewCopyLink [register]        Copy its permalink, when available
+│   ├── :ReviewOpenLink                   gx; open its web permalink
+│   ├── :ReviewBodyLinks / :ReviewBodyURLs             Inspect links in its body
+│   ├── :ReviewQuote / :ReviewQuoteAttributed          Quote into a reply; accept ranges
+│   ├── :ReviewEditMessage / :ReviewEditBase           Edit / accept refreshed edit base
+│   ├── :ReviewDeleteMessage              Preview deletion of a saved message
+│   ├── :ReviewApplySuggestion            Preview applying a suggestion to the workspace
+│   ├── :ReviewResolve / :ReviewReopen    Change thread resolution
+│   ├── :ReviewCheckThreadState           Check an uncertain resolution outcome
+│   ├── :ReviewReactions / :ReviewReact   Inspect reactions / execute selected action
+│   └── Message edit history
+│       ├── :ReviewMessageHistory         Inspect edits to this message
+│       ├── :ReviewReloadMessageHistory / :ReviewOlderMessageEdits
+│       ├── :ReviewCancelMessageHistory   Cancel the history read
+│       └── :ReviewHistoryMessageLink     Open the original message's link
+├── GitHub / provider delivery
+│   ├── Public review batch
+│   │   ├── :ReviewBatch                  Select drafts for submission
+│   │   ├── :ReviewToggleDraft            Space; select / deselect a draft
+│   │   ├── :ReviewEditDraft              Enter; edit the selected draft
+│   │   ├── :ReviewSendBatch              S; confirm delivery of the selected batch
+│   │   └── :ReviewUnpackBatch            Restore editable drafts when outcome is known
+│   └── Private pending review
+│       ├── :ReviewStartPending           Prepare a new private review
+│       ├── :ReviewSavePending            Prepare private delivery of this draft
+│       ├── :ReviewReplyPending           Compose a private reply
+│       ├── :ReviewStageBatch             Select multiple drafts to save privately
+│       ├── :ReviewPending                Inspect the backend's pending review
+│       ├── :ReviewOpenPending            Open its selected comment
+│       ├── :ReviewEditPending / :ReviewPendingBase    Edit / accept refreshed contents
+│       ├── :ReviewVerifyPending / :ReviewCancelVerifyPending
+│       ├── :ReviewDeletePendingComment   Preview removing one pending comment
+│       ├── :ReviewPublishPending         Prepare publication of the pending review
+│       └── :ReviewDiscardPending         Preview deleting the entire private review
+├── Capture and compare versions
+│   ├── :ReviewCapture [tracked|all]      Prepare a new capture in the same local review
+│   │                                     :ReviewSend confirms; :ReviewLatest opens it
+│   ├── :ReviewComparisons / :ReviewLoadHistory        Inspect / reload version inventory
+│   ├── :ReviewOpenComparison             Open selected version
+│   ├── :ReviewLatest / :ReviewPreviousComparison      Latest / previously loaded version
+│   ├── :ReviewResumeComparison           Restore saved comparison context after restart
+│   ├── :ReviewCopyComparison [register]  Copy the immutable comparison reference
+│   ├── :ReviewDraftComparison            Inspect a draft's original comparison
+│   ├── :ReviewThreadComparison           Inspect a discussion's original source
+│   ├── :ReviewReturnContext              Return from a context jump
+│   ├── Compare arbitrary endpoints
+│   │   ├── :ReviewRangeStart [base|head] / :ReviewRangeEnd [base|head]
+│   │   └── :ReviewOpenRange / :ReviewClearRange
+│   └── Move a draft's anchor explicitly
+│       ├── :ReviewReanchorDraft          Begin moving a draft to another source range
+│       ├── :ReviewReanchorHere           Choose the new location; accepts a range
+│       └── :ReviewAcceptReanchor / :ReviewCancelReanchor
+├── Refresh, progress, and delivery recovery
+│   ├── :ReviewRefresh                    R; refresh this review (or GitHub inbox globally)
+│   ├── :ReviewContinueRefresh / :ReviewCancelRefresh
+│   ├── :ReviewLoadMoreFeedback / :ReviewCancelFeedback
+│   ├── :ReviewViewed / :ReviewUnviewed / :ReviewVerifyViewed
+│   │                                     Local acknowledgement of exact file contents
+│   ├── :ReviewServiceProgress            Inspect personal Viewed state on the service
+│   ├── :ReviewMarkServiceViewed / :ReviewUnmarkServiceViewed / :ReviewCheckServiceViewed
+│   ├── :ReviewNextUnread / :ReviewMarkRead / :ReviewMarkThreadRead
+│   ├── :ReviewActivity                   Inspect saved delivery outcomes
+│   ├── :ReviewOpenOperation              Open selected pending operation
+│   ├── :ReviewCopyReceipt [register]     Copy a delivery receipt
+│   └── :ReviewCheckReceipt               Check an uncertain delivery without reposting
+├── Review history and readiness
+│   ├── :ReviewTimeline                  Read backend history
+│   ├── :ReviewOlderEvents / :ReviewReloadTimeline / :ReviewCancelTimeline
+│   ├── :ReviewEventDiscussion / :ReviewLoadEventDiscussion
+│   ├── :ReviewEventComparison            Open an event's retained comparison
+│   ├── :ReviewEventLink / :ReviewCopyEventLink
+│   ├── :ReviewReadiness                  Inspect available checks and review requirements
+│   ├── :ReviewReloadReadiness / :ReviewMoreChecks / :ReviewCancelReadiness
+│   └── :ReviewReadinessLink / :ReviewCopyReadinessLink
+├── Local participant assignments (requires participant configuration)
+│   ├── :ReviewAssign                    Select saved feedback for a participant
+│   ├── :ReviewToggleAssignment / :ReviewPrepareAssignment
+│   ├── :ReviewAssignments               List assignments and outcomes
+│   ├── :ReviewReloadAssignments / :ReviewCancelAssignmentsRead
+│   ├── :ReviewOpenAssignment / :ReviewAssignmentDetails
+│   ├── :ReviewAssignmentDiscussion / :ReviewAssignmentReply
+│   ├── :ReviewAssignmentComparison / :ReviewAssignmentResult
+│   ├── :ReviewRunParticipant            Preview starting / resuming a configured participant
+│   ├── :ReviewAbandonRun                Preview releasing an unstarted preparation
+│   └── :ReviewCancelAssignment          Preview revoking assignment access
+└── Live-editor MCP (separate plugin)
+    ├── :VimMCPConnect / :VimMCPDisconnect
+    ├── :VimMCPStatus / :VimMCPHistory
+    ├── :VimMCPReview <change_id>         Review an MCP change
+    └── :VimMCPShareSelection             Share a selection; accepts a range
+```
+
+</details>
+
+For argument details and backend-specific behavior, see the
+[Code Review guide](plugins/vim-code-review/README.md),
+[Vim help](plugins/vim-code-review/doc/revue.txt),
+[GitHub guide](plugins/vim-code-review-github/README.md), and
+[MCP guide](plugins/vim9-mcp/README.md).
+
 ## Design and development
 
 - [Review architecture and backend boundary](plugins/vim-code-review/doc/plugin-architecture.md)
