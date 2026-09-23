@@ -118,7 +118,7 @@ function! revue#moves#Paint(buf, side, file, moves, group) abort
   for move in a:moves
     let rows = move[a:side]
     if rows[0].file !=# a:file | continue | endif
-    " Editable quick-review buffers may have diverged since the VCS diff.
+    " Only mark blocks whose loaded source matches the retained patch.
     if getbufline(a:buf, rows[0].line, rows[-1].line) !=# map(copy(rows), {_, r -> r.text}) | continue | endif
     for row in rows
       call sign_place(0, a:group, a:side ==# 'base' ? 'ReviewMovedFrom' : 'ReviewMovedTo', a:buf, {'lnum': row.line, 'priority': 120})

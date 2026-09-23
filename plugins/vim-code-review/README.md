@@ -7,15 +7,8 @@ and assignment transport are supporting internals. Commands use `:Review*`
 exclusively; update command mappings and restart Vim after upgrading.
 Configuration keys and stored review identities are retained.
 
-A standalone diff review UI for Vim. Navigate changed files against a
-base revision, view them side by side, drop comments on specific
-lines, and compile them into one message — without leaving Vim for
-GitHub or Gerrit.
-
-`revue` doesn't know or care who reads that message. Wire up
-`g:RevueSubmitCallback` to hand it to an AI agent, a code review
-tool, a file, or anything else; leave it unset and `revue` copies the
-compiled comments to the clipboard instead.
+One review interface for Git, jj, and GitHub: immutable diffs, inline comment
+cards, autosaved pending feedback, and Markdown export for your agent.
 
 ## Install
 
@@ -34,12 +27,15 @@ and `r` in a thread to reply. `C` opens the conversation. Drafts are saved
 locally; Ctrl-S or `:ReviewSend` in the composer publishes after confirmation.
 The provider UI shows immutable PR revisions and does not modify the checkout.
 
-For a persistent local review using those same comment cards:
+For saved workspace changes, use the same comment cards:
 
 ```vim
-:ReviewLocal HEAD       " Capture saved Git changes against HEAD
-:ReviewLocal! HEAD      " Also include untracked files (excluding ignored files)
-:ReviewLocalReviews     " List saved local reviews; Enter reopens one
+:Review                " Git defaults to HEAD; jj defaults to @-
+:Review HEAD           " Saved Git changes against HEAD
+:Review @-             " jj working copy against its parent
+:Review! HEAD          " Git: include untracked files (excluding ignored files)
+:ReviewSaved           " List saved reviews; Enter reopens one
+:ReviewResume <id>     " Resume one exact saved review
 ```
 
 Use `c` to comment, `r` to reply, and `C` for the conversation. Comments autosave
@@ -60,11 +56,17 @@ survives closing the review. If more saved feedback is available, load it with
 
 Previously submitted local comments remain saved discussions and are included
 in the picker; no storage migration or resubmission is needed. The displayed files
-are frozen at capture time; `R` refreshes discussion. Run `:ReviewLocal` again
-to capture newer edits as a separate review. Nothing is staged or committed.
+are frozen at capture time; `R` refreshes discussion. Run `:Review` again
+to capture newer edits as a separate review, or use `:ReviewCapture` within the
+current review. Git capture does not stage or commit changes; jj performs its
+normal working-copy snapshot.
 
-The local backend requires Python 3.9+ with SQLite and currently captures Git
-only. It stores reviews under `~/.vim/revue-local`; configure
+The workspace backend requires Python 3.9+ with SQLite and captures Git or jj.
+jj requires diff-template support (tested with jj 0.45). In colocated
+repositories, jj takes precedence. jj captures its working-copy
+revision, including new files automatically tracked by jj; ignored/untracked
+files are excluded. jj symlinks, submodules, and conflicts are shown as unavailable
+source rather than editable text. It stores reviews under `~/.vim/revue-local`; configure
 `g:revue_local_dir` or `g:revue_python` if needed. Unsaved buffers are excluded.
 Scoped local assignments and MCP replies now have a [backend/transport core](doc/participant-mcp.md).
 `:ReviewRunParticipant` previews starting or resuming a configured participant
@@ -78,33 +80,30 @@ the outcome reader keeps metadata compact.
 Agent execution adapters and Git notes export remain planned; the capture slice
 provides durable local conversations through the shared backend contract.
 
-`:Review` opens review mode against `g:revue_default_base` (default
-`'main'`); `:Review <revision>` diffs against a specific revision
-instead. Map `<Plug>(revue-open)` to a key of your choice for the
-default-base case.
-
-Inside review mode:
+`:Review` always opens this persistent card interface. `g:revue_default_base`
+overrides the repository-specific default. `<Plug>(revue-open)` opens the same
+interface and can be mapped to a key of your choice.
 
 | Key | Action |
 |-----|--------|
-| `<CR>` | Open file under cursor |
+| `<CR>` | Open file under cursor in the file list |
 | `]f` / `[f` | Next / previous file |
-| `V` then `c` | Select lines, add a comment |
-| `s` | Submit all comments |
-| `q` | Close review |
-| `?` | Help |
+| `c` / `V` then `c` | Comment on a line / selected range |
+| `r` | Reply at a discussion |
+| `:ReviewBatch`, then `m` | Export selected feedback to a Markdown buffer |
+| `q` | Close the current review view |
+| `g?` | Commands and actual bindings |
 
 ## Moved code
 
-Both quick reviews (`:Review HEAD` for Git, `:Review @-` for jj) and rich
-local/GitHub reviews mark matching removed and added blocks. The base side
+Git, jj, and GitHub reviews mark matching removed and added blocks. The base side
 shows **M> / Moved to path:lines**; the head side shows **<M / Moved from
 path:lines**, with a distinct line highlight. Moves can cross files when both
 files' patches are available in the review. Comment anchors stay unchanged.
 
 Whole-file renames reported by Git or jj appear as **R old → new** in the
-quick-review sidebar, with the original file in the base pane and the renamed
-file in the working-copy pane. Any edits made during the rename stay visible
+file list, with the original file in the base pane and the renamed
+file in the head pane. Any edits made during the rename stay visible
 in the diff. Restart Vim after updating the plugin so already-loaded review
 code is replaced.
 
@@ -116,9 +115,9 @@ all other text must match.
 Tiny matches, ambiguous repeated blocks, copies without a deletion, and
 rewritten code remain ordinary diffs. Reindentation within the same replacement
 is treated as formatting, not a move, even when inserted lines shift its position.
-Incomplete provider patches can limit detection. Editing a quick-review source
-clears its displayed move markers; **R** in the sidebar recomputes them from
-saved changes. Rich local reviews retain their captured comparison.
+Incomplete provider patches can limit detection. Source panes retain their
+captured comparison; `:ReviewCapture` captures newer saved changes within the
+same review. **R** refreshes discussion.
 
 Set `let g:revue_moved_lines = 0` to disable marking. Themes can customize
 `ReviewMoved`, `ReviewMovedLine`, and `ReviewMovedLabel`.
@@ -126,8 +125,7 @@ Set `let g:revue_moved_lines = 0` to disable marking. Themes can customize
 ## Configuration
 
 ```vim
-g:revue_default_base    " revision to diff against, default 'main'
-g:RevueSubmitCallback " funcref(message: string, context: dict<any>)
+g:revue_default_base    " empty/default: HEAD for Git, @- for jj
 g:revue_moved_lines    " mark relocated blocks in diffs; default 1
 g:revue_thread_separators " emphasize provider comment anchors in the number gutter; default 1
 g:revue_local_dir      " local backend data, default '~/.vim/revue-local'
@@ -536,39 +534,15 @@ implementation by user journey and prioritizes the remaining interactions.
 The [detailed backlog](doc/interaction-backlog.md) retains stable UX story IDs,
 acceptance criteria and implementation history.
 
-## Extending: wiring a submit callback
+## Integrations and VCS capture
 
-`Open()` takes an optional `context` dict that's passed through
-untouched to the submit callback — use it to carry whatever the
-callback needs (a conversation id, a draft PR number, a file path).
+Providers open the shared interface through `revue#review#OpenReview()` or the
+[backend contract](doc/provider-api.md). The workspace backend captures Git and
+jj into the same retained-source and conversation store. jj reads immutable
+commit IDs and machine-readable rename/copy paths; source buffers are read-only.
 
-```vim
-def MySubmit(message: string, context: dict<any>)
-  # send message wherever it needs to go
-enddef
-g:RevueSubmitCallback = function('MySubmit')
-
-call revue#review#Open({context: {thread_id: 42}})
-```
-
-## VCS backends
-
-`autoload/revue/vcs.vim` dispatches to a backend module per working
-directory: both `git` and `jj` are implemented. In a repo colocated
-with both (`jj git init --colocate` on an existing git repo — jj's
-usual adoption path), jj is checked first and wins, since a colocated
-repo answers yes to both `jj root` and `git rev-parse
---show-toplevel`. `CurrentRevision` returns jj's working-copy change
-id in that case, not a git branch name — jj has no branches, only
-revisions and bookmarks. A backend implements:
-
-```
-RepoRoot(): string
-CurrentRevision(repo: string): string
-DiffNameStatus(repo: string, base: string): list<dict<any>>   " [{status, file}]
-ShowFile(repo: string, ref: string, relpath: string): dict<any> " {ok, content, is_new}
-RawDiff(repo: string, base: string, relpath: string): string    " unified diff, for gutter signs
-```
+The former callback/clipboard quick-review implementation has been removed.
+Use `:ReviewBatch` and `:ReviewExportMarkdown` to copy feedback to an agent.
 
 ## Testing
 
@@ -579,9 +553,8 @@ tests the complete remote-review UI and draft recovery across Vim processes.
 
 ## Origin
 
-Extracted from vim-ai-code's Cutout review mode, which coupled this
-UI directly to a Claude Code conversation buffer. Cutout now depends
-on this plugin and supplies its own submit callback.
+Originally extracted from vim-ai-code's Cutout review mode. The current
+interface uses persistent review sessions and explicit feedback export.
 
 ## License
 

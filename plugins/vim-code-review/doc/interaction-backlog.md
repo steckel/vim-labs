@@ -1656,9 +1656,9 @@ card styling. It should feel like entering the discussion, not abandoning it.
   message is accepted conversation, even though it has not gone to a website.
 - New UI must work with the local backend and a fixture without GitHub installed.
   Unsupported backend actions are omitted or explained, never simulated.
-- Keep the legacy `:Review` callback/clipboard flow working. It currently differs
-  from the rich `:ReviewLocal`/provider session; do not silently redefine its keys
-  or promise that its batch export is already a remote review transaction.
+- `:Review` now opens the persistent card interface for Git and jj. The legacy
+  callback/clipboard UI has been removed; local Markdown export is distinct
+  from publication through a remote provider.
 
 **Held decisions:** unified versus side-by-side; global comments visibility;
 mouse-first interaction; changes to card contrast. Individual thread collapsing

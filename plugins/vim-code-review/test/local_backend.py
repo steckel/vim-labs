@@ -589,6 +589,7 @@ qa!
         # Legacy records retain source/replies and explicitly default capture to tracked files.
         data = self.backend.load(self.review)
         data.pop('capture_options')
+        data.pop('vcs')
         data.pop('revisions')
         with self.backend.db:
             self.backend.db.execute('UPDATE reviews SET data=? WHERE id=?', (local.encode(data), self.review))
@@ -1112,7 +1113,7 @@ try
   call assert_false(isdirectory(g:revue_local_dir))
   call revue#session#Close()
   let g:revue_local_dir = g:config.store
-  ReviewLocalReviews
+  ReviewSaved
   call WaitFor({-> exists('b:revue_local_reviews')})
   call assert_equal(g:config.review, b:revue_local_reviews[0].id)
   call cursor(3, 1)
@@ -1121,7 +1122,7 @@ try
   call assert_equal(g:config.review, revue#session#Inspect(t:revue_session).snapshot.backend.review)
   call revue#session#Close()
   execute 'cd ' . fnameescape(g:config.repo)
-  ReviewLocal! HEAD
+  Review! HEAD
   call WaitFor({-> exists('t:revue_session')})
   call assert_equal(4, len(revue#session#Inspect(t:revue_session).snapshot.files))
   call revue#session#Close()

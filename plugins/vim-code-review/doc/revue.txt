@@ -1,4 +1,4 @@
-*revue.txt*    Standalone diff review UI
+*revue.txt*    Persistent diff review and feedback cards
 
 Author:  Curtis Steckel
 License: Apache 2.0 with Commons Clause 1.0 (source-available; see LICENSE)
@@ -19,14 +19,15 @@ CONTENTS                                                     *revue-contents*
 1. INTRODUCTION                                          *revue-introduction*
 
 revue navigates changed files against a base revision, shows them side
-by side, and collects line comments into one compiled message. It has
-no opinion on what happens to that message — see |revue-extending|.
+by side, and saves feedback as Pending cards. Export selected feedback as
+one Markdown buffer with :ReviewBatch then :ReviewExportMarkdown.
 
 ==============================================================================
 2. REQUIREMENTS                                          *revue-requirements*
 
 - Vim 9.1+
-- A git or jj repository (see |revue-vcs|)
+- Python 3.9+ with SQLite
+- A Git or jj repository (see |revue-vcs|)
 
 ==============================================================================
 3. COMMANDS                                                 *revue-commands*
@@ -66,9 +67,17 @@ Focused layouts quiet the status bars of minimized review panes. RevueQuietBar
 defaults to Normal; user window minimums and source coordinates are preserved.
 
                                                                      *:Review*
-:Review [revision]       Open review mode. With no argument, diffs
-                        against |g:revue_default_base|; with one,
-                        diffs against that revision instead.
+:Review[!] [revision]    Capture saved workspace changes in the persistent card
+                        interface. Git defaults to HEAD; jj defaults to @-.
+                        g:revue_default_base overrides that default.
+                        ! includes untracked, non-ignored Git files. jj
+                        includes files tracked in its working-copy revision.
+                        Source panes are immutable; unsaved buffers excluded.
+
+                                                               *:ReviewSaved*
+:ReviewSaved            List saved reviews; Enter reopens one with its feedback.
+                                                              *:ReviewResume*
+:ReviewResume <id>      Resume a saved review by its exact ID.
 
 ==============================================================================
 4. KEYMAPS                                                    *revue-keymaps*
@@ -81,10 +90,12 @@ defaults to Normal; user window minimums and source coordinates are preserved.
 Inside review mode:~
   <CR>                Open file under cursor
   ]f / [f             Next / previous file
-  V then c            Select lines, add a comment
-  s                   Submit all comments
-  q                   Close review
-  ?                   Help
+  c                   Comment on the current line
+  V then c            Comment on a selected range
+  r                   Reply at a discussion
+  :ReviewBatch        Select feedback; m exports one Markdown buffer
+  q                   Close the current review view
+  g?                  Commands and actual bindings
 
 ==============================================================================
 5. CONFIGURATION                                                *revue-config*
@@ -92,66 +103,35 @@ Inside review mode:~
                                                     *g:revue_default_base*
 g:revue_default_base   Revision to diff against when none is given to
                         |:Review|.
-                        Default: `'main'`
-
-                                                   *g:RevueSubmitCallback*
-g:RevueSubmitCallback  Funcref(message: string, context: dict<any>),
-                        called on submit — see |revue-extending|. Must
-                        start with a capital letter (Vim9 Funcref-value
-                        naming rule). Unset: comments are copied to the
-                        clipboard instead.
+                        Default: empty (HEAD for Git, @- for jj).
 
 ==============================================================================
 6. EXTENDING                                                *revue-extending*
 
-|revue#review#Open()| takes an optional dict with two keys:
+Providers use revue#review#OpenReview(snapshot, Host, file_index) to open the
+shared session interface. See doc/provider-api.md for the backend contract.
+Use :ReviewBatch and :ReviewExportMarkdown for local feedback export.
 
-    base       revision to diff against, overriding
-               |g:revue_default_base| for this call
-    context    an opaque dict passed through unchanged to
-               |g:RevueSubmitCallback|
-
-Example: >
-    def MySubmit(message: string, context: dict<any>)
-      " send message wherever it needs to go
-    enddef
-    g:RevueSubmitCallback = MySubmit
-
-    call revue#review#Open({context: {thread_id: 42}})
-<
 ==============================================================================
 7. VCS BACKENDS                                                    *revue-vcs*
 
-autoload/revue/vcs.vim dispatches to a backend per working directory.
-Both git and jj are implemented. In a repo colocated with both (jj's
-usual adoption path: `jj git init --colocate` on an existing git
-repo), jj is checked first and wins — a colocated repo answers yes to
-both `jj root` and `git rev-parse --show-toplevel`, so checking git
-first would mean jj is never selected in the one setup it's most
-likely to be used in.
-
-A backend implements:
->
-    RepoRoot(): string
-    CurrentRevision(repo: string): string
-    DiffNameStatus(repo: string, base: string): list<dict<any>>
-    ShowFile(repo: string, ref: string, relpath: string): dict<any>
-    RawDiff(repo: string, base: string, relpath: string,
-            old_relpath: string = ''): string
-<
-`old_relpath` carries a rename's prior path (git only — jj's rename
-tracking isn't exposed by the commands revue uses today).
+The workspace backend captures Git or jj into retained snapshots. jj wins in
+colocated repositories and uses immutable commit IDs, structured rename/copy
+paths, and tracked working-copy files. Run :Review @- to select a jj parent
+explicitly, or :Review HEAD for Git. Both open exactly the same card interface.
+:ReviewCapture captures newer saved source in the current review; R refreshes
+conversation. Existing feedback remains anchored to its captured comparison.
 
 ==============================================================================
 8. RICH REVIEW INTERACTIONS                              *revue-interactions*
 
-Provider reviews and :ReviewLocal use immutable source snapshots and persistent
-drafts. These mappings differ from the original :Review callback/clipboard UI.
+Provider reviews and :Review use immutable source snapshots and persistent
+drafts, with the same source-pane commands and mappings.
 Inline cards remain expanded. Their virtual rows never become source lines;
 use a discussion view for ordinary text search, selection, and copying.
 
 Local pending feedback:~
-In :ReviewLocal, comments autosave while editing and appear immediately as
+In :Review, comments autosave while editing and appear immediately as
 Pending cards. :w explicitly saves; :ReviewClose returns to the code. Ctrl-S
 or :ReviewSend saves pending feedback and returns, without submitting it.
 :ReviewEditFeedback edits pending feedback at the source line. File comments
@@ -1020,7 +1000,7 @@ synchronized GitHub pending reviews. See doc/provider-api.md for the contract.
                                               *g:revue_no_default_mappings*
 Set g:revue_no_default_mappings = 1 before opening a rich review to suppress
 default keys. Commands and <Plug> mappings remain available in each relevant
-buffer. This setting does not affect the original :Review interface.
+buffer.
 
                                                         *g:revue_mappings*
 Override an action's key by its ID, or use an empty string to leave it unmapped:

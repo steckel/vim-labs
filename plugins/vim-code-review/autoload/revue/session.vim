@@ -233,7 +233,8 @@ function! s:RenderTree(session) abort
     let comment_count = get(thread_counts, file.path, 0)
     let state = revue#progress#State(a:session, snapshot, file)
     let marker = state ==# 'viewed' ? ' [viewed]' : state ==# 'checking' ? ' [checking]' : state ==# 'unavailable' ? ' [unverified]' : ''
-    call add(lines, printf('%s %s %s%s%s', index == a:session.index ? '▸' : ' ', toupper(file.status[0]), file.path, comment_count ? ' [' . comment_count . ']' : '', marker))
+    let path = index(['R', 'C', 'renamed', 'copied'], file.status) >= 0 && file.old_path !=# file.path ? file.old_path . ' → ' . file.path : file.path
+    call add(lines, printf('%s %s %s%s%s', index == a:session.index ? '▸' : ' ', toupper(file.status[0]), path, comment_count ? ' [' . comment_count . ']' : '', marker))
     let unread = get(unread_counts, file.path, 0)
     if unread | let lines[-1] .= ' [' . unread . ' new]' | endif
     if has_key(a:session.revealed_files, file.id) | let lines[-1] .= ' [revealed]' | endif

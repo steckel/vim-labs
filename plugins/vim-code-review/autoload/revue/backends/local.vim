@@ -1,4 +1,4 @@
-" Bundled local review backend. SQLite and Git capture live in its companion;
+" Bundled local review backend. SQLite and Git/jj capture live in its companion;
 " the shared UI and other backends never load that store.
 let s:program = expand('<sfile>:p:h:h:h:h') . '/python/revue_local.py'
 let s:jobs = {}
@@ -73,7 +73,7 @@ function! revue#backends#local#Open(base, untracked) abort
     echom 'revue: Capturing saved files only; unsaved buffers are excluded.'
   endif
   let store = s:Store()
-  call s:Call({'op': 'create', 'cwd': getcwd(), 'base': empty(a:base) ? get(g:, 'revue_default_base', 'main') : a:base,
+  call s:Call({'op': 'create', 'cwd': getcwd(), 'base': empty(a:base) ? get(g:, 'revue_default_base', '') : a:base,
         \ 'untracked': a:untracked ? v:true : v:false}, function('s:Opened', [store]), store)
 endfunction
 
@@ -89,7 +89,7 @@ endfunction
 
 function! s:Listed(store, result) abort
   if !a:result.ok | call s:Notice(a:result) | return | endif
-  if empty(a:result.data) | echom 'revue: No saved local reviews. Use :ReviewLocal.' | return | endif
+  if empty(a:result.data) | echom 'revue: No saved local reviews. Use :Review.' | return | endif
   new
   setlocal buftype=nofile bufhidden=wipe noswapfile nobuflisted nomodeline nowrap
   let b:revue_local_reviews = a:result.data

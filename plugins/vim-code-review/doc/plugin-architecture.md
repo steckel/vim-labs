@@ -26,7 +26,7 @@ GitHub objects. Planned Codex and Claude integrations will combine their runtime
 with shared local review storage and captured source. A review conversation is
 not the agent runtime's transcript; it must survive Vim and agent restarts.
 
-The existing internal local backend remains usable through `:ReviewLocal` while
+The existing internal local backend remains usable through `:Review` while
 agent integrations are built. It is an implementation building block, not a
 fourth counterparty or an additional package users must install. It continues
 to support standalone review and fixtures without requiring an agent.
@@ -265,8 +265,8 @@ it does not create an implicit local conversation alongside every remote review.
 2. Define the backend boundary against the working GitHub bridge and a local
    fixture. Verify that neither needs the other's store or lifecycle.
 3. Reuse the implemented local captures, durable conversations, batches, and
-   recovery as shared internals for agent-backed review. Retain existing entry
-   points and the legacy submission callback.
+   recovery as shared internals for agent-backed review. `:Review` is the unified
+   workspace entry point; the legacy callback UI has been removed.
 4. Implement `vim-code-review-codex` as the first agent counterparty: send one
    batch, receive inline replies, capture changed files, and review the next snapshot.
 5. Add `vim-code-review-claude` through the same contract. Revise the contract only for concrete

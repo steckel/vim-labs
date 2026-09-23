@@ -25,7 +25,7 @@ machinery. There is no separate public local or Git plugin to install.
 
 The current internal local backend supplies captured source, durable review
 conversations, receipts, and assignment scope. Agent integrations will compose
-that machinery with their runtime adapters. The current `:ReviewLocal` workflow,
+that machinery with their runtime adapters. The current `:Review` workflow,
 storage paths, backend identifiers, and recovery behavior remain available;
 changing public package names does not migrate stored sessions.
 

@@ -106,8 +106,9 @@ includes a configuration example, Vim requirements, and the editing contract.
 
 ## Try a review
 
-In a Git checkout, `:ReviewLocal HEAD` captures saved changes into a local
-review. Use `c` to comment, `t` to read threads, and `r` to reply. New feedback
+Run `:Review` to capture saved changes into a persistent review: Git defaults
+to `HEAD`, jj to `@-`. Use `:Review <revision>` to choose another base.
+Use `c` to comment, `t` to read threads, and `r` to reply. New feedback
 autosaves as Pending cards; `:ReviewClose` returns to the code. `:ReviewBatch`
 collects feedback: Space selects items, `a` selects all loaded, and `m` exports
 one Markdown buffer for your agent. Pending and saved feedback survive restarts.
@@ -118,7 +119,7 @@ review actions and confirmation; local drafts are distinct from posted comments.
 
 Diffs also mark relocated code with **Moved from / Moved to** labels and
 **<M / M>** gutter markers, including moves between files in the review. This
-works in quick jj reviews (`:Review @-`) as well as Git and rich review views;
+works in jj (`:Review @-`), Git (`:Review HEAD`), and GitHub reviews;
 [matching details and settings](plugins/vim-code-review/README.md#moved-code).
 
 For a fixture-only walkthrough, run:
@@ -139,7 +140,7 @@ Available actions also depend on the backend and its permissions. Use
 `:ReviewHelp` (`g?`) for the current pane's bindings, or `:ReviewReviewActions`
 for its action chooser. Keys shown below are defaults and can be remapped.
 
-For the local feedback → agent workflow: **`:ReviewLocal HEAD` → `c` → write
+For the local feedback → agent workflow: **`:Review` → `c` → write
 feedback → `:ReviewClose` → `:ReviewBatch` → Space or `a` → `m` → `ggVG"+y`**.
 The final step copies the Markdown buffer to your system clipboard; it does
 not start an agent or post to GitHub.
@@ -150,14 +151,12 @@ not start an agent or post to GitHub.
 ```text
 Vim Labs
 ├── Start or resume a review
-│   ├── :ReviewLocal HEAD                 Saved working tree against HEAD
-│   ├── :ReviewLocal! HEAD                Include untracked, non-ignored files
-│   ├── :ReviewLocalReviews               List saved local reviews; Enter resumes
-│   ├── :ReviewLocalResume <id>           Resume one exact local review
+│   ├── :Review [revision]                Persistent cards; Git HEAD or jj @- by default
+│   ├── :Review! [revision]               Include untracked, non-ignored Git files
+│   ├── :ReviewSaved                     List saved reviews; Enter resumes
+│   ├── :ReviewResume <id>                Resume one exact saved review
 │   ├── :Reviews [owner/repo]             Open the GitHub PR inbox
-│   ├── :ReviewOpen <PR URL>              Open a GitHub PR directly
-│   └── :Review [revision]                Quick diff / callback / clipboard workflow
-│                                         Separate from persistent :ReviewLocal
+│   └── :ReviewOpen <PR URL>              Open a GitHub PR directly
 ├── Write feedback
 │   ├── :ReviewComment                    c on a line; V then c for a range
 │   ├── :ReviewFileComment                Comment on the whole file

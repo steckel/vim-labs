@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local review backend: immutable Git captures and transactional discussion.
+"""Local review backend: immutable Git/jj captures and transactional discussion.
 
 One JSON request on stdin, one response on stdout. This module is deliberately
 independent of Vim so other transports can call the same backend operations.
@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sqlite3
 import stat
 import subprocess
@@ -114,7 +115,7 @@ def range_revision(data, selection):
             raise ValueError('Range endpoints must identify original captures, not derived ranges')
         endpoints.append(revision)
     if endpoints[0]['snapshot']['base'] != endpoints[1]['snapshot']['base']:
-        raise ValueError('Local range endpoints must share their captured Git baseline')
+        raise ValueError('Local range endpoints must share their captured baseline')
     baseline = {}
     for revision in endpoints:
         for file in revision['snapshot']['files']:
@@ -215,30 +216,95 @@ def capture_files(root, base, untracked):
     return files, contents
 
 
+def jj(root, *args, snapshot=False, check=True):
+    # cwd matters: -R alone leaves paths relative to the caller's directory.
+    argv = ["jj", "--color=never", "--no-pager"]
+    if not snapshot:
+        argv.append("--ignore-working-copy")
+    result = subprocess.run([*argv, *args], cwd=root, capture_output=True)
+    if check and result.returncode:
+        raise ValueError(result.stderr.decode("utf-8", "replace").strip() or "jj operation failed")
+    return result
+
+
+def jj_revision(root, expression, snapshot=False):
+    revisions = jj(root, "log", "-r", expression, "--no-graph", "-T", 'commit_id ++ "\\n"',
+                   snapshot=snapshot).stdout.decode().splitlines()
+    if len(revisions) != 1 or not re.fullmatch(r"[0-9a-f]+", revisions[0]):
+        raise ValueError("Choose exactly one jj revision: " + expression)
+    return revisions[0]
+
+
+def capture_jj_files(root, base, head):
+    # JSON fields preserve literal rename/copy paths, spaces and newlines.
+    template = ('"[" ++ json(status_char) ++ "," ++ json(path) ++ "," ++ '
+                'json(source.path()) ++ "," ++ json(source.file_type()) ++ "," ++ '
+                'json(target.file_type()) ++ "]\\n"')
+    entries = jj(root, "diff", "--from", base, "--to", head, "--template", template).stdout.decode().splitlines()
+    files, contents = [], {}
+    for status, path, old, base_kind, head_kind in sorted((json.loads(line) for line in entries), key=lambda entry: entry[1]):
+        sides = []
+        for revision, name, kind in [(base, old, base_kind), (head, path, head_kind)]:
+            if not kind:
+                sides.append(absent())
+            elif kind == "file":
+                sides.append(content(jj(root, "file", "show", "-r", revision, "-T", "", "--", "file:" + json.dumps(name, ensure_ascii=False)).stdout))
+            else:
+                sides.append({"kind": "unavailable", "lines": [], "message": "jj " + kind + " content is not captured."})
+        before, after = sides
+        file_id = hashlib.sha256(path.encode()).hexdigest()
+        patch = ""
+        if before["kind"] in ("text", "absent") and after["kind"] in ("text", "absent"):
+            patch = "\n".join(difflib.unified_diff(before["lines"], after["lines"],
+                                                   fromfile="base", tofile="head", lineterm=""))
+        files.append({"id": file_id, "path": path, "old_path": old, "status": status, "patch": patch})
+        contents[file_id] = {"base": before, "head": after}
+    return files, contents
+
+
 def capture(request, allow_empty=False):
-    root = Path(git(request["cwd"], "rev-parse", "--show-toplevel").stdout.decode().strip())
-    if (root / ".jj").exists():
-        raise ValueError("Local snapshot capture currently supports Git only; use :Review for jj.")
-    base = git(root, "rev-parse", "--verify", "--end-of-options", request.get("base", "HEAD") + "^{commit}").stdout.decode().strip()
-    untracked = bool(request.get("untracked", False))
-    files, contents = capture_files(root, base, untracked)
-    # Detect observable edits while reading. Patch and display always derive
-    # from the exact same retained content, never a later working-tree read.
-    if (files, contents) != capture_files(root, base, untracked):
-        raise ValueError("Workspace changed during capture; retry when edits have settled.")
+    cwd = request["cwd"]
+    vcs = request.get("vcs", "")
+    jj_root = jj(cwd, "root", check=False) if vcs != "git" and shutil.which("jj") else None
+    if vcs == "jj" or (jj_root is not None and jj_root.returncode == 0):
+        if jj_root is None or jj_root.returncode:
+            raise ValueError("Cannot open this jj workspace; check that jj is installed.")
+        root = Path(jj_root.stdout.decode().strip())
+        vcs = "jj"
+        base_expression = request.get("base") or "@-"
+        # Snapshot saved files once, then read both immutable trees by commit ID.
+        head = jj_revision(root, "@", snapshot=True)
+        base = jj_revision(root, base_expression)
+        files, contents = capture_jj_files(root, base, head)
+        if jj_revision(root, "@", snapshot=True) != head:
+            raise ValueError("Workspace changed during capture; retry when edits have settled.")
+        author = jj(root, "log", "-r", head, "--no-graph", "-T", "author.name()").stdout.decode().strip() or "You"
+        untracked = bool(request.get("untracked", False))
+        inclusion = "Files tracked by jj are included; jj automatically tracks new non-ignored files."
+    else:
+        vcs = "git"
+        root = Path(git(cwd, "rev-parse", "--show-toplevel").stdout.decode().strip())
+        base_expression = request.get("base") or "HEAD"
+        base = git(root, "rev-parse", "--verify", "--end-of-options", base_expression + "^{commit}").stdout.decode().strip()
+        untracked = bool(request.get("untracked", False))
+        files, contents = capture_files(root, base, untracked)
+        # Patch and display always derive from the exact same retained content.
+        if (files, contents) != capture_files(root, base, untracked):
+            raise ValueError("Workspace changed during capture; retry when edits have settled.")
+        author = git(root, "config", "user.name", check=False).stdout.decode("utf-8", "replace").strip() or "You"
+        inclusion = "Untracked files included." if untracked else "Untracked files excluded."
     if not files and not allow_empty:
-        raise ValueError("No changes to capture against " + request.get("base", "HEAD"))
+        raise ValueError("No changes to capture against " + base_expression)
     snapshot_id = hashlib.sha256(encode([base, files, contents]).encode()).hexdigest()
-    author = git(root, "config", "user.name", check=False).stdout.decode("utf-8", "replace").strip() or "You"
     review = identity()
     return {
-        "id": review, "workspace": str(root), "created": now(), "contents": contents,
+        "id": review, "workspace": str(root), "vcs": vcs, "created": now(), "contents": contents,
         "capture_options": {'base': base, 'untracked': untracked},
         "snapshot": {
             "version": 1, "key": "local/" + review, "display_id": "Local " + review[:8],
-            "title": root.name + " · " + request.get("base", "HEAD") + " → saved working tree",
+            "title": root.name + " · " + base_expression + " → saved working tree",
             "author": author, "state": "open", "body": "Captured saved files. Unsaved buffers excluded. " +
-            ("Untracked files included." if untracked else "Untracked files excluded."),
+            inclusion,
             "url": "", "reviewers": [], "base": base, "base_tip": base, "head": snapshot_id,
             "submit_label": "Save", "submit_target": "local review " + review[:8],
             "snapshot": snapshot_id, "files": files, "threads": [], "conversation": [],
@@ -271,7 +337,7 @@ def local_capabilities():
     rules['feedback_lookup'] = {'enabled': True, 'requires_token': False}
     rules['feedback_refresh'] = {'enabled': True, 'scope': 'Up to 50 complete feedback units per read'}
     rules['comparison_range'] = {'enabled': True, 'sides': ['base', 'head'],
-                                 'semantics': 'Exact retained trees against a shared captured Git baseline; no workspace reads.'}
+                                 'semantics': 'Exact retained trees against a shared captured baseline; no workspace reads.'}
     rules['capture'] = {'enabled': True, 'body_required': False}
     rules['thread_state'] = {'enabled': True, 'body_required': False}
     rules['reactions'] = {'enabled': True}
@@ -736,7 +802,7 @@ class LocalBackend:
         if draft.get('kind') == 'capture':
             if type(draft.get('untracked')) is not bool or draft.get('body') != '':
                 raise ValueError('A capture requires an explicit untracked-file choice and no comment body')
-            captured = capture({'cwd': data['workspace'], 'base': snapshot['base'], 'untracked': draft['untracked']}, allow_empty=True)
+            captured = capture({'cwd': data['workspace'], 'vcs': data.get('vcs', 'git'), 'base': snapshot['base'], 'untracked': draft['untracked']}, allow_empty=True)
             next_id = captured['snapshot']['snapshot']
             changed = next_id != snapshot['snapshot']
             source = captured['snapshot']

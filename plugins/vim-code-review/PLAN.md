@@ -242,11 +242,9 @@ in writes and use server preconditions where available. Providers without an
 atomic freshness check must expose the limitation; a preflight check alone
 cannot eliminate a race.
 
-The legacy `g:RevueSubmitCallback(message, context)` remains a local export
-adapter. A synchronous return counts as completion under that legacy contract;
-an exception preserves the draft. Network hosts use the asynchronous structured
-contract. Preserve the existing context pass-through behavior and documented
-entry points during migration.
+The former callback/clipboard interface has been removed. `:Review` opens the
+persistent card interface; local feedback exports through `:ReviewBatch` and
+`:ReviewExportMarkdown`. Network hosts use the asynchronous structured contract.
 
 **5. Provider implementation choices**
 

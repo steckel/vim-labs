@@ -1,5 +1,7 @@
 set nocompatible nomore hidden
 execute 'set runtimepath^=' . fnameescape(expand('<sfile>:p:h:h'))
+let g:revue_local_dir = $REVIEW_MOVES_TMP . '/store'
+let g:revue_auto_focus = 0
 let g:revue_draft_dir = $REVIEW_MOVES_TMP . '/drafts'
 let g:revue_capability_store = $REVIEW_MOVES_TMP . '/capabilities.json'
 runtime plugin/revue.vim
@@ -17,6 +19,19 @@ function! Host(request, Done) abort
   else
     throw 'Unexpected request: ' . a:request.op
   endif
+endfunction
+function! WaitFor(Fn) abort
+  let until = reltime()
+  while !a:Fn() && reltimefloat(reltime(until)) < 15 | sleep 10m | endwhile
+  call assert_true(a:Fn(), 'Timed out waiting for review')
+  if !a:Fn() | throw 'Review did not load: ' . execute('messages') | endif
+endfunction
+function! OpenReview(base) abort
+  execute 'Review ' . a:base
+  call WaitFor({-> !empty(get(b:, 'revue_session', ''))})
+  let g:id = b:revue_session
+  call WaitFor({-> !empty(revue#session#Inspect(g:id).loaded)})
+  return revue#session#Inspect(g:id)
 endfunction
 try
   if empty($REVIEW_MOVES_MODE)
@@ -37,8 +52,8 @@ try
     call assert_equal([], revue#moves#Detect(g:fixture.files))
     let g:revue_moved_lines = 1
     let snapshot = {'version': 1, 'key': 'fixture/moves', 'display_id': '#1', 'title': 'Moves', 'author': 'author', 'state': 'open', 'body': '', 'url': '', 'reviewers': [], 'base': 'base', 'head': 'head', 'snapshot': 'moves', 'conversation': [], 'review_actions': [], 'files': g:fixture.files, 'threads': [{'id': 't1', 'path': 'source.py', 'side': 'base', 'line': 1, 'start': 1, 'outdated': 0, 'comments': [{'author': 'Reviewer', 'created': '2026-09-22', 'body': 'Keep this discussion here.'}]}]}
-    let id = revue#session#Open(snapshot, function('Host'), 0)
-    let s = revue#session#Inspect(id)
+    let g:id = revue#session#Open(snapshot, function('Host'), 0)
+    let s = revue#session#Inspect(g:id)
     call assert_equal([1, 2, 3], sort(Signs(s.base, 'ReviewMovedFrom'), 'n'))
     call assert_equal([], Signs(s.head, 'ReviewMovedTo'))
     call assert_equal(1, len(Labels(s.base)))
@@ -46,7 +61,7 @@ try
     call assert_equal(g:fixture.files[0].before, getbufline(s.base, 1, '$'))
     call win_gotoid(s.headwin)
     call revue#session#Next(1)
-    let s = revue#session#Inspect(id)
+    let s = revue#session#Inspect(g:id)
     call assert_equal([], Signs(s.base, 'ReviewMovedFrom'))
     call assert_equal([], Labels(s.base))
     call assert_equal([16, 17, 18], sort(Signs(s.head, 'ReviewMovedTo'), 'n'))
@@ -54,93 +69,50 @@ try
     call assert_equal(g:fixture.files[1].after, getbufline(s.head, 1, '$'))
     call assert_equal(snapshot.threads, s.snapshot.threads)
     call revue#session#Close()
-  elseif $REVIEW_MOVES_MODE ==# 'within_file'
-    Review
-    call feedkeys('h', 'xt')
-    let head = bufnr()
-    let bases = filter(getbufinfo(), {_, b -> b.name =~# 'revue-base-'})
-    call assert_equal(1, len(bases))
-    let base = bases[0].bufnr
-    call assert_equal([1, 2, 3], sort(Signs(base, 'ReviewMovedFrom'), 'n'))
-    call assert_equal([16, 17, 18], sort(Signs(head, 'ReviewMovedTo'), 'n'))
-    call assert_equal(1, len(Labels(base)))
-    call assert_equal(1, len(Labels(head)))
-    call assert_equal(g:fixture.file.before, getbufline(base, 1, '$'))
-    call assert_equal(g:fixture.file.after, getbufline(head, 1, '$'))
-    call setline(16, 'changed_after_review()')
-    call feedkeys('h', 'xt')
-    doautocmd TextChanged
-    call assert_equal([], Signs(base, 'ReviewMovedFrom'))
-    call assert_equal([], Signs(head, 'ReviewMovedTo'))
-    call revue#review#RefreshSidebar()
-    call assert_equal([], Signs(head, 'ReviewMovedTo'), 'Never label stale unsaved content')
-    call setline(16, g:fixture.file.after[15])
-    setlocal nomodified
-    call revue#review#RefreshSidebar()
-    call assert_equal(1, len(Labels(head)))
-    call revue#review#Close()
-    call assert_equal([], Signs(head, 'ReviewMovedTo'))
-    call assert_equal([], Labels(head))
-  elseif $REVIEW_MOVES_MODE ==# 'jj_inventory'
-    let changes = revue#vcs#DiffNameStatus(revue#vcs#RepoRoot(), 'main')
-    call assert_equal([
-          \ {'status': 'A', 'file': 'added.py'},
-          \ {'status': 'R', 'file': g:fixture.new, 'old_file': g:fixture.old},
-          \ {'status': 'D', 'file': 'removed.py'}], changes)
-  elseif $REVIEW_MOVES_MODE ==# 'jj_rename'
-    let repo = revue#vcs#RepoRoot()
-    let changes = revue#vcs#DiffNameStatus(repo, 'main')
-    call assert_equal([{'status': 'R', 'file': g:fixture.new, 'old_file': g:fixture.old}], changes)
-    let patch = revue#vcs#RawDiff(repo, 'main', g:fixture.new, g:fixture.old)
-    call assert_match('rename from ', patch)
-    call assert_match('rename to ', patch)
-    if g:fixture.edited
-      call assert_match('+    return value + changed_constant', patch)
-    endif
-    Review
-    call feedkeys('h', 'xt')
-    call assert_equal(repo . '/' . g:fixture.new, expand('%:p'))
-    call assert_equal(g:fixture.after, getline(1, '$'))
-    let bases = filter(getbufinfo(), {_, b -> b.name =~# 'revue-base-'})
-    call assert_equal(1, len(bases))
-    call assert_equal(g:fixture.before, getbufline(bases[0].bufnr, 1, '$'))
-    let sidebars = filter(getbufinfo(), {_, b -> b.name =~# '__RevueReview_'})
-    call assert_equal(1, len(sidebars))
-    call assert_true(index(getbufline(sidebars[0].bufnr, 1, '$'), '▸ R ' . g:fixture.old . ' → ' . g:fixture.new) >= 0)
-    call revue#review#Close()
   else
-    execute 'Review ' . g:fixture.base
-    call feedkeys('h', 'xt')
-    let head = bufnr()
-    let bases = filter(getbufinfo(), {_, b -> b.name =~# 'revue-base-'})
-    call assert_equal(1, len(bases))
-    let base = bases[0].bufnr
-    call assert_equal([1, 2, 3], sort(Signs(base, 'ReviewMovedFrom'), 'n'))
-    call assert_equal(1, len(Labels(base)))
-    call revue#review#NextFile()
-    let head = bufnr()
-    call assert_match('target.py$', bufname(head))
-    call assert_equal([16, 17, 18], sort(Signs(head, 'ReviewMovedTo'), 'n'))
-    call assert_equal(1, len(Labels(head)))
-    call assert_equal(g:fixture.files[1].after, getline(1, '$'))
-    call setline(16, 'changed_after_review()')
-    call feedkeys('h', 'xt')
-    doautocmd TextChanged
-    call assert_equal([], Signs(head, 'ReviewMovedTo'))
-    call assert_equal([], Labels(head))
-    call revue#review#RefreshSidebar()
-    call assert_equal([], Signs(head, 'ReviewMovedTo'), 'Never label stale unsaved content')
-    call setline(16, g:fixture.files[1].after[15])
-    setlocal nomodified
-    call revue#review#RefreshSidebar()
-    call assert_equal(1, len(Labels(head)))
-    call revue#review#PrevFile()
-    call assert_equal([], Signs(head, 'ReviewMovedTo'))
-    call assert_equal([], Labels(head))
-    call revue#review#NextFile()
-    call revue#review#Close()
-    call assert_equal([], Signs(head, 'ReviewMovedTo'))
-    call assert_equal([], Labels(head))
+    let s = OpenReview(get(g:fixture, 'base', ''))
+    let g:id = s.id
+    call win_gotoid(s.headwin)
+    call assert_false(&modifiable, 'All review source panes are immutable')
+    if $REVIEW_MOVES_MODE ==# 'within_file'
+      call assert_equal([1, 2, 3], sort(Signs(s.base, 'ReviewMovedFrom'), 'n'))
+      call assert_equal([16, 17, 18], sort(Signs(s.head, 'ReviewMovedTo'), 'n'))
+      call assert_equal(1, len(Labels(s.base)))
+      call assert_equal(1, len(Labels(s.head)))
+      call assert_equal(g:fixture.file.before, getbufline(s.base, 1, '$'))
+      call assert_equal(g:fixture.file.after, getbufline(s.head, 1, '$'))
+    elseif $REVIEW_MOVES_MODE ==# 'jj_inventory'
+      call assert_equal([
+            \ ['A', 'added.py', 'added.py'],
+            \ ['R', g:fixture.new, g:fixture.old],
+            \ ['D', 'removed.py', 'removed.py']],
+            \ map(copy(s.snapshot.files), {_, f -> [f.status, f.path, f.old_path]}))
+    elseif $REVIEW_MOVES_MODE ==# 'jj_rename'
+      call assert_equal([['R', g:fixture.new, g:fixture.old]],
+            \ map(copy(s.snapshot.files), {_, f -> [f.status, f.path, f.old_path]}))
+      call assert_equal(g:fixture.after, getbufline(s.head, 1, '$'))
+      call assert_equal(g:fixture.before, getbufline(s.base, 1, '$'))
+      call assert_match(escape(g:fixture.old . ' → ' . g:fixture.new, '~.[]*\'), join(getbufline(s.tree, 1, '$'), "\n"))
+      if g:fixture.edited | call assert_match('+    return value + changed_constant', s.snapshot.files[0].patch) | endif
+    else
+      call assert_equal([1, 2, 3], sort(Signs(s.base, 'ReviewMovedFrom'), 'n'))
+      call assert_equal(1, len(Labels(s.base)))
+      ReviewNextFile
+      call WaitFor({-> !empty(revue#session#Inspect(g:id).loaded)})
+      let s = revue#session#Inspect(g:id)
+      call assert_equal('target.py', getbufvar(s.head, 'revue_file'))
+      call assert_equal([16, 17, 18], sort(Signs(s.head, 'ReviewMovedTo'), 'n'))
+      call assert_equal(1, len(Labels(s.head)))
+      call assert_equal([], Labels(s.base))
+      call assert_equal(g:fixture.files[1].after, getbufline(s.head, 1, '$'))
+      ReviewPreviousFile
+      call WaitFor({-> !empty(revue#session#Inspect(g:id).loaded)})
+      call assert_equal([], Signs(s.head, 'ReviewMovedTo'))
+      call assert_equal([], Labels(s.head))
+    endif
+    call revue#session#Close()
+    call assert_false(bufexists(s.head))
+    call assert_false(bufexists(s.base))
   endif
 catch
   call add(v:errors, v:exception . ' at ' . v:throwpoint)

@@ -14,33 +14,42 @@ with tempfile.TemporaryDirectory(prefix='revue-regression-') as directory:
     git('config', 'user.email', 'fixture@example.invalid')
     names = ["a|call extend(g:, {'revue_injected': 1})", "z.vim|call extend(g:, {'revue_injected': 1})"]
     for name in names:
-        (repo / name).write_text('old\n')
+        (repo / name).write_text('old\n' * 5)
     git('add', '.')
     git('commit', '-m', 'base')
     for name in names:
-        (repo / name).write_text('new\n')
+        (repo / name).write_text('one\ntwo\nthree\nfour\nfive\n')
     script = repo / 'test.vim'
     script.write_text('''set nocompatible nomore
 execute 'set runtimepath^=' . fnameescape('ROOT')
 runtime plugin/revue.vim
+let g:revue_local_dir = 'REPO/store'
+let g:revue_draft_dir = 'REPO/drafts'
+let g:revue_auto_focus = 0
 cd REPO
+function! WaitFor(Fn) abort
+ let started = reltime()
+ while !a:Fn() && reltimefloat(reltime(started)) < 10 | sleep 10m | endwhile
+ if !a:Fn() | throw 'Review did not load: ' . execute('messages') | endif
+endfunction
 try
  Review HEAD
- call revue#review#NextFile()
+ call WaitFor({-> !empty(get(b:, 'revue_session', ''))})
+ let g:id = b:revue_session
+ call WaitFor({-> !empty(revue#session#Inspect(g:id).loaded)})
+ call win_gotoid(revue#session#Inspect(g:id).headwin)
+ ReviewNextFile
+ call WaitFor({-> !empty(revue#session#Inspect(g:id).loaded)})
  call assert_false(exists('g:revue_injected'))
- call revue#review#Close()
- enew
- file selection-fixture
- call setline(1, ['one', 'two', 'three', 'four', 'five'])
- xnoremap <buffer> c <Cmd>let g:capture_mode = [mode(), mode(1), line('v'), line('.'), expand('%:p')]<Bar>let g:captured = revue#selection#Capture()<CR>
- call feedkeys('ggVjc', 'xt')
- call assert_equal([1, 2], [g:captured.start, g:captured.end])
- call feedkeys("\\<Esc>", 'xt')
- call feedkeys('4GVjc', 'xt')
- call assert_equal([4, 5], [g:captured.start, g:captured.end])
- call feedkeys("\\<Esc>", 'xt')
- call feedkeys('5GVkc', 'xt')
- call assert_equal([4, 5], [g:captured.start, g:captured.end])
+ for [keys, expected] in [['ggVjc', [1, 2]], ['4GVjc', [4, 5]], ['5GVkc', [4, 5]]]
+   call feedkeys(keys, 'xt')
+   let draft = revue#session#Inspect(g:id).drafts[-1]
+   call assert_equal(expected, [draft.start, draft.end])
+   call setline(1, 'Range feedback ' . string(expected))
+   ReviewClose
+ endfor
+ call assert_equal(['one', 'two', 'three', 'four', 'five'], getline(1, '$'))
+ call revue#session#Close()
 catch
  call add(v:errors, v:exception . ' at ' . v:throwpoint . ' state=' . string(get(g:, 'capture_mode', [])))
 endtry
